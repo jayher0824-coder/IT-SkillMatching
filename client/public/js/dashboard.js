@@ -223,8 +223,15 @@ async function loadStudentDashboard() {
                     <div class="lg:col-span-2">
                         <div class="bg-white dark:bg-gray-800 rounded-lg shadow">
                             <div class="p-4 md:p-6 border-b border-gray-200 dark:border-gray-600">
-                                <h3 class="text-lg md:text-xl font-semibold text-gray-900 dark:text-white">Recommended Jobs</h3>
-                                <p class="text-gray-600 dark:text-gray-300 text-xs md:text-sm mt-1">Jobs matched to your skills and preferences</p>
+                                <h3 class="text-lg md:text-xl font-semibold text-gray-900 dark:text-white flex items-center">
+                                    <i class="fas fa-star text-[#56AE67] mr-2"></i>
+                                    Recommended For You
+                                </h3>
+                                <p class="text-gray-600 dark:text-gray-300 text-xs md:text-sm mt-1">
+                                    ${studentProfile?.assessmentScore?.overall ? 
+                                        'AI-matched based on your assessment results and skills' : 
+                                        'Complete your assessment for personalized recommendations'}
+                                </p>
                             </div>
                             <div class="p-6">
                                 ${validJobs.length > 0 ?

@@ -278,19 +278,35 @@ router.get('/job-matches', protect, authorize('student'), async (req, res) => {
       .populate('company', 'companyName logo industry')
       .sort({ createdAt: -1 });
 
-    // Calculate match scores
+    // Calculate match scores with enhanced algorithm
     const jobMatches = jobs.map(job => {
       let matchScore = 0;
       let totalPossible = 0;
+      const matchedSkills = [];
+      const missingSkills = [];
 
-      // Skill matching (60% weight)
-      const skillWeight = 0.6;
+      // Enhanced Skill matching (70% weight) - Increased importance
+      const skillWeight = 0.7;
       const studentSkills = student.skills || [];
       const requiredSkills = job.skillsRequired || [];
+      const assessmentBreakdown = student.assessmentScore?.breakdown || {};
+
+      // Map skill categories to common programming languages and technologies
+      const skillCategoryMapping = {
+        'programming': ['javascript', 'python', 'java', 'c++', 'c#', 'ruby', 'go', 'rust', 'swift', 'kotlin', 'typescript', 'php'],
+        'webDevelopment': ['html', 'css', 'react', 'angular', 'vue', 'node.js', 'express', 'django', 'flask', 'laravel', 'frontend', 'backend', 'fullstack'],
+        'database': ['sql', 'mysql', 'postgresql', 'mongodb', 'redis', 'oracle', 'database', 'nosql'],
+        'networking': ['network', 'tcp/ip', 'security', 'firewall', 'vpn', 'routing'],
+        'problemSolving': ['algorithm', 'data structure', 'optimization', 'debugging'],
+        'cloudComputing': ['aws', 'azure', 'gcp', 'cloud', 'docker', 'kubernetes'],
+        'devOps': ['ci/cd', 'jenkins', 'gitlab', 'github actions', 'terraform', 'ansible'],
+        'mobile': ['android', 'ios', 'react native', 'flutter', 'mobile'],
+      };
 
       requiredSkills.forEach(reqSkill => {
+        const reqSkillLower = reqSkill.name.toLowerCase();
         const studentSkill = studentSkills.find(s => 
-          s.name.toLowerCase() === reqSkill.name.toLowerCase()
+          s.name.toLowerCase() === reqSkillLower
         );
 
         if (studentSkill) {
@@ -304,35 +320,88 @@ router.get('/job-matches', protect, authorize('student'), async (req, res) => {
           const reqLevel = levelScore[reqSkill.level] || 1;
           const stuLevel = levelScore[studentSkill.level] || 1;
 
+          // Base score for skill match
+          let skillScore = 0;
+          
           if (stuLevel >= reqLevel) {
-            matchScore += reqSkill.priority === 'must-have' ? 20 : 10;
+            // Perfect match or exceeds requirement
+            skillScore = reqSkill.priority === 'must-have' ? 25 : 15;
+            
+            // BONUS: Check if student has high assessment score in related category
+            for (const [category, keywords] of Object.entries(skillCategoryMapping)) {
+              if (keywords.some(keyword => reqSkillLower.includes(keyword))) {
+                const categoryScore = assessmentBreakdown[category] || 0;
+                if (categoryScore >= 80) {
+                  skillScore += 10; // Expert bonus
+                } else if (categoryScore >= 70) {
+                  skillScore += 7; // Advanced bonus
+                } else if (categoryScore >= 60) {
+                  skillScore += 5; // Proficient bonus
+                }
+                break;
+              }
+            }
           } else {
-            matchScore += Math.min(stuLevel / reqLevel, 1) * (reqSkill.priority === 'must-have' ? 10 : 5);
+            // Partial match
+            skillScore = Math.min(stuLevel / reqLevel, 1) * (reqSkill.priority === 'must-have' ? 12 : 7);
+          }
+
+          matchScore += skillScore;
+          matchedSkills.push({
+            name: reqSkill.name,
+            studentLevel: studentSkill.level,
+            requiredLevel: reqSkill.level,
+            score: Math.round(skillScore)
+          });
+        } else {
+          // Check if student has strong assessment score in related category
+          let foundRelatedStrength = false;
+          for (const [category, keywords] of Object.entries(skillCategoryMapping)) {
+            if (keywords.some(keyword => reqSkillLower.includes(keyword))) {
+              const categoryScore = assessmentBreakdown[category] || 0;
+              if (categoryScore >= 75) {
+                // Student has strong assessment in this category even without explicit skill
+                matchScore += reqSkill.priority === 'must-have' ? 8 : 5;
+                foundRelatedStrength = true;
+                matchedSkills.push({
+                  name: reqSkill.name,
+                  studentLevel: 'Assessment Verified',
+                  requiredLevel: reqSkill.level,
+                  score: reqSkill.priority === 'must-have' ? 8 : 5,
+                  assessmentBased: true
+                });
+              }
+              break;
+            }
+          }
+          
+          if (!foundRelatedStrength) {
+            missingSkills.push(reqSkill.name);
           }
         }
 
-        totalPossible += reqSkill.priority === 'must-have' ? 20 : 10;
+        totalPossible += reqSkill.priority === 'must-have' ? 25 : 15;
       });
 
-      // Location matching (20% weight)
-      const locationWeight = 0.2;
+      // Location matching (15% weight)
+      const locationWeight = 0.15;
       const studentPrefs = student.preferences || {};
       const jobLocation = job.location || {};
 
       if (jobLocation.remote || studentPrefs.remote) {
-        matchScore += 20 * locationWeight;
+        matchScore += 15 * locationWeight;
       } else if (studentPrefs.locations && studentPrefs.locations.includes(jobLocation.city)) {
-        matchScore += 20 * locationWeight;
+        matchScore += 15 * locationWeight;
       }
 
-      totalPossible += 20 * locationWeight;
+      totalPossible += 15 * locationWeight;
 
-      // Job type matching (20% weight)
+      // Job type matching (15% weight)
       if (studentPrefs.jobTypes && studentPrefs.jobTypes.includes(job.jobType)) {
-        matchScore += 20 * locationWeight;
+        matchScore += 15 * locationWeight;
       }
 
-      totalPossible += 20 * locationWeight;
+      totalPossible += 15 * locationWeight;
 
       const finalScore = totalPossible > 0 ? Math.round((matchScore / totalPossible) * 100) : 0;
 
@@ -346,13 +415,27 @@ router.get('/job-matches', protect, authorize('student'), async (req, res) => {
             (studentPrefs.locations && studentPrefs.locations.includes(jobLocation.city)) ? 100 : 0,
           jobTypeMatch: studentPrefs.jobTypes && studentPrefs.jobTypes.includes(job.jobType) ? 100 : 0,
         },
+        matchedSkills,
+        missingSkills,
+        assessmentInfluenced: matchedSkills.some(s => s.assessmentBased)
       };
     });
 
-    // Sort by match score and filter out very low matches
+    // Enhanced sorting: prioritize jobs matching student's strongest assessment categories
     const sortedMatches = jobMatches
       .filter(match => match.matchScore >= 20)
-      .sort((a, b) => b.matchScore - a.matchScore)
+      .sort((a, b) => {
+        // First, sort by match score
+        if (b.matchScore !== a.matchScore) {
+          return b.matchScore - a.matchScore;
+        }
+        // If scores are equal, prioritize jobs influenced by assessment
+        if (a.assessmentInfluenced !== b.assessmentInfluenced) {
+          return a.assessmentInfluenced ? -1 : 1;
+        }
+        // Finally, sort by number of matched skills
+        return b.matchedSkills.length - a.matchedSkills.length;
+      })
       .slice(0, 20); // Top 20 matches
 
     res.json({

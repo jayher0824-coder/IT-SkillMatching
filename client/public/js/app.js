@@ -2231,8 +2231,14 @@ function getAssessmentButtonInfo(hasAssessment, assessmentStatus) {
 
 async function showAllJobs() {
     try {
-        const response = await apiCall('/jobs');
-        const jobs = response.data || [];
+        // Use job-matches API if user is a student for personalized recommendations
+        const isStudent = currentUser && currentUser.role === 'student';
+        const endpoint = isStudent ? '/students/job-matches' : '/jobs';
+        const response = await apiCall(endpoint);
+        const data = response.data || [];
+        
+        // Extract jobs from response (job-matches returns different structure)
+        const jobsWithMatches = isStudent && data.length > 0 && data[0].job ? data : data.map(j => ({job: j, matchScore: 0}));
 
         // Create modal if it doesn't exist
         let modal = document.getElementById('all-jobs-modal');
@@ -2244,12 +2250,20 @@ async function showAllJobs() {
                 <div class="bg-white dark:bg-gray-800 rounded-lg max-w-6xl w-full max-h-[90vh] overflow-hidden flex flex-col shadow-2xl">
                     <div class="p-6 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center flex-shrink-0">
                         <h2 class="text-2xl font-bold text-gray-900 dark:text-white">
-                            <i class="fas fa-briefcase mr-2 text-[#56AE67]"></i>All Available Jobs
+                            <i class="fas fa-briefcase mr-2 text-[#56AE67]"></i>${isStudent ? 'Recommended Jobs For You' : 'All Available Jobs'}
                         </h2>
                         <button onclick="closeAllJobsModal()" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors">
                             <i class="fas fa-times text-2xl"></i>
                         </button>
                     </div>
+                    ${isStudent ? `
+                        <div class="px-6 py-3 bg-gradient-to-r from-[#56AE67]/10 to-[#3d8b4f]/10 border-b border-gray-200 dark:border-gray-700">
+                            <p class="text-sm text-gray-700 dark:text-gray-300">
+                                <i class="fas fa-magic mr-2 text-[#56AE67]"></i>
+                                Jobs are ranked based on your assessment results and skill proficiency
+                            </p>
+                        </div>
+                    ` : ''}
                     <div class="p-6 overflow-y-auto flex-1 scrollbar-custom" id="all-jobs-container" style="max-height: calc(90vh - 100px);">
                         <div class="flex items-center justify-center py-8">
                             <i class="fas fa-spinner fa-spin text-[#56AE67] text-3xl"></i>
@@ -2273,12 +2287,12 @@ async function showAllJobs() {
         const jobsContainer = document.getElementById('all-jobs-container');
         if (!jobsContainer) return;
 
-        if (jobs.length === 0) {
+        if (jobsWithMatches.length === 0) {
             jobsContainer.innerHTML = `
                 <div class="text-center py-16">
                     <i class="fas fa-briefcase text-gray-300 dark:text-gray-600 text-6xl mb-4"></i>
                     <p class="text-gray-500 dark:text-gray-400 text-lg">No jobs available at the moment.</p>
-                    <p class="text-gray-400 dark:text-gray-500 text-sm mt-2">Check back later for new opportunities!</p>
+                    <p class="text-gray-400 dark:text-gray-500 text-sm mt-2">${isStudent ? 'Complete your assessment to get personalized job recommendations!' : 'Check back later for new opportunities!'}</p>
                 </div>
             `;
             return;
@@ -2291,8 +2305,13 @@ async function showAllJobs() {
             </div>
         `;
 
-        // Create job cards with assessment status
-        const jobCards = await Promise.all(jobs.map(async job => {
+        // Create job cards with match scores
+        const jobCards = await Promise.all(jobsWithMatches.map(async jobData => {
+            const job = jobData.job || jobData;
+            const matchScore = jobData.matchScore || 0;
+            const matchedSkills = jobData.matchedSkills || [];
+            const assessmentInfluenced = jobData.assessmentInfluenced || false;
+            
             // Check if job has assessment using enhanced detection
             const hasAssessment = job.requireCustomAssessment || job.customAssessment;
             
@@ -2304,24 +2323,70 @@ async function showAllJobs() {
             
             const buttonInfo = getAssessmentButtonInfo(hasAssessment, assessmentStatus);
             
+            // Match score color
+            const getMatchScoreColor = (score) => {
+                if (score >= 80) return 'bg-green-500';
+                if (score >= 60) return 'bg-blue-500';
+                if (score >= 40) return 'bg-yellow-500';
+                return 'bg-gray-400';
+            };
+            
             return `
                 <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-4 hover:shadow-lg transition-shadow border border-gray-200 dark:border-gray-700">
+                    ${isStudent && matchScore > 0 ? `
+                        <div class="flex items-center justify-between mb-3 pb-3 border-b border-gray-200 dark:border-gray-700">
+                            <div class="flex items-center space-x-3">
+                                <div class="flex items-center space-x-2">
+                                    <div class="relative w-16 h-16">
+                                        <svg class="transform -rotate-90 w-16 h-16">
+                                            <circle cx="32" cy="32" r="28" stroke="currentColor" stroke-width="4" fill="transparent" class="text-gray-200 dark:text-gray-700"/>
+                                            <circle cx="32" cy="32" r="28" stroke="currentColor" stroke-width="4" fill="transparent" 
+                                                class="${getMatchScoreColor(matchScore)}"
+                                                stroke-dasharray="${2 * Math.PI * 28}"
+                                                stroke-dashoffset="${2 * Math.PI * 28 * (1 - matchScore / 100)}"
+                                                stroke-linecap="round"/>
+                                        </svg>
+                                        <div class="absolute inset-0 flex items-center justify-center">
+                                            <span class="text-sm font-bold text-gray-900 dark:text-white">${matchScore}%</span>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm font-semibold text-gray-900 dark:text-white">Match Score</p>
+                                        <p class="text-xs text-gray-500 dark:text-gray-400">
+                                            ${matchScore >= 80 ? 'Excellent Match!' : matchScore >= 60 ? 'Good Match' : matchScore >= 40 ? 'Fair Match' : 'Low Match'}
+                                        </p>
+                                    </div>
+                                </div>
+                                ${assessmentInfluenced ? `
+                                    <span class="px-3 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-200 text-xs rounded-full font-medium">
+                                        <i class="fas fa-star mr-1"></i>Based on Assessment
+                                    </span>
+                                ` : ''}
+                            </div>
+                            ${matchedSkills.length > 0 ? `
+                                <div class="text-xs text-gray-600 dark:text-gray-400">
+                                    <i class="fas fa-check-circle text-green-500 mr-1"></i>
+                                    ${matchedSkills.length} skill${matchedSkills.length > 1 ? 's' : ''} matched
+                                </div>
+                            ` : ''}
+                        </div>
+                    ` : ''}
                     <div class="flex justify-between items-start mb-4">
                         <div class="flex-1">
                             <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">${job.title}</h3>
                             <div class="flex items-center gap-2 mb-3">
                                 <i class="fas fa-building text-gray-400"></i>
-                                <p class="text-gray-600 dark:text-gray-300">${job.companyName}</p>
+                                <p class="text-gray-600 dark:text-gray-300">${job.company?.companyName || job.companyName}</p>
                             </div>
                             <div class="flex items-center gap-2 mb-3">
                                 <i class="fas fa-map-marker-alt text-gray-400"></i>
-                                <p class="text-sm text-gray-500 dark:text-gray-400">${job.location}</p>
+                                <p class="text-sm text-gray-500 dark:text-gray-400">${job.location?.city || job.location} ${job.location?.remote ? '(Remote)' : ''}</p>
                             </div>
                             <p class="text-sm text-gray-700 dark:text-gray-300 line-clamp-2">${job.description}</p>
                         </div>
                         <div class="text-right ml-4">
-                            <p class="text-lg font-bold text-green-600 dark:text-green-400">${formatSalary(job.salary)}</p>
-                            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">${job.type}</p>
+                            <p class="text-lg font-bold text-green-600 dark:text-green-400">${job.salary ? formatSalary(job.salary) : 'Competitive'}</p>
+                            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">${job.jobType || job.type}</p>
                         </div>
                     </div>
                     <div class="flex justify-between items-center pt-4 border-t border-gray-200 dark:border-gray-700">
