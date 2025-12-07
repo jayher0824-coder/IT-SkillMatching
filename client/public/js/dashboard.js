@@ -5664,18 +5664,3 @@ window.uploadAvatar = async function(event) {
         uploadBtn.innerHTML = '<i class="fas fa-check mr-2"></i>Upload';
     }
 };
-    
-    // Hide assessment and results pages
-    document.getElementById('assessment-page')?.classList.add('hidden');
-    document.getElementById('assessment-results')?.classList.add('hidden');
-    
-    // Show appropriate dashboard
-    if (currentUser && currentUser.role === 'student') {
-        document.getElementById('student-dashboard')?.classList.remove('hidden');
-        // Refresh dashboard data
-        loadStudentDashboard();
-    } else if (currentUser && currentUser.role === 'company') {
-        document.getElementById('company-dashboard')?.classList.remove('hidden');
-        loadCompanyDashboard();
-    }
-};
