@@ -1291,6 +1291,22 @@ function showCreateJob() {
                         <input type="text" id="jobTitle" required class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-[#56AE67]" placeholder="e.g. Junior Software Developer">
                     </div>
                     <div class="mb-4">
+                        <label class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">Department *</label>
+                        <select id="jobDepartment" required class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-[#56AE67]">
+                            <option value="">Select Department</option>
+                            <option value="Engineering">Engineering</option>
+                            <option value="Marketing">Marketing</option>
+                            <option value="Sales">Sales</option>
+                            <option value="HR">Human Resources</option>
+                            <option value="Finance">Finance</option>
+                            <option value="Operations">Operations</option>
+                            <option value="IT">Information Technology</option>
+                            <option value="Design">Design</option>
+                            <option value="Customer Support">Customer Support</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div class="mb-4">
                         <label class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">Job Type *</label>
                         <select id="jobType" required class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-[#56AE67]">
                             <option value="">Select Job Type</option>
@@ -1463,6 +1479,7 @@ async function saveJob(event) {
         
         const formData = {
             title: document.getElementById('jobTitle').value,
+            department: document.getElementById('jobDepartment').value,
             description: document.getElementById('jobDescription').value,
             jobType: document.getElementById('jobType').value,
             experienceLevel: document.getElementById('experienceLevel').value,
