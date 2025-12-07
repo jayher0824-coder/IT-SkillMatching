@@ -157,7 +157,7 @@ function updateNavigation() {
                 <button onclick="goToDashboard()" class="text-[#56AE67] hover:text-[#2d6b3c] dark:text-[#6bc481] dark:hover:text-[#7dd091]">
                     <i class="fas fa-tachometer-alt mr-1"></i>Dashboard
                 </button>
-                <button onclick="showDeleteAccountModal()" class="text-[#56AE67] hover:text-[#2d6b3c] dark:text-[#6bc481] dark:hover:text-[#7dd091]">
+                <button onclick="showSettingsModal()" class="text-[#56AE67] hover:text-[#2d6b3c] dark:text-[#6bc481] dark:hover:text-[#7dd091]">
                     <i class="fas fa-cog mr-1"></i>Settings
                 </button>
                 <button onclick="logout()" class="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300">
@@ -170,7 +170,7 @@ function updateNavigation() {
             const companyName = currentUser.companyName || sessionStorage.getItem('companyName') || currentUser.email;
             navMenu.innerHTML = `
                 <span class="text-gray-700 dark:text-gray-300">Welcome, ${companyName}</span>
-                <button onclick="showDeleteAccountModal()" class="text-[#56AE67] hover:text-[#2d6b3c] dark:text-[#6bc481] dark:hover:text-[#7dd091]">
+                <button onclick="showSettingsModal()" class="text-[#56AE67] hover:text-[#2d6b3c] dark:text-[#6bc481] dark:hover:text-[#7dd091]">
                     <i class="fas fa-cog mr-1"></i>Settings
                 </button>
                 <button onclick="logout()" class="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300">
@@ -697,13 +697,526 @@ async function toggleTheme() {
 }
 
 // Account Deletion Functions
+function showSettingsModal() {
+    const modal = document.getElementById('settings-modal');
+    if (!modal) {
+        // Create modal if it doesn't exist
+        createSettingsModal();
+    } else {
+        modal.classList.remove('hidden');
+    }
+}
+
+// ===== SETTINGS MODAL =====
+function showSettingsModal() {
+    const modal = document.getElementById('settings-modal');
+    if (!modal) {
+        createSettingsModal();
+    } else {
+        modal.classList.remove('hidden');
+    }
+}
+
+function closeSettingsModal() {
+    const modal = document.getElementById('settings-modal');
+    if (modal) {
+        modal.classList.add('hidden');
+    }
+}
+
+function createSettingsModal() {
+    // Remove existing modal if present
+    const existing = document.getElementById('settings-modal');
+    if (existing) existing.remove();
+    
+    const modalHTML = `
+        <div id="settings-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div class="bg-white dark:bg-gray-800 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+                <div class="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-6 flex justify-between items-center">
+                    <h2 class="text-2xl font-bold text-gray-900 dark:text-white">
+                        <i class="fas fa-cog mr-2"></i>Settings
+                    </h2>
+                    <button onclick="closeSettingsModal()" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+                
+                <div class="p-6">
+                    <!-- Change Password -->
+                    <div class="mb-6 pb-6 border-b border-gray-200 dark:border-gray-700">
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-3">
+                            <i class="fas fa-key mr-2 text-blue-600"></i>Change Password
+                        </h3>
+                        <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">Update your password to keep your account secure</p>
+                        <button onclick="showChangePasswordForm()" 
+                            style="background-color: #2563eb; color: white; border: 2px solid #1e40af;"
+                            class="px-4 py-2 rounded-lg hover:bg-blue-700 transition font-medium"
+                            onmouseover="this.style.backgroundColor='#1d4ed8'" 
+                            onmouseout="this.style.backgroundColor='#2563eb'">
+                            <i class="fas fa-lock mr-2"></i>Change Password
+                        </button>
+                    </div>
+
+                    <!-- Profile Management -->
+                    <div class="mb-6 pb-6 border-b border-gray-200 dark:border-gray-700">
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-3">
+                            <i class="fas fa-user-edit mr-2 text-green-600"></i>Profile Information
+                        </h3>
+                        <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">Update your personal information and profile details</p>
+                        <button onclick="closeSettingsModal(); goToDashboard()" 
+                            style="background-color: #56AE67; color: white; border: 2px solid #2d6b3c;"
+                            class="px-4 py-2 rounded-lg hover:bg-[#3d8b4f] transition font-medium"
+                            onmouseover="this.style.backgroundColor='#3d8b4f'" 
+                            onmouseout="this.style.backgroundColor='#56AE67'">
+                            <i class="fas fa-edit mr-2"></i>Edit Profile
+                        </button>
+                    </div>
+
+                    <!-- Theme Preference -->
+                    <div class="mb-6 pb-6 border-b border-gray-200 dark:border-gray-700">
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-3">
+                            <i class="fas fa-palette mr-2 text-purple-600"></i>Appearance
+                        </h3>
+                        <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">Current theme: <span class="font-semibold">${isDarkMode ? 'Dark Mode' : 'Light Mode'}</span></p>
+                        <button onclick="toggleTheme(); location.reload()" 
+                            style="background-color: #7c3aed; color: white; border: 2px solid #6d28d9;"
+                            class="px-4 py-2 rounded-lg hover:bg-purple-700 transition font-medium"
+                            onmouseover="this.style.backgroundColor='#6d28d9'" 
+                            onmouseout="this.style.backgroundColor='#7c3aed'">
+                            <i class="fas fa-${isDarkMode ? 'sun' : 'moon'} mr-2"></i>Switch to ${isDarkMode ? 'Light' : 'Dark'} Mode
+                        </button>
+                    </div>
+
+                    <!-- Privacy & Security -->
+                    <div class="mb-6 pb-6 border-b border-gray-200 dark:border-gray-700">
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-3">
+                            <i class="fas fa-shield-alt mr-2 text-indigo-600"></i>Privacy & Security
+                        </h3>
+                        <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">Manage your privacy and security settings</p>
+                        <div class="space-y-3">
+                            <label class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition">
+                                <div class="flex items-center">
+                                    <i class="fas fa-eye mr-3 text-gray-600 dark:text-gray-400"></i>
+                                    <span class="text-sm text-gray-700 dark:text-gray-300">Profile Visible to Companies</span>
+                                </div>
+                                <input type="checkbox" checked class="w-4 h-4">
+                            </label>
+                            <label class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition">
+                                <div class="flex items-center">
+                                    <i class="fas fa-file-alt mr-3 text-gray-600 dark:text-gray-400"></i>
+                                    <span class="text-sm text-gray-700 dark:text-gray-300">Show Resume to Recruiters</span>
+                                </div>
+                                <input type="checkbox" checked class="w-4 h-4">
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Notifications -->
+                    <div class="mb-6 pb-6 border-b border-gray-200 dark:border-gray-700">
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-3">
+                            <i class="fas fa-bell mr-2 text-yellow-600"></i>Notifications
+                        </h3>
+                        <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">Manage your notification preferences</p>
+                        <div class="space-y-3">
+                            <label class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition">
+                                <div class="flex items-center">
+                                    <i class="fas fa-envelope mr-3 text-gray-600 dark:text-gray-400"></i>
+                                    <span class="text-sm text-gray-700 dark:text-gray-300">Email Notifications</span>
+                                </div>
+                                <input type="checkbox" checked class="w-4 h-4">
+                            </label>
+                            <label class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition">
+                                <div class="flex items-center">
+                                    <i class="fas fa-briefcase mr-3 text-gray-600 dark:text-gray-400"></i>
+                                    <span class="text-sm text-gray-700 dark:text-gray-300">Job Application Updates</span>
+                                </div>
+                                <input type="checkbox" checked class="w-4 h-4">
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Delete Account -->
+                    <div class="mb-4">
+                        <h3 class="text-lg font-semibold text-red-600 dark:text-red-400 mb-3">
+                            <i class="fas fa-exclamation-triangle mr-2"></i>Danger Zone
+                        </h3>
+                        <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+                            <p class="text-sm text-red-800 dark:text-red-200 mb-3">Once you delete your account, there is no going back. Please be certain.</p>
+                            <button onclick="showDeleteAccountModal()" 
+                                style="background-color: #dc2626; color: white; border: 2px solid #b91c1c;"
+                                class="px-4 py-2 rounded-lg hover:bg-red-700 transition font-medium"
+                                onmouseover="this.style.backgroundColor='#b91c1c'" 
+                                onmouseout="this.style.backgroundColor='#dc2626'">
+                                <i class="fas fa-trash mr-2"></i>Delete Account
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+}
+
+function showChangePasswordForm() {
+    closeSettingsModal();
+    
+    // Remove existing modal if present
+    const existing = document.getElementById('change-password-modal');
+    if (existing) existing.remove();
+    
+    const modalHTML = `
+        <div id="change-password-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div class="bg-white dark:bg-gray-800 p-6 rounded-lg max-w-md w-full">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-bold text-gray-900 dark:text-white">Change Password</h3>
+                    <button onclick="closeChangePasswordModal()" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                
+                <form id="change-password-form" onsubmit="handleChangePassword(event)">
+                    <div class="mb-4">
+                        <label class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">Current Password</label>
+                        <input type="password" id="current-password" required 
+                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg 
+                                   focus:outline-none focus:border-blue-500 dark:bg-gray-700 dark:text-white" 
+                            placeholder="Enter current password">
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">New Password</label>
+                        <input type="password" id="new-password" required minlength="8"
+                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg 
+                                   focus:outline-none focus:border-blue-500 dark:bg-gray-700 dark:text-white" 
+                            placeholder="Enter new password">
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Minimum 8 characters</p>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">Confirm New Password</label>
+                        <input type="password" id="confirm-password" required 
+                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg 
+                                   focus:outline-none focus:border-blue-500 dark:bg-gray-700 dark:text-white" 
+                            placeholder="Confirm new password">
+                    </div>
+                    
+                    <div class="flex justify-end space-x-3 mt-6">
+                        <button type="button" onclick="closeChangePasswordModal()" 
+                            class="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200">
+                            Cancel
+                        </button>
+                        <button type="submit" 
+                            style="background-color: #2563eb; color: white;"
+                            class="px-4 py-2 rounded-lg hover:bg-blue-700 transition"
+                            onmouseover="this.style.backgroundColor='#1d4ed8'" 
+                            onmouseout="this.style.backgroundColor='#2563eb'">
+                            Update Password
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    `;
+    
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+}
+
+function closeChangePasswordModal() {
+    const modal = document.getElementById('change-password-modal');
+    if (modal) modal.remove();
+}
+
+async function handleChangePassword(event) {
+    event.preventDefault();
+    
+    const currentPassword = document.getElementById('current-password').value;
+    const newPassword = document.getElementById('new-password').value;
+    const confirmPassword = document.getElementById('confirm-password').value;
+    
+    if (newPassword !== confirmPassword) {
+        showToast('New passwords do not match', 'error');
+        return;
+    }
+    
+    if (newPassword.length < 8) {
+        showToast('Password must be at least 8 characters', 'error');
+        return;
+    }
+    
+    try {
+        // For now, show a message that this feature is coming soon
+        // You'll need to implement the backend route for this
+        showToast('Password change feature coming soon', 'info');
+        closeChangePasswordModal();
+        
+        /* Uncomment when backend is ready:
+        const response = await apiCall('/auth/change-password', {
+            method: 'POST',
+            body: JSON.stringify({ currentPassword, newPassword })
+        });
+        
+        if (response.success) {
+            showToast('Password changed successfully', 'success');
+            closeChangePasswordModal();
+        } else {
+            showToast(response.message || 'Failed to change password', 'error');
+        }
+        */
+    } catch (error) {
+        showToast(error.message || 'Failed to change password', 'error');
+    }
+}
+
+// ===== DELETE ACCOUNT MODAL =====
 function showDeleteAccountModal() {
+    closeSettingsModal();
+    closeSettingsModal();
     const modal = document.getElementById('delete-account-modal');
     if (!modal) {
         // Create modal if it doesn't exist
         createDeleteAccountModal();
     } else {
         modal.classList.remove('hidden');
+    }
+}
+
+function createSettingsModal() {
+    const modalHTML = `
+        <div id="settings-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div class="bg-white dark:bg-gray-800 rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+                <div class="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-6 flex justify-between items-center">
+                    <h2 class="text-2xl font-bold text-gray-900 dark:text-white">
+                        <i class="fas fa-cog mr-2"></i>Settings
+                    </h2>
+                    <button onclick="closeSettingsModal()" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+                
+                <div class="p-6">
+                    <!-- Change Password -->
+                    <div class="mb-6 pb-6 border-b border-gray-200 dark:border-gray-700">
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-3">
+                            <i class="fas fa-key mr-2 text-blue-600"></i>Change Password
+                        </h3>
+                        <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">Update your password to keep your account secure</p>
+                        <button onclick="showChangePasswordForm()" 
+                            style="background-color: #2563eb; color: white; border: 2px solid #1e40af;"
+                            class="px-4 py-2 rounded-lg hover:bg-blue-700 transition font-medium"
+                            onmouseover="this.style.backgroundColor='#1d4ed8'" 
+                            onmouseout="this.style.backgroundColor='#2563eb'">
+                            <i class="fas fa-lock mr-2"></i>Change Password
+                        </button>
+                    </div>
+
+                    <!-- Profile Management -->
+                    <div class="mb-6 pb-6 border-b border-gray-200 dark:border-gray-700">
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-3">
+                            <i class="fas fa-user-edit mr-2 text-green-600"></i>Profile Information
+                        </h3>
+                        <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">Update your personal information and profile details</p>
+                        <button onclick="goToDashboard()" 
+                            style="background-color: #56AE67; color: white; border: 2px solid #2d6b3c;"
+                            class="px-4 py-2 rounded-lg hover:bg-[#3d8b4f] transition font-medium"
+                            onmouseover="this.style.backgroundColor='#3d8b4f'" 
+                            onmouseout="this.style.backgroundColor='#56AE67'">
+                            <i class="fas fa-edit mr-2"></i>Edit Profile
+                        </button>
+                    </div>
+
+                    <!-- Notification Preferences -->
+                    <div class="mb-6 pb-6 border-b border-gray-200 dark:border-gray-700">
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-3">
+                            <i class="fas fa-bell mr-2 text-yellow-600"></i>Notifications
+                        </h3>
+                        <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">Manage your notification preferences</p>
+                        <div class="space-y-3">
+                            <label class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition">
+                                <div class="flex items-center">
+                                    <i class="fas fa-envelope mr-3 text-gray-600 dark:text-gray-400"></i>
+                                    <span class="text-sm text-gray-700 dark:text-gray-300">Email Notifications</span>
+                                </div>
+                                <input type="checkbox" id="email-notifications" checked class="toggle-checkbox">
+                            </label>
+                            <label class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition">
+                                <div class="flex items-center">
+                                    <i class="fas fa-briefcase mr-3 text-gray-600 dark:text-gray-400"></i>
+                                    <span class="text-sm text-gray-700 dark:text-gray-300">Job Application Updates</span>
+                                </div>
+                                <input type="checkbox" id="job-notifications" checked class="toggle-checkbox">
+                            </label>
+                            <label class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition">
+                                <div class="flex items-center">
+                                    <i class="fas fa-clipboard-check mr-3 text-gray-600 dark:text-gray-400"></i>
+                                    <span class="text-sm text-gray-700 dark:text-gray-300">Assessment Reminders</span>
+                                </div>
+                                <input type="checkbox" id="assessment-notifications" checked class="toggle-checkbox">
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Theme Preference -->
+                    <div class="mb-6 pb-6 border-b border-gray-200 dark:border-gray-700">
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-3">
+                            <i class="fas fa-palette mr-2 text-purple-600"></i>Appearance
+                        </h3>
+                        <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">Current theme: <span class="font-semibold">${isDarkMode ? 'Dark Mode' : 'Light Mode'}</span></p>
+                        <button onclick="toggleTheme(); closeSettingsModal()" 
+                            style="background-color: #7c3aed; color: white; border: 2px solid #6d28d9;"
+                            class="px-4 py-2 rounded-lg hover:bg-purple-700 transition font-medium"
+                            onmouseover="this.style.backgroundColor='#6d28d9'" 
+                            onmouseout="this.style.backgroundColor='#7c3aed'">
+                            <i class="fas fa-${isDarkMode ? 'sun' : 'moon'} mr-2"></i>Switch to ${isDarkMode ? 'Light' : 'Dark'} Mode
+                        </button>
+                    </div>
+
+                    <!-- Privacy & Security -->
+                    <div class="mb-6 pb-6 border-b border-gray-200 dark:border-gray-700">
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-3">
+                            <i class="fas fa-shield-alt mr-2 text-indigo-600"></i>Privacy & Security
+                        </h3>
+                        <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">Manage your privacy and security settings</p>
+                        <div class="space-y-3">
+                            <label class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition">
+                                <div class="flex items-center">
+                                    <i class="fas fa-eye mr-3 text-gray-600 dark:text-gray-400"></i>
+                                    <span class="text-sm text-gray-700 dark:text-gray-300">Profile Visible to Companies</span>
+                                </div>
+                                <input type="checkbox" id="profile-visibility" checked class="toggle-checkbox">
+                            </label>
+                            <label class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition">
+                                <div class="flex items-center">
+                                    <i class="fas fa-file-alt mr-3 text-gray-600 dark:text-gray-400"></i>
+                                    <span class="text-sm text-gray-700 dark:text-gray-300">Show Resume to Recruiters</span>
+                                </div>
+                                <input type="checkbox" id="resume-visibility" checked class="toggle-checkbox">
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Delete Account -->
+                    <div class="mb-4">
+                        <h3 class="text-lg font-semibold text-red-600 dark:text-red-400 mb-3">
+                            <i class="fas fa-exclamation-triangle mr-2"></i>Danger Zone
+                        </h3>
+                        <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+                            <p class="text-sm text-red-800 dark:text-red-200 mb-3">Once you delete your account, there is no going back. Please be certain.</p>
+                            <button onclick="showDeleteAccountModal()" 
+                                style="background-color: #dc2626; color: white; border: 2px solid #b91c1c;"
+                                class="px-4 py-2 rounded-lg hover:bg-red-700 transition font-medium"
+                                onmouseover="this.style.backgroundColor='#b91c1c'" 
+                                onmouseout="this.style.backgroundColor='#dc2626'">
+                                <i class="fas fa-trash mr-2"></i>Delete Account
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+    document.getElementById('settings-modal').classList.remove('hidden');
+}
+
+function closeSettingsModal() {
+    const modal = document.getElementById('settings-modal');
+    if (modal) {
+        modal.classList.add('hidden');
+    }
+}
+
+function showChangePasswordForm() {
+    closeSettingsModal();
+    
+    const modalHTML = `
+        <div id="change-password-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div class="bg-white dark:bg-gray-800 p-6 rounded-lg max-w-md w-full mx-4">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-bold text-gray-900 dark:text-white">Change Password</h3>
+                    <button onclick="closeChangePasswordModal()" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                
+                <form id="change-password-form" onsubmit="handleChangePassword(event)">
+                    <div class="mb-4">
+                        <label class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">Current Password</label>
+                        <input type="password" id="current-password" required 
+                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg 
+                                   focus:outline-none focus:border-blue-500 dark:bg-gray-700 dark:text-white" 
+                            placeholder="Enter current password">
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">New Password</label>
+                        <input type="password" id="new-password" required minlength="8"
+                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg 
+                                   focus:outline-none focus:border-blue-500 dark:bg-gray-700 dark:text-white" 
+                            placeholder="Enter new password">
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Minimum 8 characters</p>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">Confirm New Password</label>
+                        <input type="password" id="confirm-password" required 
+                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg 
+                                   focus:outline-none focus:border-blue-500 dark:bg-gray-700 dark:text-white" 
+                            placeholder="Confirm new password">
+                    </div>
+                    
+                    <div class="flex justify-end space-x-3 mt-6">
+                        <button type="button" onclick="closeChangePasswordModal()" 
+                            class="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200">
+                            Cancel
+                        </button>
+                        <button type="submit" 
+                            style="background-color: #2563eb; color: white;"
+                            class="px-4 py-2 rounded-lg hover:bg-blue-700 transition"
+                            onmouseover="this.style.backgroundColor='#1d4ed8'" 
+                            onmouseout="this.style.backgroundColor='#2563eb'">
+                            Update Password
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    `;
+    
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+}
+
+function closeChangePasswordModal() {
+    const modal = document.getElementById('change-password-modal');
+    if (modal) {
+        modal.remove();
+    }
+}
+
+async function handleChangePassword(event) {
+    event.preventDefault();
+    
+    const currentPassword = document.getElementById('current-password').value;
+    const newPassword = document.getElementById('new-password').value;
+    const confirmPassword = document.getElementById('confirm-password').value;
+    
+    if (newPassword !== confirmPassword) {
+        showToast('New passwords do not match', 'error');
+        return;
+    }
+    
+    try {
+        const response = await apiCall('/auth/change-password', {
+            method: 'POST',
+            body: JSON.stringify({ currentPassword, newPassword })
+        });
+        
+        if (response.success) {
+            showToast('Password changed successfully', 'success');
+            closeChangePasswordModal();
+        } else {
+            showToast(response.message || 'Failed to change password', 'error');
+        }
+    } catch (error) {
+        showToast(error.message || 'Failed to change password', 'error');
     }
 }
 
