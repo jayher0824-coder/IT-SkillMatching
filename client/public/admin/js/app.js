@@ -735,10 +735,15 @@ const UserManagement = () => {
 
   const fetchUsers = async () => {
     try {
+      console.log('Fetching users with filters:', filters);
       const response = await axios.get(`${API_BASE}/admin/users`, { params: filters });
-      setUsers(response.data.data);
+      console.log('Users response:', response.data);
+      console.log('Users array:', response.data.data);
+      console.log('Users count:', response.data.data?.length);
+      setUsers(response.data.data || []);
     } catch (error) {
       console.error('Error fetching users:', error);
+      console.error('Error details:', error.response?.data);
     } finally {
       setLoading(false);
     }
