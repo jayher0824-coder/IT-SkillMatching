@@ -234,8 +234,36 @@ if (typeof module !== 'undefined' && module.exports) {
         isTokenExpired,
         formatDate,
         formatSalary,
-        capitalizeFirst
+        capitalizeFirst,
+        loadNotificationBell
     };
+}
+
+// Load notification bell component
+async function loadNotificationBell(containerId) {
+    try {
+        const container = document.getElementById(containerId);
+        if (!container) {
+            console.warn('Notification bell container not found:', containerId);
+            return;
+        }
+
+        const response = await fetch('/components/notification-bell.html');
+        if (!response.ok) throw new Error('Failed to load notification bell');
+        
+        const html = await response.text();
+        container.innerHTML = html;
+        
+        // Execute any scripts in the loaded HTML
+        const scripts = container.querySelectorAll('script');
+        scripts.forEach(script => {
+            const newScript = document.createElement('script');
+            newScript.textContent = script.textContent;
+            document.body.appendChild(newScript);
+        });
+    } catch (error) {
+        console.error('Error loading notification bell:', error);
+    }
 }
 
 // Also attach to window for browser global access when loaded as a <script>
@@ -249,4 +277,5 @@ if (typeof window !== 'undefined') {
     window.formatDate = window.formatDate || formatDate;
     window.formatSalary = window.formatSalary || formatSalary;
     window.capitalizeFirst = window.capitalizeFirst || capitalizeFirst;
+    window.loadNotificationBell = window.loadNotificationBell || loadNotificationBell;
 }

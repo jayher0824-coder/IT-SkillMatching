@@ -143,8 +143,10 @@ async function loadStudentDashboard() {
                         </div>
                     </nav>
 
-                    <!-- User Actions - Empty for now -->
+                    <!-- User Actions -->
                     <div class="px-2 md:px-4 pb-4 border-t border-gray-200 dark:border-gray-700 pt-4">
+                        <!-- Notification Bell -->
+                        <div id="student-notification-bell-container"></div>
                     </div>
                 </div>
 
@@ -548,6 +550,9 @@ async function loadStudentDashboard() {
             attachAssessmentCardListeners();
             loadAssessmentHistory();
             loadStudentProfile();
+            
+            // Load notification bell component
+            loadNotificationBell('student-notification-bell-container');
         }, 1000);
 
     } catch (error) {
