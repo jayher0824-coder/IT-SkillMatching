@@ -1799,7 +1799,7 @@ function viewJob(jobId) {
                                                         <span class="font-semibold">Assessment Completed - You can now apply!</span>
                                                     </div>
                                                 ` : `
-                                                    <button onclick="takeCustomAssessment('${job._id}')" 
+                                                    <button onclick="takeCustomAssessmentForJob('${job._id}')" 
                                                         style="background-color: #2563eb; color: white; border: 2px solid #1e40af;"
                                                         class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition font-semibold border-2"
                                                         onmouseover="this.style.backgroundColor='#1d4ed8'" 
