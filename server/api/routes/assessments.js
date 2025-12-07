@@ -13,52 +13,73 @@ router.get('/', protect, async (req, res) => {
   try {
     const { category } = req.query;
     
-    // If category is requested, return a filtered version of the general assessment
+    // If category is requested, find assessment by category
     if (category) {
-      const generalAssessment = await Assessment.findOne({ isActive: true, category: 'general' })
+      // First, try to find an assessment with matching category
+      let assessment = await Assessment.findOne({ isActive: true, category: category })
         .sort({ createdAt: -1 });
       
-      if (!generalAssessment) {
+      // If no direct category match, fall back to the old filtering method
+      if (!assessment) {
+        const generalAssessment = await Assessment.findOne({ isActive: true, category: 'general' })
+          .sort({ createdAt: -1 });
+        
+        if (!generalAssessment) {
+          return res.json({
+            success: true,
+            count: 0,
+            data: [],
+          });
+        }
+        
+        // Filter questions by category and create a category-specific assessment
+        const categoryQuestions = generalAssessment.questions.filter(q => q.category === category);
+        
+        if (categoryQuestions.length === 0) {
+          return res.json({
+            success: true,
+            count: 0,
+            data: [],
+          });
+        }
+        
+        // Create a category-specific assessment object
+        const categoryAssessment = {
+          _id: generalAssessment._id,
+          title: `${category.charAt(0).toUpperCase() + category.slice(1)} Assessment`,
+          description: `Assessment for ${category} skills`,
+          questions: categoryQuestions.map(q => {
+            const qObj = q.toObject();
+            delete qObj.correctAnswer; // Remove correct answers from client response
+            return qObj;
+          }),
+          timeLimit: generalAssessment.timeLimit,
+          passingScore: generalAssessment.passingScore,
+          totalPoints: categoryQuestions.reduce((sum, q) => sum + q.points, 0),
+          category: category,
+          isActive: generalAssessment.isActive,
+          createdAt: generalAssessment.createdAt
+        };
+        
         return res.json({
           success: true,
-          count: 0,
-          data: [],
+          count: 1,
+          data: [categoryAssessment],
         });
       }
       
-      // Filter questions by category and create a category-specific assessment
-      const categoryQuestions = generalAssessment.questions.filter(q => q.category === category);
-      
-      if (categoryQuestions.length === 0) {
-        return res.json({
-          success: true,
-          count: 0,
-          data: [],
-        });
-      }
-      
-      // Create a category-specific assessment object
-      const categoryAssessment = {
-        _id: generalAssessment._id,
-        title: `${category.charAt(0).toUpperCase() + category.slice(1)} Assessment`,
-        description: `Assessment for ${category} skills`,
-        questions: categoryQuestions.map(q => {
-          const qObj = q.toObject();
-          delete qObj.correctAnswer; // Remove correct answers from client response
-          return qObj;
-        }),
-        timeLimit: generalAssessment.timeLimit,
-        passingScore: generalAssessment.passingScore,
-        totalPoints: categoryQuestions.reduce((sum, q) => sum + q.points, 0),
-        category: category,
-        isActive: generalAssessment.isActive,
-        createdAt: generalAssessment.createdAt
-      };
+      // Found a direct category match - return it without correct answers
+      const assessmentObj = assessment.toObject();
+      assessmentObj.questions = assessmentObj.questions.map(q => {
+        const qCopy = { ...q };
+        delete qCopy.correctAnswer;
+        return qCopy;
+      });
       
       return res.json({
         success: true,
         count: 1,
-        data: [categoryAssessment],
+        data: [assessmentObj],
       });
     }
     
