@@ -635,8 +635,9 @@ function showAssessmentResults(results) {
 
     const overallScoreEl = document.getElementById('overall-score');
     if (overallScoreEl) {
-        overallScoreEl.className = `text-7xl font-black text-white mb-2 drop-shadow-2xl`;
-        overallScoreEl.style.textShadow = '2px 2px 4px rgba(0,0,0,0.3)';
+        overallScoreEl.className = `text-7xl font-black mb-2 drop-shadow-2xl`;
+        overallScoreEl.style.color = '#ffffff';
+        overallScoreEl.style.textShadow = '3px 3px 6px rgba(0,0,0,0.5), 0 0 20px rgba(0,0,0,0.3)';
         overallScoreEl.textContent = (results.percentage || 0) + '%';
     }
 
