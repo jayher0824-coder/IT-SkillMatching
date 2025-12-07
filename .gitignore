@@ -49,6 +49,23 @@ jspm_packages/
 # Google OAuth secrets
 server/config/client_secret_*.json
 
+# Uploads (user-generated content)
+uploads/
+client/assets/uploads/
+
+# Exports (generated files)
+exports/
+
+# Windows specific
+*.bat
+Thumbs.db
+desktop.ini
+
+# macOS specific
+.DS_Store
+.AppleDouble
+.LSOverride
+
 # IDE files
 .vscode/
 .idea/
