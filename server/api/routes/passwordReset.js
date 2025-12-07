@@ -75,17 +75,6 @@ router.post('/forgot-password', async (req, res) => {
       success: true, 
       message: 'Password change request sent to admin. You will be notified once approved.' 
     });
-    } catch (emailError) {
-      console.error('Email sending error:', emailError);
-      
-      // Clear reset token if email fails
-      user.resetPasswordToken = undefined;
-      user.resetPasswordExpires = undefined;
-      await user.save();
-    res.status(200).json({ 
-      success: true, 
-      message: 'Password change request sent to admin. You will be notified once approved.' 
-    });
 
   } catch (error) {
     console.error('Forgot password error:', error);
