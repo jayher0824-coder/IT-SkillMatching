@@ -1426,7 +1426,7 @@ async function applyForJob(jobId, customAssessmentData = null) {
         
         // Use the stored assessment submission ID if available
         const assessmentData = customAssessmentData || 
-            (currentAssessmentSubmissionId ? { customAssessmentSubmissionId: currentAssessmentSubmissionId } : null);
+            (window.currentAssessmentSubmissionId ? { customAssessmentSubmissionId: window.currentAssessmentSubmissionId } : null);
         
         const body = assessmentData ? JSON.stringify(assessmentData) : undefined;
         
@@ -1439,7 +1439,7 @@ async function applyForJob(jobId, customAssessmentData = null) {
         showToast('Application submitted successfully!', 'success');
         
         // Clear the stored assessment submission ID
-        currentAssessmentSubmissionId = null;
+        window.currentAssessmentSubmissionId = null;
         
         // Close the job details modal
         closeJobDetailsModal();
@@ -1934,7 +1934,7 @@ function closeJobDetailsModal() {
 }
 
 // Store assessment submission ID globally
-let currentAssessmentSubmissionId = null;
+window.currentAssessmentSubmissionId = null;
 
 async function takeCustomAssessmentForJob(jobId) {
     console.log('takeCustomAssessmentForJob called with jobId:', jobId);
@@ -1961,8 +1961,8 @@ async function takeCustomAssessmentForJob(jobId) {
             
             if (result && result.success && result.submissionId) {
                 // Store the submission ID
-                currentAssessmentSubmissionId = result.submissionId;
-                console.log('Stored assessment submission ID:', currentAssessmentSubmissionId);
+                window.currentAssessmentSubmissionId = result.submissionId;
+                console.log('Stored assessment submission ID:', window.currentAssessmentSubmissionId);
                 
                 showToast('Assessment completed! Loading job details...', 'success');
                 

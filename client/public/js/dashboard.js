@@ -1793,7 +1793,7 @@ function viewJob(jobId) {
                                                     ${job.customAssessment.timeLimit ? `<span><i class="fas fa-clock mr-1"></i>${job.customAssessment.timeLimit} minutes</span>` : ''}
                                                     ${job.customAssessment.passingScore ? `<span><i class="fas fa-chart-line mr-1"></i>Pass: ${job.customAssessment.passingScore}%</span>` : ''}
                                                 </div>
-                                                ${typeof currentAssessmentSubmissionId !== 'undefined' && currentAssessmentSubmissionId ? `
+                                                ${window.currentAssessmentSubmissionId ? `
                                                     <div class="flex items-center text-green-600 dark:text-green-400">
                                                         <i class="fas fa-check-circle mr-2"></i>
                                                         <span class="font-semibold">Assessment Completed - You can now apply!</span>
@@ -1901,7 +1901,7 @@ function viewJob(jobId) {
                                     Close
                                 </button>
                                 ${!hasApplied ? `
-                                    ${job.requireCustomAssessment && (typeof currentAssessmentSubmissionId === 'undefined' || !currentAssessmentSubmissionId) ? `
+                                    ${job.requireCustomAssessment && !window.currentAssessmentSubmissionId ? `
                                         <div class="flex items-center px-4 py-2 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-200 rounded-lg">
                                             <i class="fas fa-exclamation-triangle mr-2"></i>
                                             <span class="text-sm">Complete assessment first</span>
