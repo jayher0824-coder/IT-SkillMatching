@@ -468,6 +468,172 @@ const RetakeRequests = () => {
   );
 };
 
+// Notifications Management Component
+const NotificationsManagement = () => {
+  const [notifications, setNotifications] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState('all');
+
+  useEffect(() => {
+    fetchNotifications();
+  }, [filter]);
+
+  const fetchNotifications = async () => {
+    try {
+      const response = await axios.get(`${API_BASE}/notifications`);
+      let notifs = response.data.data || [];
+      
+      // Apply filter
+      if (filter === 'unread') {
+        notifs = notifs.filter(n => !n.read);
+      } else if (filter === 'read') {
+        notifs = notifs.filter(n => n.read);
+      }
+      
+      setNotifications(notifs);
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const markAsRead = async (id) => {
+    try {
+      await axios.put(`${API_BASE}/notifications/${id}/read`);
+      fetchNotifications();
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+    }
+  };
+
+  const markAllAsRead = async () => {
+    try {
+      await axios.put(`${API_BASE}/notifications/read-all`);
+      fetchNotifications();
+    } catch (error) {
+      console.error('Error marking all as read:', error);
+    }
+  };
+
+  const deleteNotification = async (id) => {
+    try {
+      await axios.delete(`${API_BASE}/notifications/${id}`);
+      fetchNotifications();
+    } catch (error) {
+      console.error('Error deleting notification:', error);
+    }
+  };
+
+  const clearReadNotifications = async () => {
+    try {
+      await axios.delete(`${API_BASE}/notifications/clear-read`);
+      fetchNotifications();
+    } catch (error) {
+      console.error('Error clearing read notifications:', error);
+    }
+  };
+
+  const getNotificationIcon = (type) => {
+    const icons = {
+      'password_change_approved': 'fas fa-key text-green-600',
+      'password_change_rejected': 'fas fa-key text-red-600',
+      'application_status': 'fas fa-file-alt text-blue-600',
+      'application_received': 'fas fa-inbox text-indigo-600',
+      'assessment_complete': 'fas fa-check-circle text-green-600',
+      'retake_approved': 'fas fa-redo text-green-600',
+      'retake_rejected': 'fas fa-redo text-red-600',
+      'feedback_received': 'fas fa-comment text-yellow-600',
+      'system': 'fas fa-info-circle text-gray-600'
+    };
+    return icons[type] || 'fas fa-bell text-gray-600';
+  };
+
+  return (
+    <div>
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-2xl font-bold text-gray-900">Notifications</h2>
+        <div className="flex space-x-2">
+          <select 
+            value={filter} 
+            onChange={(e) => setFilter(e.target.value)}
+            className="px-3 py-2 border border-gray-300 rounded-md"
+          >
+            <option value="all">All</option>
+            <option value="unread">Unread</option>
+            <option value="read">Read</option>
+          </select>
+          <button 
+            onClick={markAllAsRead}
+            className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+          >
+            Mark All Read
+          </button>
+          <button 
+            onClick={clearReadNotifications}
+            className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+          >
+            Clear Read
+          </button>
+        </div>
+      </div>
+
+      {loading ? (
+        <div className="text-center py-8">Loading notifications...</div>
+      ) : notifications.length === 0 ? (
+        <div className="text-center py-8 text-gray-500">No notifications</div>
+      ) : (
+        <div className="space-y-3">
+          {notifications.map((notif) => (
+            <div 
+              key={notif._id}
+              className={`bg-white rounded-lg shadow p-4 border-l-4 ${
+                notif.read ? 'border-gray-300 bg-gray-50' : 'border-green-500'
+              }`}
+            >
+              <div className="flex items-start justify-between">
+                <div className="flex items-start space-x-3 flex-1">
+                  <i className={`${getNotificationIcon(notif.type)} text-xl mt-1`}></i>
+                  <div className="flex-1">
+                    <div className="flex items-center space-x-2">
+                      <h3 className="font-semibold text-gray-900">{notif.title}</h3>
+                      {!notif.read && (
+                        <span className="bg-green-500 text-white text-xs px-2 py-1 rounded-full">New</span>
+                      )}
+                    </div>
+                    <p className="text-gray-600 mt-1">{notif.message}</p>
+                    <p className="text-sm text-gray-400 mt-2">
+                      {new Date(notif.createdAt).toLocaleString()}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex space-x-2 ml-4">
+                  {!notif.read && (
+                    <button
+                      onClick={() => markAsRead(notif._id)}
+                      className="text-green-600 hover:text-green-800"
+                      title="Mark as read"
+                    >
+                      <i className="fas fa-check"></i>
+                    </button>
+                  )}
+                  <button
+                    onClick={() => deleteNotification(notif._id)}
+                    className="text-red-600 hover:text-red-800"
+                    title="Delete"
+                  >
+                    <i className="fas fa-trash"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
 // Feedback Management Component
 const FeedbackManagement = () => {
   const [feedback, setFeedback] = useState([]);
@@ -1398,10 +1564,9 @@ const Sidebar = ({ activeTab, setActiveTab }) => {
   
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: 'fas fa-tachometer-alt' },
-    { id: 'feedback', label: 'Feedback', icon: 'fas fa-comment' },
-    { id: 'users', label: 'Users', icon: 'fas fa-users' },
+    { id: 'notifications', label: 'Notifications', icon: 'fas fa-bell' },
     { id: 'password-requests', label: 'Password Requests', icon: 'fas fa-lock' },
-    { id: 'jobs', label: 'Job Management', icon: 'fas fa-briefcase' },
+    { id: 'feedback', label: 'Feedback', icon: 'fas fa-comment' },
   ];
 
   return (
@@ -1475,14 +1640,12 @@ const Dashboard = () => {
     switch (activeTab) {
       case 'dashboard':
         return <DashboardStats />;
-      case 'feedback':
-        return <FeedbackManagement />;
-      case 'users':
-        return <UserManagement />;
+      case 'notifications':
+        return <NotificationsManagement />;
       case 'password-requests':
         return <PasswordChangeRequests />;
-      case 'jobs':
-        return <JobManagement />;
+      case 'feedback':
+        return <FeedbackManagement />;
       default:
         return <DashboardStats />;
     }
