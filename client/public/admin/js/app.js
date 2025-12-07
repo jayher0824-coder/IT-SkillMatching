@@ -218,7 +218,6 @@ const DashboardStats = () => {
     { title: 'Companies', value: stats.users.companies, icon: 'fas fa-building', color: 'bg-purple-500' },
     { title: 'Total Jobs', value: stats.jobs.total, icon: 'fas fa-briefcase', color: 'bg-yellow-500' },
     { title: 'Applications', value: stats.jobs.applications, icon: 'fas fa-file-alt', color: 'bg-indigo-500' },
-    { title: 'Pending Retakes', value: stats.pending.retakeRequests, icon: 'fas fa-redo', color: 'bg-red-500' },
     { title: 'Open Feedback', value: stats.pending.feedback, icon: 'fas fa-comment', color: 'bg-orange-500' },
   ];
 
@@ -1399,7 +1398,6 @@ const Sidebar = ({ activeTab, setActiveTab }) => {
   
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: 'fas fa-tachometer-alt' },
-    { id: 'retakes', label: 'Retake Requests', icon: 'fas fa-redo' },
     { id: 'feedback', label: 'Feedback', icon: 'fas fa-comment' },
     { id: 'users', label: 'Users', icon: 'fas fa-users' },
     { id: 'password-requests', label: 'Password Requests', icon: 'fas fa-lock' },
@@ -1471,14 +1469,12 @@ const Dashboard = () => {
     };
 
     setTimeout(loadNotificationBell, 500);
-  }, []);
+  }, [activeTab]);
 
   const renderContent = () => {
     switch (activeTab) {
       case 'dashboard':
         return <DashboardStats />;
-      case 'retakes':
-        return <RetakeRequests />;
       case 'feedback':
         return <FeedbackManagement />;
       case 'users':
