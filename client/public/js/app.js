@@ -1367,14 +1367,19 @@ async function handleChangePassword(event) {
         return;
     }
     
+    if (newPassword.length < 8) {
+        showToast('Password must be at least 8 characters', 'error');
+        return;
+    }
+    
     try {
-        const response = await apiCall('/auth/change-password', {
+        const response = await apiCall('/settings/change-password', {
             method: 'POST',
             body: JSON.stringify({ currentPassword, newPassword })
         });
         
         if (response.success) {
-            showToast('Password changed successfully', 'success');
+            showToast('Password changed successfully!', 'success');
             closeChangePasswordModal();
         } else {
             showToast(response.message || 'Failed to change password', 'error');
