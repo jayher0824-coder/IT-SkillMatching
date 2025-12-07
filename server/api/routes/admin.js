@@ -7,6 +7,7 @@ const Job = require('../../database/models/Job');
 const { AssessmentResult } = require('../../database/models/Assessment');
 const Feedback = require('../../database/models/Feedback');
 const EmailReport = require('../../database/models/EmailReport');
+const NotificationService = require('../../services/notificationService');
 
 const router = express.Router();
 
@@ -402,7 +403,27 @@ router.put('/users/:id/reset-password', protect, authorize('admin'), async (req,
     // Update password (will be hashed by pre-save hook)
     // This allows Google OAuth users to also have a password for email/password login
     user.password = newPassword;
+    
+    // Mark any pending password change requests as approved
+    if (user.passwordChangeRequests && user.passwordChangeRequests.length > 0) {
+      user.passwordChangeRequests.forEach(request => {
+        if (request.status === 'pending') {
+          request.status = 'approved';
+          request.approvedBy = req.user._id;
+          request.approvedAt = new Date();
+        }
+      });
+    }
+    
     await user.save();
+
+    // Send notification to user
+    try {
+      await NotificationService.notifyPasswordResetApproved(user._id, newPassword);
+    } catch (notifError) {
+      console.error('Error sending notification:', notifError);
+      // Don't fail the password reset if notification fails
+    }
 
     const message = user.googleId 
       ? 'Password set successfully. User can now login with both Google and email/password.'

@@ -97,6 +97,7 @@ app.use('/api/jobs', require('./api/routes/jobs'));
 app.use('/api/feedback', require('./api/routes/feedback'));
 app.use('/api/admin', require('./api/routes/admin'));
 app.use('/api/custom-assessments', require('./api/routes/customAssessments'));
+app.use('/api/notifications', require('./api/routes/notifications'));
 
 // Global error handling middleware
 app.use((err, req, res, next) => {
