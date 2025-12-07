@@ -971,7 +971,7 @@ function getJobStatusColor(status) {
 }
 
 // Dashboard Actions - Student Profile
-function showStudentProfileModal() {
+window.showStudentProfileModal = function() {
     const modal = document.getElementById('login-modal');
     const modalTitle = document.getElementById('modal-title');
     const modalContent = document.getElementById('modal-content');
@@ -1143,7 +1143,7 @@ async function loadCurrentStudentProfile() {
     }
 }
 
-async function saveStudentProfile(event) {
+window.saveStudentProfile = async function(event) {
     event.preventDefault();
     
     const form = document.getElementById('student-profile-form');
@@ -5578,7 +5578,7 @@ window.showAvatarUpload = function() {
                     class="bg-[#56AE67] text-white px-6 py-2 rounded-lg hover:bg-[#3d8b4f] transition font-semibold">
                     <i class="fas fa-upload mr-2"></i>Choose Photo
                 </button>
-                <p class="text-sm text-gray-500 dark:text-gray-400 mt-2">JPG, PNG, or GIF (Max 5MB)</p>
+                <p class="text-sm text-gray-500 dark:text-gray-400 mt-2">JPG, PNG, or GIF (Max 2MB)</p>
             </div>
             
             <div class="flex justify-end space-x-3">
@@ -5600,15 +5600,17 @@ window.previewAvatar = function(event) {
     const file = event.target.files[0];
     if (!file) return;
     
-    // Validate file size (5MB max)
-    if (file.size > 5 * 1024 * 1024) {
-        showToast('File size must be less than 5MB', 'error');
+    // Validate file size (2MB max to match backend)
+    if (file.size > 2 * 1024 * 1024) {
+        showToast('File size must be less than 2MB', 'error');
+        event.target.value = ''; // Clear the input
         return;
     }
     
     // Validate file type
     if (!file.type.startsWith('image/')) {
         showToast('Please select an image file', 'error');
+        event.target.value = ''; // Clear the input
         return;
     }
     
@@ -5616,10 +5618,13 @@ window.previewAvatar = function(event) {
     reader.onload = function(e) {
         const preview = document.getElementById('avatar-preview');
         const placeholder = document.getElementById('avatar-placeholder');
-        preview.src = e.target.result;
-        preview.classList.remove('hidden');
-        placeholder.classList.add('hidden');
-        document.getElementById('upload-avatar-btn').disabled = false;
+        if (preview && placeholder) {
+            preview.src = e.target.result;
+            preview.classList.remove('hidden');
+            placeholder.classList.add('hidden');
+            const uploadBtn = document.getElementById('upload-avatar-btn');
+            if (uploadBtn) uploadBtn.disabled = false;
+        }
     };
     reader.readAsDataURL(file);
 };
@@ -5628,7 +5633,7 @@ window.uploadAvatar = async function(event) {
     event.preventDefault();
     
     const fileInput = document.getElementById('avatar-file');
-    const file = fileInput.files[0];
+    const file = fileInput ? fileInput.files[0] : null;
     
     if (!file) {
         showToast('Please select a file', 'error');
@@ -5636,18 +5641,24 @@ window.uploadAvatar = async function(event) {
     }
     
     const uploadBtn = document.getElementById('upload-avatar-btn');
-    uploadBtn.disabled = true;
-    uploadBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Uploading...';
+    if (uploadBtn) {
+        uploadBtn.disabled = true;
+        uploadBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Uploading...';
+    }
     
     try {
         const formData = new FormData();
         formData.append('avatar', file);
         
-        const token = getAuthToken();
+        const authToken = sessionStorage.getItem('authToken');
+        if (!authToken) {
+            throw new Error('Not authenticated');
+        }
+        
         const response = await fetch('/api/students/upload-avatar', {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${token}`
+                'Authorization': `Bearer ${authToken}`
             },
             body: formData
         });
@@ -5657,16 +5668,21 @@ window.uploadAvatar = async function(event) {
         if (data.success) {
             showToast('Profile picture uploaded successfully!', 'success');
             closeModal();
-            loadStudentProfile(); // Reload profile to show new avatar
+            // Reload profile to show new avatar
+            loadStudentProfile();
         } else {
             showToast(data.message || 'Failed to upload avatar', 'error');
-            uploadBtn.disabled = false;
-            uploadBtn.innerHTML = '<i class="fas fa-check mr-2"></i>Upload';
+            if (uploadBtn) {
+                uploadBtn.disabled = false;
+                uploadBtn.innerHTML = '<i class="fas fa-check mr-2"></i>Upload';
+            }
         }
     } catch (error) {
         console.error('Error uploading avatar:', error);
         showToast('Error uploading profile picture', 'error');
-        uploadBtn.disabled = false;
-        uploadBtn.innerHTML = '<i class="fas fa-check mr-2"></i>Upload';
+        if (uploadBtn) {
+            uploadBtn.disabled = false;
+            uploadBtn.innerHTML = '<i class="fas fa-check mr-2"></i>Upload';
+        }
     }
 };
