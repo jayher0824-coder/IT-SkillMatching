@@ -19,7 +19,7 @@ const questionSchema = new mongoose.Schema({
   },
   category: {
     type: String,
-    enum: ['programming', 'database', 'webDevelopment', 'networking', 'problemSolving'],
+    enum: ['programming', 'database', 'webDevelopment', 'networking', 'problemSolving', 'cloudComputing', 'devOps', 'security', 'systemDesign', 'dataStructures', 'algorithms', 'mobile', 'backend', 'frontend', 'apiDesign'],
     required: true,
   },
   points: {
@@ -50,7 +50,7 @@ const assessmentSchema = new mongoose.Schema({
   },
   category: {
     type: String,
-    enum: ['general', 'programming', 'database', 'webDevelopment', 'networking', 'problemSolving'],
+    enum: ['general', 'programming', 'database', 'webDevelopment', 'networking', 'problemSolving', 'cloudComputing', 'devOps', 'security', 'systemDesign', 'dataStructures', 'algorithms', 'mobile', 'backend', 'frontend', 'apiDesign'],
     required: true,
   },
   isActive: {
@@ -111,6 +111,16 @@ const assessmentResultSchema = new mongoose.Schema({
     webDevelopment: Number,
     networking: Number,
     problemSolving: Number,
+    cloudComputing: Number,
+    devOps: Number,
+    security: Number,
+    systemDesign: Number,
+    dataStructures: Number,
+    algorithms: Number,
+    mobile: Number,
+    backend: Number,
+    frontend: Number,
+    apiDesign: Number,
   },
 });
 
