@@ -304,13 +304,16 @@ async function loadStudentDashboard() {
                         </div>
 
                         <!-- Skills Overview -->
-                        ${studentProfile?.skills?.length > 0 ? `
+                        ${studentProfile?.skills?.filter(s => s.verified && s.score >= 60).length > 0 ? `
                             <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-                                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Your Skills</h3>
+                                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Your Verified Skills</h3>
                                 <div class="space-y-2">
-                                    ${studentProfile.skills.slice(0, 5).map(skill => `
+                                    ${studentProfile.skills.filter(s => s.verified && s.score >= 60).slice(0, 5).map(skill => `
                                         <div class="flex items-center justify-between">
-                                            <span class="text-sm text-gray-900 dark:text-white">${capitalizeFirst(skill.name)}</span>
+                                            <div class="flex-1">
+                                                <span class="text-sm text-gray-900 dark:text-white font-medium">${capitalizeFirst(skill.name)}</span>
+                                                <span class="text-xs text-[#56AE67] ml-2">${skill.score}%</span>
+                                            </div>
                                             <span class="text-xs px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-[#2d6b3c] dark:text-blue-200 rounded">${skill.level}</span>
                                         </div>
                                     `).join('')}
@@ -4958,10 +4961,13 @@ async function loadStudentProfile() {
                             Verified Skills
                         </h3>
                         <div class="grid md:grid-cols-3 gap-4">
-                            ${profile.skills.map(skill => `
+                            ${profile.skills.filter(skill => skill.verified && skill.score >= 60).map(skill => {
+                                // Format skill name for display
+                                const displayName = skill.name.charAt(0).toUpperCase() + skill.name.slice(1);
+                                return `
                                 <div class="bg-white dark:bg-gray-600 p-4 rounded-lg">
                                     <div class="flex justify-between items-center mb-2">
-                                        <span class="text-gray-900 dark:text-white font-medium">${skill.name}</span>
+                                        <span class="text-gray-900 dark:text-white font-medium">${displayName}</span>
                                         <span class="text-sm ${
                                             skill.level === 'Expert' ? 'text-purple-600' :
                                             skill.level === 'Advanced' ? 'text-[#56AE67]' :
@@ -4969,13 +4975,15 @@ async function loadStudentProfile() {
                                             'text-gray-600'
                                         } font-bold">${skill.level}</span>
                                     </div>
-                                    ${skill.score !== undefined ? `
-                                        <div class="w-full bg-gray-200 dark:bg-gray-500 rounded-full h-2">
-                                            <div class="bg-[#56AE67] h-2 rounded-full" style="width: ${skill.score}%"></div>
-                                        </div>
-                                    ` : ''}
+                                    <div class="flex items-center justify-between mb-1">
+                                        <span class="text-xs text-gray-500 dark:text-gray-400">Score</span>
+                                        <span class="text-sm font-bold text-[#56AE67]">${skill.score}%</span>
+                                    </div>
+                                    <div class="w-full bg-gray-200 dark:bg-gray-500 rounded-full h-2">
+                                        <div class="bg-[#56AE67] h-2 rounded-full" style="width: ${skill.score}%"></div>
+                                    </div>
                                 </div>
-                            `).join('')}
+                            `}).join('')}
                         </div>
                     </div>
                 ` : ''}

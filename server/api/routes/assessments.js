@@ -365,24 +365,35 @@ router.post('/:id/submit', protect, authorize('student'), async (req, res) => {
     };
 
     // Update student skills based on assessment results
-    const skillUpdates = [];
-    Object.keys(finalCategoryScores).forEach(category => {
-      const score = finalCategoryScores[category];
+    // Only add/update the specific skill that was assessed (assessment.category)
+    if (passed && assessment.category) {
+      // Find if this skill already exists
+      const existingSkillIndex = student.skills.findIndex(s => s.name === assessment.category);
+      
+      // Determine skill level based on percentage
       let level = 'Beginner';
+      if (percentage >= 80) level = 'Expert';
+      else if (percentage >= 70) level = 'Advanced';
+      else if (percentage >= 60) level = 'Intermediate';
       
-      if (score >= 80) level = 'Expert';
-      else if (score >= 70) level = 'Advanced';
-      else if (score >= 60) level = 'Intermediate';
-      
-      skillUpdates.push({
-        name: category,
+      const skillData = {
+        name: assessment.category,
         level,
         verified: true,
-        score,
-      });
-    });
-
-    student.skills = skillUpdates;
+        score: percentage,
+      };
+      
+      if (existingSkillIndex >= 0) {
+        // Update existing skill only if new score is higher
+        if (percentage > (student.skills[existingSkillIndex].score || 0)) {
+          student.skills[existingSkillIndex] = skillData;
+        }
+      } else {
+        // Add new skill
+        student.skills.push(skillData);
+      }
+    }
+    
     await student.save();
 
     res.json({
