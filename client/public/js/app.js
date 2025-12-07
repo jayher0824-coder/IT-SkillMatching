@@ -1109,9 +1109,9 @@ function showDeleteAccountModal() {
 
 function createSettingsModal() {
     const modalHTML = `
-        <div id="settings-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div class="bg-white dark:bg-gray-800 rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-                <div class="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-6 flex justify-between items-center">
+        <div id="settings-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div class="bg-white dark:bg-gray-800 rounded-lg max-w-2xl w-full max-h-[90vh] flex flex-col">
+                <div class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-6 flex justify-between items-center flex-shrink-0">
                     <h2 class="text-2xl font-bold text-gray-900 dark:text-white">
                         <i class="fas fa-cog mr-2"></i>Settings
                     </h2>
@@ -1120,7 +1120,44 @@ function createSettingsModal() {
                     </button>
                 </div>
                 
-                <div class="p-6">
+                <div class="p-6 flex-1" style="overflow-y: scroll !important; max-height: calc(90vh - 88px); scrollbar-width: thin; scrollbar-color: #56AE67 #f1f1f1;">
+                    <style>
+                        /* Webkit browsers (Chrome, Safari, Edge) */
+                        #settings-modal div[style*="overflow-y"]::-webkit-scrollbar {
+                            width: 14px;
+                            background: transparent;
+                        }
+                        #settings-modal div[style*="overflow-y"]::-webkit-scrollbar-track {
+                            background: #f1f1f1;
+                            border-radius: 10px;
+                            margin: 8px 0;
+                        }
+                        #settings-modal div[style*="overflow-y"]::-webkit-scrollbar-thumb {
+                            background: #56AE67;
+                            border-radius: 10px;
+                            border: 2px solid #f1f1f1;
+                        }
+                        #settings-modal div[style*="overflow-y"]::-webkit-scrollbar-thumb:hover {
+                            background: #3d8b4f;
+                        }
+                        /* Dark mode */
+                        .dark #settings-modal div[style*="overflow-y"]::-webkit-scrollbar-track {
+                            background: #1f2937;
+                            border: 1px solid #374151;
+                        }
+                        .dark #settings-modal div[style*="overflow-y"]::-webkit-scrollbar-thumb {
+                            background: #6bc481;
+                            border: 2px solid #1f2937;
+                        }
+                        .dark #settings-modal div[style*="overflow-y"]::-webkit-scrollbar-thumb:hover {
+                            background: #7dd091;
+                        }
+                        /* Firefox */
+                        .dark #settings-modal div[style*="overflow-y"] {
+                            scrollbar-color: #6bc481 #1f2937;
+                        }
+                    </style>
+                    <div class="p-6">
                     <!-- Change Password -->
                     <div class="mb-6 pb-6 border-b border-gray-200 dark:border-gray-700">
                         <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-3">
