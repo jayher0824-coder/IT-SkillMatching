@@ -85,6 +85,7 @@ const jobSchema = new mongoose.Schema({
       default: 'pending',
     },
     matchScore: Number, // Algorithm-calculated match score
+    overallAssessmentScore: Number, // Student's overall assessment score at time of application
     notes: String, // Company notes about the applicant
     customAssessmentSubmission: {
       type: mongoose.Schema.Types.ObjectId,

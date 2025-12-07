@@ -2667,6 +2667,7 @@ function displayJobApplications(applications) {
                                 <div class="bg-[#56AE67] h-2 rounded-full" style="width: ${app.student?.assessmentScore?.overall || 0}%"></div>
                             </div>
                             <span class="text-sm font-medium">${app.student?.assessmentScore?.overall || 0}%</span>
+                            ${!app.student?.assessmentScore?.overall ? '<span class="text-xs text-gray-500 dark:text-gray-400 ml-2">(Not taken)</span>' : ''}
                         </div>
                     </div>
                     <div>
@@ -2676,6 +2677,7 @@ function displayJobApplications(applications) {
                                 <div class="bg-green-600 h-2 rounded-full" style="width: ${app.matchScore || 0}%"></div>
                             </div>
                             <span class="text-sm font-medium">${app.matchScore || 0}%</span>
+                            ${!app.matchScore ? '<span class="text-xs text-gray-500 dark:text-gray-400 ml-2">(Calculating...)</span>' : ''}
                         </div>
                     </div>
                 </div>

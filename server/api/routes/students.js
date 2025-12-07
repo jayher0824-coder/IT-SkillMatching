@@ -433,6 +433,15 @@ router.post('/apply/:jobId', protect, authorize('student'), async (req, res) => 
 
     matchScore = Math.min(matchScore, 100);
 
+    console.log('Application match score calculated:', {
+      studentId: student._id,
+      jobId,
+      matchScore,
+      studentSkills: studentSkills.length,
+      requiredSkills: requiredSkills.length,
+      assessmentScore: student.assessmentScore?.overall || 0
+    });
+
     // Add to student's applications
     student.applications.push({
       job: jobId,
@@ -448,6 +457,7 @@ router.post('/apply/:jobId', protect, authorize('student'), async (req, res) => 
       appliedAt: new Date(),
       status: 'pending',
       matchScore,
+      overallAssessmentScore: student.assessmentScore?.overall || 0,
     });
 
     await job.save();
