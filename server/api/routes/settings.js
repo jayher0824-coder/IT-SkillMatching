@@ -20,16 +20,16 @@ router.post('/change-password', protect, async (req, res) => {
       });
     }
 
-    // Check if user signed up with Google (no password)
-    if (req.user.googleId && !req.user.password) {
-      return res.status(400).json({
-        success: false,
-        message: 'Google OAuth users cannot change password. Please use Google account settings.',
-      });
-    }
-
     // Get user with password field
     const user = await User.findById(req.user._id).select('+password');
+
+    // Check if user signed up with Google and has no password set
+    if (user.googleId && !user.password) {
+      return res.status(400).json({
+        success: false,
+        message: 'You signed up with Google. To set a password for email login, please request a password change from an admin.',
+      });
+    }
 
     // Verify current password
     const isMatch = await bcrypt.compare(currentPassword, user.password);

@@ -400,15 +400,22 @@ router.put('/users/:id/reset-password', protect, authorize('admin'), async (req,
     }
 
     // Update password (will be hashed by pre-save hook)
+    // This allows Google OAuth users to also have a password for email/password login
     user.password = newPassword;
     await user.save();
 
+    const message = user.googleId 
+      ? 'Password set successfully. User can now login with both Google and email/password.'
+      : 'Password reset successfully';
+
     res.json({
       success: true,
-      message: 'Password reset successfully',
+      message: message,
       data: {
         userId: user._id,
         email: user.email,
+        hasGoogleAuth: !!user.googleId,
+        canLoginWithPassword: true,
       },
     });
   } catch (error) {

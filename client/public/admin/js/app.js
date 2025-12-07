@@ -837,8 +837,13 @@ const UserManagement = () => {
               {users.map((user) => (
                 <tr key={user._id}>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">
-                      {user.email}
+                    <div className="flex items-center">
+                      <div className="text-sm font-medium text-gray-900">
+                        {user.email}
+                      </div>
+                      {user.googleId && (
+                        <i className="fab fa-google text-blue-500 ml-2" title="Google OAuth User"></i>
+                      )}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -898,7 +903,9 @@ const UserManagement = () => {
       {passwordResetModal && selectedUser && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-            <h3 className="text-lg font-medium mb-4">Reset Password</h3>
+            <h3 className="text-lg font-medium mb-4">
+              {selectedUser.googleId ? 'Set Password for Google User' : 'Reset Password'}
+            </h3>
             <div className="mb-4">
               <p className="text-sm text-gray-600">
                 <strong>User:</strong> {selectedUser.email}
@@ -906,6 +913,14 @@ const UserManagement = () => {
               <p className="text-sm text-gray-600">
                 <strong>Role:</strong> {selectedUser.role}
               </p>
+              {selectedUser.googleId && (
+                <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded">
+                  <p className="text-xs text-blue-800">
+                    <i className="fab fa-google mr-1"></i>
+                    <strong>Google OAuth User:</strong> Setting a password will allow this user to login with both Google and email/password.
+                  </p>
+                </div>
+              )}
             </div>
 
             {passwordError && (
@@ -928,7 +943,7 @@ const UserManagement = () => {
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                  placeholder="Enter new password"
+                  placeholder="Enter new password (min 6 characters)"
                 />
               </div>
 
@@ -959,7 +974,7 @@ const UserManagement = () => {
                 disabled={!newPassword || !confirmPassword}
                 className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 disabled:opacity-50"
               >
-                Reset Password
+                {selectedUser.googleId ? 'Set Password' : 'Reset Password'}
               </button>
             </div>
           </div>
