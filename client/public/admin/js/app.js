@@ -224,7 +224,10 @@ const DashboardStats = () => {
 
   return (
     <div>
-      <h2 className="text-2xl font-bold text-gray-900 mb-6">Dashboard Overview</h2>
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-2xl font-bold text-gray-900">Dashboard Overview</h2>
+        <div id="admin-notification-bell-container"></div>
+      </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         {statCards.map((stat, index) => (
           <div key={index} className="bg-white overflow-hidden shadow rounded-lg">
@@ -1406,10 +1409,7 @@ const Sidebar = ({ activeTab, setActiveTab }) => {
   return (
     <div className="bg-gray-800 text-white w-64 min-h-screen flex flex-col">
       <div className="p-4 border-b border-gray-700">
-        <div className="flex items-center justify-between mb-2">
-          <h1 className="text-xl font-bold">Admin Dashboard</h1>
-          <div id="admin-notification-bell-container"></div>
-        </div>
+        <h1 className="text-xl font-bold mb-2">Admin Dashboard</h1>
         <p className="text-sm text-gray-300">{user?.email}</p>
       </div>
       
