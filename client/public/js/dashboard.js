@@ -327,35 +327,164 @@ async function loadStudentDashboard() {
                             <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-4">Skills Assessment</h2>
                             <p class="text-gray-600 dark:text-gray-300 mb-6">Choose a skill category to assess your abilities and get better job matches.</p>
 
-                            <div class="grid-container">
-                                <div class="grid-item programming" onclick="startCategoryAssessment('programming')">
-                                    <i class="fas fa-code"></i>
-                                    <h3>Programming</h3>
-                                    <p>Core programming concepts, algorithms, data structures, and general coding proficiency.</p>
+                            <!-- General Categories -->
+                            <div class="mb-8">
+                                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">General Skills</h3>
+                                <div class="grid-container">
+                                    <div class="grid-item programming" onclick="startCategoryAssessment('programming')">
+                                        <i class="fas fa-code"></i>
+                                        <h3>Programming</h3>
+                                        <p>Core programming concepts, algorithms, data structures.</p>
+                                    </div>
+                                    <div class="grid-item database" onclick="startCategoryAssessment('database')">
+                                        <i class="fas fa-database"></i>
+                                        <h3>Database</h3>
+                                        <p>Database design, SQL queries, NoSQL concepts.</p>
+                                    </div>
+                                    <div class="grid-item webDevelopment" onclick="startCategoryAssessment('webDevelopment')">
+                                        <i class="fas fa-globe"></i>
+                                        <h3>Web Development</h3>
+                                        <p>Frontend and backend web technologies, frameworks.</p>
+                                    </div>
+                                    <div class="grid-item networking" onclick="startCategoryAssessment('networking')">
+                                        <i class="fas fa-network-wired"></i>
+                                        <h3>Networking</h3>
+                                        <p>Network protocols, security, cloud computing.</p>
+                                    </div>
+                                    <div class="grid-item problemSolving" onclick="startCategoryAssessment('problemSolving')">
+                                        <i class="fas fa-brain"></i>
+                                        <h3>Problem Solving</h3>
+                                        <p>Logical thinking, analytical skills, debugging.</p>
+                                    </div>
                                 </div>
+                            </div>
 
-                                <div class="grid-item database" onclick="startCategoryAssessment('database')">
-                                    <i class="fas fa-database"></i>
-                                    <h3>Database</h3>
-                                    <p>Database design, SQL queries, NoSQL concepts, and data management skills.</p>
+                            <!-- Programming Languages -->
+                            <div class="mb-8">
+                                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Programming Languages</h3>
+                                <div class="grid-container">
+                                    <div class="grid-item python" onclick="startCategoryAssessment('python')">
+                                        <i class="fab fa-python"></i>
+                                        <h3>Python</h3>
+                                        <p>Python programming, Django, Flask, data science.</p>
+                                    </div>
+                                    <div class="grid-item java" onclick="startCategoryAssessment('java')">
+                                        <i class="fab fa-java"></i>
+                                        <h3>Java</h3>
+                                        <p>Java programming, Spring, enterprise applications.</p>
+                                    </div>
+                                    <div class="grid-item javascript" onclick="startCategoryAssessment('javascript')">
+                                        <i class="fab fa-js"></i>
+                                        <h3>JavaScript</h3>
+                                        <p>JavaScript, Node.js, modern web development.</p>
+                                    </div>
+                                    <div class="grid-item typescript" onclick="startCategoryAssessment('typescript')">
+                                        <i class="fas fa-code"></i>
+                                        <h3>TypeScript</h3>
+                                        <p>TypeScript, Angular, type-safe JavaScript.</p>
+                                    </div>
+                                    <div class="grid-item csharp" onclick="startCategoryAssessment('csharp')">
+                                        <i class="fas fa-code"></i>
+                                        <h3>C#</h3>
+                                        <p>C# programming, .NET, ASP.NET development.</p>
+                                    </div>
+                                    <div class="grid-item cpp" onclick="startCategoryAssessment('cpp')">
+                                        <i class="fas fa-code"></i>
+                                        <h3>C++</h3>
+                                        <p>C++ programming, system development, STL.</p>
+                                    </div>
+                                    <div class="grid-item c" onclick="startCategoryAssessment('c')">
+                                        <i class="fas fa-code"></i>
+                                        <h3>C</h3>
+                                        <p>C programming, embedded systems, low-level.</p>
+                                    </div>
+                                    <div class="grid-item php" onclick="startCategoryAssessment('php')">
+                                        <i class="fab fa-php"></i>
+                                        <h3>PHP</h3>
+                                        <p>PHP programming, Laravel, WordPress development.</p>
+                                    </div>
+                                    <div class="grid-item ruby" onclick="startCategoryAssessment('ruby')">
+                                        <i class="fas fa-gem"></i>
+                                        <h3>Ruby</h3>
+                                        <p>Ruby programming, Rails, web applications.</p>
+                                    </div>
+                                    <div class="grid-item go" onclick="startCategoryAssessment('go')">
+                                        <i class="fas fa-code"></i>
+                                        <h3>Go</h3>
+                                        <p>Go programming, microservices, concurrency.</p>
+                                    </div>
+                                    <div class="grid-item rust" onclick="startCategoryAssessment('rust')">
+                                        <i class="fas fa-code"></i>
+                                        <h3>Rust</h3>
+                                        <p>Rust programming, memory safety, performance.</p>
+                                    </div>
+                                    <div class="grid-item swift" onclick="startCategoryAssessment('swift')">
+                                        <i class="fab fa-swift"></i>
+                                        <h3>Swift</h3>
+                                        <p>Swift programming, iOS development, SwiftUI.</p>
+                                    </div>
+                                    <div class="grid-item kotlin" onclick="startCategoryAssessment('kotlin')">
+                                        <i class="fas fa-code"></i>
+                                        <h3>Kotlin</h3>
+                                        <p>Kotlin programming, Android development.</p>
+                                    </div>
+                                    <div class="grid-item objectivec" onclick="startCategoryAssessment('objectivec')">
+                                        <i class="fab fa-apple"></i>
+                                        <h3>Objective-C</h3>
+                                        <p>Objective-C, iOS/macOS legacy development.</p>
+                                    </div>
+                                    <div class="grid-item r" onclick="startCategoryAssessment('r')">
+                                        <i class="fab fa-r-project"></i>
+                                        <h3>R</h3>
+                                        <p>R programming, statistical computing, data analysis.</p>
+                                    </div>
+                                    <div class="grid-item scala" onclick="startCategoryAssessment('scala')">
+                                        <i class="fas fa-code"></i>
+                                        <h3>Scala</h3>
+                                        <p>Scala programming, functional programming.</p>
+                                    </div>
+                                    <div class="grid-item perl" onclick="startCategoryAssessment('perl')">
+                                        <i class="fas fa-code"></i>
+                                        <h3>Perl</h3>
+                                        <p>Perl programming, text processing, scripting.</p>
+                                    </div>
+                                    <div class="grid-item visualbasic" onclick="startCategoryAssessment('visualbasic')">
+                                        <i class="fas fa-code"></i>
+                                        <h3>Visual Basic</h3>
+                                        <p>VB.NET, Windows applications development.</p>
+                                    </div>
+                                    <div class="grid-item assembly" onclick="startCategoryAssessment('assembly')">
+                                        <i class="fas fa-microchip"></i>
+                                        <h3>Assembly</h3>
+                                        <p>Assembly language, low-level programming.</p>
+                                    </div>
+                                    <div class="grid-item matlab" onclick="startCategoryAssessment('matlab')">
+                                        <i class="fas fa-calculator"></i>
+                                        <h3>MATLAB</h3>
+                                        <p>MATLAB, numerical computing, Simulink.</p>
+                                    </div>
                                 </div>
+                            </div>
 
-                                <div class="grid-item webDevelopment" onclick="startCategoryAssessment('webDevelopment')">
-                                    <i class="fas fa-globe"></i>
-                                    <h3>Web Development</h3>
-                                    <p>Frontend and backend web technologies, frameworks, and modern web development practices.</p>
-                                </div>
-
-                                <div class="grid-item networking" onclick="startCategoryAssessment('networking')">
-                                    <i class="fas fa-network-wired"></i>
-                                    <h3>Networking</h3>
-                                    <p>Network protocols, security, system administration, and cloud computing fundamentals.</p>
-                                </div>
-
-                                <div class="grid-item problemSolving" onclick="startCategoryAssessment('problemSolving')">
-                                    <i class="fas fa-brain"></i>
-                                    <h3>Problem Solving</h3>
-                                    <p>Logical thinking, analytical skills, debugging, and complex problem resolution.</p>
+                            <!-- Web Technologies -->
+                            <div class="mb-8">
+                                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Web Technologies</h3>
+                                <div class="grid-container">
+                                    <div class="grid-item html" onclick="startCategoryAssessment('html')">
+                                        <i class="fab fa-html5"></i>
+                                        <h3>HTML</h3>
+                                        <p>HTML5, semantic markup, web structure.</p>
+                                    </div>
+                                    <div class="grid-item css" onclick="startCategoryAssessment('css')">
+                                        <i class="fab fa-css3-alt"></i>
+                                        <h3>CSS</h3>
+                                        <p>CSS3, Flexbox, Grid, responsive design.</p>
+                                    </div>
+                                    <div class="grid-item sql" onclick="startCategoryAssessment('sql')">
+                                        <i class="fas fa-database"></i>
+                                        <h3>SQL</h3>
+                                        <p>SQL queries, database operations, optimization.</p>
+                                    </div>
                                 </div>
                             </div>
 
