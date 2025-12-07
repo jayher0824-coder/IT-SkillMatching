@@ -163,7 +163,6 @@ function updateNavigation() {
                 <button onclick="logout()" class="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300">
                     <i class="fas fa-sign-out-alt mr-1"></i>Logout
                 </button>
-                ${themeToggleButton}
             `;
         } else if (currentUser.role === 'company') {
             // Get company name from sessionStorage or use email as fallback
@@ -176,7 +175,6 @@ function updateNavigation() {
                 <button onclick="logout()" class="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300">
                     <i class="fas fa-sign-out-alt mr-1"></i>Logout
                 </button>
-                ${themeToggleButton}
             `;
         } else {
             // Admin or other roles - show basic navigation
@@ -191,14 +189,11 @@ function updateNavigation() {
                 <button onclick="logout()" class="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300">
                     <i class="fas fa-sign-out-alt mr-1"></i>Logout
                 </button>
-                ${themeToggleButton}
             `;
         }
     } else {
-        // When not logged in, show only theme toggle
-        navMenu.innerHTML = `
-            ${themeToggleButton}
-        `;
+        // When not logged in, show nothing in nav menu
+        navMenu.innerHTML = ``;
     }
 }
 

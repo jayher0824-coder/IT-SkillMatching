@@ -5095,16 +5095,6 @@ async function loadAssessmentHistory() {
                         </button>
                     </div>
                 </div>
-                ${result.categoryScores ? `
-                    <div class="grid grid-cols-2 md:grid-cols-3 gap-2 mt-3 text-sm">
-                        ${Object.entries(result.categoryScores).map(([cat, score]) => `
-                            <div class="flex justify-between">
-                                <span class="text-gray-600 dark:text-gray-400 capitalize">${cat}:</span>
-                                <span class="font-medium text-gray-900 dark:text-white">${score}%</span>
-                            </div>
-                        `).join('')}
-                    </div>
-                ` : ''}
             </div>
         `).join('');
         
