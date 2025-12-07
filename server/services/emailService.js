@@ -8,6 +8,22 @@ const createTransporter = () => {
     return null;
   }
 
+  // Try SendGrid first if configured (more reliable for production)
+  if (process.env.SENDGRID_API_KEY) {
+    console.log('Using SendGrid for email delivery');
+    return nodemailer.createTransport({
+      host: 'smtp.sendgrid.net',
+      port: 587,
+      secure: false,
+      auth: {
+        user: 'apikey',
+        pass: process.env.SENDGRID_API_KEY
+      }
+    });
+  }
+
+  // Fall back to Gmail
+  console.log('Using Gmail for email delivery');
   return nodemailer.createTransport({
     host: 'smtp.gmail.com',
     port: 587,

@@ -171,7 +171,8 @@ router.post('/request-verification-code', async (req, res) => {
 
     // Send verification code via email
     const userName = user.email.split('@')[0];
-    console.log('Sending verification code to:', user.email, 'Code:', verificationCode);
+    console.log('Sending verification code to:', user.email);
+    // DO NOT log the actual code - security risk!
     const emailResult = await sendVerificationCode(user.email, verificationCode, userName);
     
     if (!emailResult || !emailResult.success) {
