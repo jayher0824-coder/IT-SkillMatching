@@ -336,11 +336,6 @@ async function loadStudentDashboard() {
                                         <h3>Programming</h3>
                                         <p>Core programming concepts, algorithms, data structures.</p>
                                     </div>
-                                    <div class="grid-item database" onclick="startCategoryAssessment('database')">
-                                        <i class="fas fa-database"></i>
-                                        <h3>Database</h3>
-                                        <p>Database design, SQL queries, NoSQL concepts.</p>
-                                    </div>
                                     <div class="grid-item webDevelopment" onclick="startCategoryAssessment('webDevelopment')">
                                         <i class="fas fa-globe"></i>
                                         <h3>Web Development</h3>
@@ -468,7 +463,7 @@ async function loadStudentDashboard() {
 
                             <!-- Web Technologies -->
                             <div class="mb-8">
-                                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Web Technologies</h3>
+                                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Web Technologies & Database</h3>
                                 <div class="grid-container">
                                     <div class="grid-item html" onclick="startCategoryAssessment('html')">
                                         <i class="fab fa-html5"></i>

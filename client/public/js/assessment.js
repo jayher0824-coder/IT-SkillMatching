@@ -339,14 +339,26 @@ async function showQuestion(index) {
     const questionContainer = document.getElementById('question-container');
     
     if (question.type === 'multiple-choice') {
-        // Ensure options array exists
+        // Ensure options array exists and has valid data
         const options = question.options || [];
-        if (options.length === 0) {
-            console.error('Question has no options:', question);
-            showToast('Error: Question data is incomplete. Skipping question.', 'error');
+        const validOptions = options.filter(opt => opt && opt.trim() !== '');
+        
+        if (validOptions.length === 0) {
+            console.error('Question has no valid options:', question);
+            showToast('Error: Question data is incomplete. Skipping to next question.', 'error');
             // Auto-advance to next question
             if (index < window.assessmentState.currentAssessment.questions.length - 1) {
-                await showQuestion(index + 1);
+                setTimeout(() => showQuestion(index + 1), 1000);
+            }
+            return;
+        }
+        
+        // Check if question text is valid
+        if (!question.question || question.question.trim() === '') {
+            console.error('Question has no text:', question);
+            showToast('Error: Question text is missing. Skipping to next question.', 'error');
+            if (index < window.assessmentState.currentAssessment.questions.length - 1) {
+                setTimeout(() => showQuestion(index + 1), 1000);
             }
             return;
         }
