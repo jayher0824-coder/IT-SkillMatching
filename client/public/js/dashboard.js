@@ -145,8 +145,6 @@ async function loadStudentDashboard() {
 
                     <!-- User Actions -->
                     <div class="px-2 md:px-4 pb-4 border-t border-gray-200 dark:border-gray-700 pt-4">
-                        <!-- Notification Bell -->
-                        <div id="student-notification-bell-container"></div>
                     </div>
                 </div>
 
@@ -168,6 +166,8 @@ async function loadStudentDashboard() {
                                         <p class="text-gray-600 dark:text-gray-300 mt-1 md:mt-2 text-sm md:text-base">Welcome back${studentProfile?.firstName ? ', ' + studentProfile.firstName : ''}! Here's your OJT journey overview.</p>
                                     </div>
                                 </div>
+                                <!-- Notification Bell -->
+                                <div id="student-notification-bell-container"></div>
                             </div>
                         </div>
 
