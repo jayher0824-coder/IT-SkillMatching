@@ -184,6 +184,12 @@ router.post('/:id/submit', protect, authorize('student'), async (req, res) => {
     const { answers, startedAt } = req.body;
     const assessmentId = req.params.id;
     
+    // Helper function to normalize answers for comparison
+    const normalizeAnswer = (answer) => {
+      if (answer === null || answer === undefined) return '';
+      return String(answer).toLowerCase().trim();
+    };
+    
     console.log('Assessment submission received:', {
       assessmentId,
       userId: req.user._id,
@@ -265,8 +271,18 @@ router.post('/:id/submit', protect, authorize('student'), async (req, res) => {
         };
       }
 
-      const isCorrect = answer.answer === question.correctAnswer;
+      const isCorrect = normalizeAnswer(answer.answer) === normalizeAnswer(question.correctAnswer);
       const points = isCorrect ? question.points : 0;
+      
+      console.log(`Question ${index + 1}:`, {
+        userAnswer: answer.answer,
+        correctAnswer: question.correctAnswer,
+        normalizedUser: normalizeAnswer(answer.answer),
+        normalizedCorrect: normalizeAnswer(question.correctAnswer),
+        isCorrect,
+        points,
+        category: question.category
+      });
       
       totalScore += points;
       totalPoints += question.points;
