@@ -11,6 +11,9 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/it-ojt-pl
 // Helper function to generate assessment with category
 async function createLanguageAssessment(language, category, questions) {
   try {
+    // Calculate total points
+    const totalPoints = questions.reduce((sum, q) => sum + (q.points || 0), 0);
+    
     const assessment = await Assessment.create({
       title: `${language} Programming Assessment`,
       description: `Comprehensive ${language} programming assessment covering fundamentals to advanced concepts`,
@@ -18,10 +21,11 @@ async function createLanguageAssessment(language, category, questions) {
       difficulty: 'mixed',
       timeLimit: 45,
       passingScore: 70,
+      totalPoints: totalPoints,
       questions: questions,
       isActive: true,
     });
-    console.log(`✓ Created ${language} assessment (${questions.length} questions)`);
+    console.log(`✓ Created ${language} assessment (${questions.length} questions, ${totalPoints} points)`);
     return assessment;
   } catch (error) {
     console.error(`✗ Error creating ${language} assessment:`, error.message);
