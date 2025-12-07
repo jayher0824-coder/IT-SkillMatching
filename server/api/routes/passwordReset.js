@@ -307,12 +307,16 @@ router.post('/forgot-password', async (req, res) => {
 // Get security questions for user
 router.get('/security-questions/:email', async (req, res) => {
   try {
+    console.log('Getting security questions for:', req.params.email);
     const user = await User.findOne({ email: req.params.email.toLowerCase() });
 
     if (!user) {
-      return res.status(404).json({ 
-        success: false, 
-        message: 'User not found' 
+      console.log('User not found for security questions:', req.params.email);
+      // Return empty array instead of 404 - security questions are optional
+      return res.status(200).json({ 
+        success: true, 
+        questions: [],
+        hasQuestions: false
       });
     }
 
@@ -321,6 +325,7 @@ router.get('/security-questions/:email', async (req, res) => {
       question: sq.question 
     })) || [];
 
+    console.log('Security questions found:', questions.length);
     res.status(200).json({ 
       success: true, 
       questions,
