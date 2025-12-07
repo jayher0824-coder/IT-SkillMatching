@@ -1793,21 +1793,20 @@ function viewJob(jobId) {
                                                     ${job.customAssessment.timeLimit ? `<span><i class="fas fa-clock mr-1"></i>${job.customAssessment.timeLimit} minutes</span>` : ''}
                                                     ${job.customAssessment.passingScore ? `<span><i class="fas fa-chart-line mr-1"></i>Pass: ${job.customAssessment.passingScore}%</span>` : ''}
                                                 </div>
-                                                <button onclick="takeCustomAssessment('${job._id}', function(result) { 
-                                                    if (result && result.success) { 
-                                                        closeModal(); 
-                                                        setTimeout(function() { 
-                                                            showToast('Assessment completed! You can now apply for this job.', 'success'); 
-                                                            viewJob('${job._id}'); 
-                                                        }, 500); 
-                                                    } 
-                                                })" 
-                                                    style="background-color: #2563eb; color: white; border: 2px solid #1e40af;"
-                                                    class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition font-semibold border-2"
-                                                    onmouseover="this.style.backgroundColor='#1d4ed8'" 
-                                                    onmouseout="this.style.backgroundColor='#2563eb'">
-                                                    <i class="fas fa-play-circle mr-2"></i>Take Assessment
-                                                </button>
+                                                ${typeof currentAssessmentSubmissionId !== 'undefined' && currentAssessmentSubmissionId ? `
+                                                    <div class="flex items-center text-green-600 dark:text-green-400">
+                                                        <i class="fas fa-check-circle mr-2"></i>
+                                                        <span class="font-semibold">Assessment Completed - You can now apply!</span>
+                                                    </div>
+                                                ` : `
+                                                    <button onclick="takeCustomAssessment('${job._id}')" 
+                                                        style="background-color: #2563eb; color: white; border: 2px solid #1e40af;"
+                                                        class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition font-semibold border-2"
+                                                        onmouseover="this.style.backgroundColor='#1d4ed8'" 
+                                                        onmouseout="this.style.backgroundColor='#2563eb'">
+                                                        <i class="fas fa-play-circle mr-2"></i>Take Assessment
+                                                    </button>
+                                                `}
                                             </div>
                                         </div>
                                     </div>
@@ -1902,13 +1901,20 @@ function viewJob(jobId) {
                                     Close
                                 </button>
                                 ${!hasApplied ? `
-                                    <button onclick="applyForJob('${job._id}')" 
-                                        style="background-color: #56AE67; color: white; border: 2px solid #2d6b3c;"
-                                        class="bg-[#56AE67] text-white px-6 py-2 rounded-lg hover:bg-[#3d8b4f] transition font-semibold border-2 border-green-800 dark:border-green-600"
-                                        onmouseover="this.style.backgroundColor='#3d8b4f'" 
-                                        onmouseout="this.style.backgroundColor='#56AE67'">
-                                        <i class="fas fa-paper-plane mr-2"></i>Apply Now
-                                    </button>
+                                    ${job.requireCustomAssessment && (typeof currentAssessmentSubmissionId === 'undefined' || !currentAssessmentSubmissionId) ? `
+                                        <div class="flex items-center px-4 py-2 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-200 rounded-lg">
+                                            <i class="fas fa-exclamation-triangle mr-2"></i>
+                                            <span class="text-sm">Complete assessment first</span>
+                                        </div>
+                                    ` : `
+                                        <button onclick="applyForJob('${job._id}')" 
+                                            style="background-color: #56AE67; color: white; border: 2px solid #2d6b3c;"
+                                            class="bg-[#56AE67] text-white px-6 py-2 rounded-lg hover:bg-[#3d8b4f] transition font-semibold border-2 border-green-800 dark:border-green-600"
+                                            onmouseover="this.style.backgroundColor='#3d8b4f'" 
+                                            onmouseout="this.style.backgroundColor='#56AE67'">
+                                            <i class="fas fa-paper-plane mr-2"></i>Apply Now
+                                        </button>
+                                    `}
                                 ` : `
                                     <span class="inline-flex items-center px-4 py-2 rounded-lg bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200">
                                         <i class="fas fa-check mr-2"></i>Already Applied
@@ -3724,11 +3730,11 @@ function displayStudentsList(students) {
                     <div class="grid md:grid-cols-2 gap-4 mb-3">
                         <div>
                             <span class="text-xs font-medium text-gray-500 dark:text-gray-400">Course:</span>
-                            <p class="text-sm text-gray-700 dark:text-gray-300">${student.course || 'Not specified'}</p>
+                            <p class="text-sm text-gray-700 dark:text-gray-300">${student.education?.degree || 'Not specified'}</p>
                         </div>
                         <div>
-                            <span class="text-xs font-medium text-gray-500 dark:text-gray-400">Year Level:</span>
-                            <p class="text-sm text-gray-700 dark:text-gray-300">${student.yearLevel || 'Not specified'}</p>
+                            <span class="text-xs font-medium text-gray-500 dark:text-gray-400">Graduation Year:</span>
+                            <p class="text-sm text-gray-700 dark:text-gray-300">${student.education?.graduationYear || 'Not specified'}</p>
                         </div>
                     </div>
                     
