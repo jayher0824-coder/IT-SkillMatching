@@ -369,6 +369,57 @@ router.get('/users', protect, authorize('admin'), async (req, res) => {
   }
 });
 
+// @desc    Reset user password by admin
+// @route   PUT /api/admin/users/:id/reset-password
+// @access  Private (Admin only)
+router.put('/users/:id/reset-password', protect, authorize('admin'), async (req, res) => {
+  try {
+    const { newPassword } = req.body;
+    
+    if (!newPassword || newPassword.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: 'Password must be at least 6 characters long',
+      });
+    }
+
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found',
+      });
+    }
+
+    // Prevent admin from changing their own password this way
+    if (user._id.toString() === req.user._id.toString()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot reset your own password. Use the change password feature instead.',
+      });
+    }
+
+    // Update password (will be hashed by pre-save hook)
+    user.password = newPassword;
+    await user.save();
+
+    res.json({
+      success: true,
+      message: 'Password reset successfully',
+      data: {
+        userId: user._id,
+        email: user.email,
+      },
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error',
+    });
+  }
+});
+
 // @desc    Update user status (activate/deactivate)
 // @route   PUT /api/admin/users/:id/status
 // @access  Private (Admin only)
@@ -479,57 +530,6 @@ router.put('/jobs/:id/status', protect, authorize('admin'), async (req, res) => 
       success: true,
       message: `Job ${status} successfully`,
       data: job,
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({
-      success: false,
-      message: 'Server error',
-    });
-  }
-});
-
-// @desc    Reset user password by admin
-// @route   PUT /api/admin/users/:id/reset-password
-// @access  Private (Admin only)
-router.put('/users/:id/reset-password', protect, authorize('admin'), async (req, res) => {
-  try {
-    const { newPassword } = req.body;
-    
-    if (!newPassword || newPassword.length < 6) {
-      return res.status(400).json({
-        success: false,
-        message: 'Password must be at least 6 characters long',
-      });
-    }
-
-    const user = await User.findById(req.params.id);
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: 'User not found',
-      });
-    }
-
-    // Prevent admin from changing their own password this way
-    if (user._id.toString() === req.user._id.toString()) {
-      return res.status(400).json({
-        success: false,
-        message: 'Cannot reset your own password. Use the change password feature instead.',
-      });
-    }
-
-    // Update password (will be hashed by pre-save hook)
-    user.password = newPassword;
-    await user.save();
-
-    res.json({
-      success: true,
-      message: 'Password reset successfully',
-      data: {
-        userId: user._id,
-        email: user.email,
-      },
     });
   } catch (error) {
     console.error(error);
