@@ -77,9 +77,12 @@ const sendVerificationCode = async (email, code, userName) => {
       `
     };
     
-    return await emailService.sendEmail(email, template);
+    const result = await emailService.sendEmail(email, template);
+    console.log('Verification code email sent to:', email, 'Result:', result);
+    return result;
   } catch (error) {
-    console.error('Error sending verification code:', error);
+    console.error('Error sending verification code email:', error);
+    // Don't throw - allow process to continue even if email fails
     return { success: false, error: error.message };
   }
 };
@@ -165,7 +168,12 @@ router.post('/request-verification-code', async (req, res) => {
 
     // Send verification code via email
     const userName = user.email.split('@')[0];
-    await sendVerificationCode(user.email, verificationCode, userName);
+    console.log('Sending verification code to:', user.email, 'Code:', verificationCode);
+    const emailResult = await sendVerificationCode(user.email, verificationCode, userName);
+    
+    if (!emailResult || !emailResult.success) {
+      console.warn('Failed to send verification code email, but continuing...', emailResult);
+    }
 
     res.status(200).json({ 
       success: true, 
