@@ -1138,21 +1138,6 @@ function createSettingsModal() {
                         }
                     </style>
                     <div class="p-6">
-                    <!-- Change Password -->
-                    <div class="mb-6 pb-6 border-b border-gray-200 dark:border-gray-700">
-                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-3">
-                            <i class="fas fa-key mr-2 text-blue-600"></i>Change Password
-                        </h3>
-                        <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">Update your password to keep your account secure</p>
-                        <button onclick="showChangePasswordForm()" 
-                            style="background-color: #2563eb; color: white; border: 2px solid #1e40af;"
-                            class="px-4 py-2 rounded-lg hover:bg-blue-700 transition font-medium"
-                            onmouseover="this.style.backgroundColor='#1d4ed8'" 
-                            onmouseout="this.style.backgroundColor='#2563eb'">
-                            <i class="fas fa-lock mr-2"></i>Change Password
-                        </button>
-                    </div>
-
                     <!-- Profile Management -->
                     <div class="mb-6 pb-6 border-b border-gray-200 dark:border-gray-700">
                         <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-3">
