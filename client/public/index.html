@@ -80,6 +80,38 @@
         .border-blue-500, .border-[#56AE67] { border-color: var(--brand-primary) !important; }
         .focus\:border-blue-500:focus, .focus\:border-[#56AE67]:focus { border-color: var(--brand-primary) !important; }
         
+        /* Custom Scrollbar Styles */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+        
+        .dark ::-webkit-scrollbar-track {
+            background: #374151;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: #56AE67;
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: #3d8b4f;
+        }
+        
+        .dark ::-webkit-scrollbar-thumb {
+            background: #6bc481;
+        }
+        
+        .dark ::-webkit-scrollbar-thumb:hover {
+            background: #56AE67;
+        }
+        
         /* Dark Mode Variables */
         :root {
             --bg-primary: #ffffff;
@@ -995,7 +1027,7 @@
 
     <!-- Load helpers and app scripts with cache busting -->
     <script src="./js/helpers.js?v=2025120601"></script>
-    <script src="./js/app.js?v=2025120615"></script>
+    <script src="./js/app.js?v=2025120616"></script>
     <script src="./js/dashboard.js?v=2025120613"></script>
     <script src="./js/assessment.js?v=2025120608"></script>
     <script src="./js/customAssessments.js?v=2025120608"></script>

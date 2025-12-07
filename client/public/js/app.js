@@ -738,8 +738,8 @@ function createSettingsModal() {
     
     const modalHTML = `
         <div id="settings-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div class="bg-white dark:bg-gray-800 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-                <div class="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-6 flex justify-between items-center">
+            <div class="bg-white dark:bg-gray-800 rounded-lg max-w-2xl w-full max-h-[90vh] flex flex-col">
+                <div class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-6 flex justify-between items-center flex-shrink-0">
                     <h2 class="text-2xl font-bold text-gray-900 dark:text-white">
                         <i class="fas fa-cog mr-2"></i>Settings
                     </h2>
@@ -748,7 +748,7 @@ function createSettingsModal() {
                     </button>
                 </div>
                 
-                <div class="p-6">
+                <div class="p-6 overflow-y-auto flex-1" style="scrollbar-width: thin; scrollbar-color: #56AE67 #e5e7eb;">
                     <!-- Change Password -->
                     <div class="mb-6 pb-6 border-b border-gray-200 dark:border-gray-700">
                         <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-3">
