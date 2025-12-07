@@ -623,32 +623,46 @@ function showAssessmentResults(results) {
 
     const overallScoreEl = document.getElementById('overall-score');
     if (overallScoreEl) {
-        overallScoreEl.className = `text-6xl font-bold text-white mb-2 drop-shadow-lg`;
+        overallScoreEl.className = `text-7xl font-black text-white mb-2 drop-shadow-2xl`;
+        overallScoreEl.style.textShadow = '2px 2px 4px rgba(0,0,0,0.3)';
         overallScoreEl.textContent = (results.percentage || 0) + '%';
     }
 
-    // Update category scores
+    // Update category scores - show only the assessed category
     const categoryScoresContainer = document.getElementById('category-scores');
     const categoryScores = results.categoryScores || {};
+    const assessedCategory = window.assessmentState?.currentAssessment?.category || language || 'unknown';
 
     if (categoryScoresContainer) {
-        categoryScoresContainer.innerHTML = Object.entries(categoryScores).map(([category, score]) => {
-        const barColor = score >= 80 ? 'bg-gradient-to-r from-green-500 to-green-600' : score >= 60 ? 'bg-gradient-to-r from-yellow-500 to-yellow-600' : 'bg-gradient-to-r from-red-500 to-red-600';
-        const icon = score >= 80 ? '🏆' : score >= 60 ? '⭐' : '📚';
+        // Filter to show only the category that was actually assessed
+        const filteredScores = Object.entries(categoryScores).filter(([category, score]) => {
+            // Show only if score > 0 (was actually assessed)
+            return score > 0;
+        });
 
-        return `
-            <div class="mb-4 p-3 bg-white dark:bg-gray-800 rounded-lg shadow-sm hover:shadow-md transition-shadow">
-                <div class="flex justify-between items-center mb-2">
-                    <span class="text-sm font-semibold text-gray-700 dark:text-gray-300">${icon} ${capitalizeFirst(category)}</span>
-                    <span class="text-sm font-bold ${score >= 80 ? 'text-green-600' : score >= 60 ? 'text-yellow-600' : 'text-red-600'}">${score}%</span>
-                </div>
-                <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3 overflow-hidden">
-                    <div class="${barColor} h-3 rounded-full transition-all duration-1000 shadow-inner"
-                         style="width: ${score}%"></div>
-                </div>
-            </div>
-        `;
-        }).join('');
+        if (filteredScores.length > 0) {
+            categoryScoresContainer.innerHTML = filteredScores.map(([category, score]) => {
+                const barColor = score >= 80 ? 'bg-gradient-to-r from-green-500 to-green-600' : score >= 60 ? 'bg-gradient-to-r from-yellow-500 to-yellow-600' : 'bg-gradient-to-r from-red-500 to-red-600';
+                const icon = score >= 80 ? '🏆' : score >= 60 ? '⭐' : '📚';
+
+                return `
+                    <div class="mb-4 p-4 bg-white dark:bg-gray-800 rounded-xl shadow-md hover:shadow-lg transition-all">
+                        <div class="flex justify-between items-center mb-3">
+                            <span class="text-lg font-bold text-gray-800 dark:text-gray-200">${icon} ${capitalizeFirst(category)}</span>
+                            <span class="text-2xl font-bold ${score >= 80 ? 'text-green-600 dark:text-green-400' : score >= 60 ? 'text-yellow-600 dark:text-yellow-400' : 'text-red-600 dark:text-red-400'}">${score}%</span>
+                        </div>
+                        <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-4 overflow-hidden">
+                            <div class="${barColor} h-4 rounded-full transition-all duration-1000 shadow-lg"
+                                 style="width: ${score}%"></div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        } else {
+            // If no scores, hide the section
+            const categorySection = categoryScoresContainer.closest('.mb-8');
+            if (categorySection) categorySection.classList.add('hidden');
+        }
     }
 
     // Show retake button if score is 0%
@@ -694,26 +708,7 @@ function showAssessmentResults(results) {
         showToast('Assessment complete. Keep learning to improve your skills!', 'info');
     }
     
-    // Add button to view detailed answers
-    const viewDetailsBtn = document.getElementById('view-details-btn');
-    if (viewDetailsBtn) {
-        viewDetailsBtn.onclick = () => showDetailedAnswers(results);
-    } else if (resultsDiv) {
-        // Create button if it doesn't exist
-        const btnContainer = document.createElement('div');
-        btnContainer.className = 'mt-6 text-center';
-        btnContainer.innerHTML = `
-            <button id="view-details-btn" 
-                style="background-color: #56AE67; color: white; border: 2px solid #2d6b3c;"
-                class="px-6 py-3 rounded-lg hover:bg-[#3d8b4f] dark:hover:bg-[#6bc481] transition font-medium shadow-md"
-                onmouseover="this.style.backgroundColor='#3d8b4f'" 
-                onmouseout="this.style.backgroundColor='#56AE67'">
-                <i class="fas fa-list-check mr-2"></i>View Detailed Answers
-            </button>
-        `;
-        resultsDiv.appendChild(btnContainer);
-        document.getElementById('view-details-btn').onclick = () => showDetailedAnswers(results);
-    }
+    // Remove view detailed answers button - not needed in results page
 }
 
 function showDetailedAnswers(results) {
