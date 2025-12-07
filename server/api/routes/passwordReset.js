@@ -36,7 +36,7 @@ router.post('/forgot-password', async (req, res) => {
       // Don't reveal if user exists or not for security
       return res.status(200).json({ 
         success: true, 
-        message: 'If an account exists with this email, a password reset link will be sent.' 
+        message: 'If an account exists with this email, a password change request will be sent to the admin.' 
       });
     }
 
@@ -44,52 +44,37 @@ router.post('/forgot-password', async (req, res) => {
     if (user.googleId && !user.password) {
       return res.status(400).json({ 
         success: false, 
-        message: 'This account uses Google Sign-In. Please sign in with Google.' 
+        message: 'This account uses Google Sign-In. Please sign in with Google or contact admin to set a password.' 
       });
     }
 
-    // Generate reset token
-    const resetToken = crypto.randomBytes(32).toString('hex');
+    // Check if user already has a pending request
+    const hasPendingRequest = user.passwordChangeRequests?.some(req => req.status === 'pending');
     
-    // Hash token before storing
-    user.resetPasswordToken = crypto.createHash('sha256').update(resetToken).digest('hex');
-    user.resetPasswordExpires = Date.now() + 3600000; // 1 hour
+    if (hasPendingRequest) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'You already have a pending password change request. Please wait for admin approval.' 
+      });
+    }
+
+    // Add password change request to user document
+    if (!user.passwordChangeRequests) {
+      user.passwordChangeRequests = [];
+    }
+
+    user.passwordChangeRequests.push({
+      reason: 'Forgot password - requested via forgot password form',
+      requestedAt: new Date(),
+      status: 'pending'
+    });
     
     await user.save();
-
-    // Create reset URL
-    const resetUrl = `${process.env.CLIENT_URL || 'http://localhost:3000'}/reset-password.html?token=${resetToken}`;
-
-    // Email content
-    const mailOptions = {
-      from: process.env.EMAIL_USER,
-      to: user.email,
-      subject: 'Password Reset Request - IT OJT Platform',
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2 style="color: #56AE67;">Password Reset Request</h2>
-          <p>You are receiving this email because you (or someone else) requested a password reset for your account.</p>
-          <p>Please click the link below to reset your password:</p>
-          <a href="${resetUrl}" style="display: inline-block; padding: 12px 24px; background-color: #56AE67; color: white; text-decoration: none; border-radius: 5px; margin: 20px 0;">Reset Password</a>
-          <p>Or copy and paste this link into your browser:</p>
-          <p style="word-break: break-all; color: #666;">${resetUrl}</p>
-          <p><strong>This link will expire in 1 hour.</strong></p>
-          <p>If you did not request this, please ignore this email and your password will remain unchanged.</p>
-          <hr style="margin: 30px 0; border: none; border-top: 1px solid #ddd;">
-          <p style="color: #999; font-size: 12px;">IT OJT Platform</p>
-        </div>
-      `
-    };
-
-    // Send email
-    try {
-      const transporter = createTransporter();
-      await transporter.sendMail(mailOptions);
-      
-      res.status(200).json({ 
-        success: true, 
-        message: 'Password reset link sent to your email' 
-      });
+    
+    res.status(200).json({ 
+      success: true, 
+      message: 'Password change request sent to admin. You will be notified once approved.' 
+    });
     } catch (emailError) {
       console.error('Email sending error:', emailError);
       
@@ -97,12 +82,10 @@ router.post('/forgot-password', async (req, res) => {
       user.resetPasswordToken = undefined;
       user.resetPasswordExpires = undefined;
       await user.save();
-      
-      res.status(500).json({ 
-        success: false, 
-        message: 'Error sending email. Please try again later.' 
-      });
-    }
+    res.status(200).json({ 
+      success: true, 
+      message: 'Password change request sent to admin. You will be notified once approved.' 
+    });
 
   } catch (error) {
     console.error('Forgot password error:', error);
