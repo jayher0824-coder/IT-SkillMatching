@@ -1564,7 +1564,6 @@ const Sidebar = ({ activeTab, setActiveTab }) => {
   
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: 'fas fa-tachometer-alt' },
-    { id: 'notifications', label: 'Notifications', icon: 'fas fa-bell' },
     { id: 'password-requests', label: 'Password Requests', icon: 'fas fa-lock' },
     { id: 'feedback', label: 'Feedback', icon: 'fas fa-comment' },
   ];
@@ -1640,8 +1639,6 @@ const Dashboard = () => {
     switch (activeTab) {
       case 'dashboard':
         return <DashboardStats />;
-      case 'notifications':
-        return <NotificationsManagement />;
       case 'password-requests':
         return <PasswordChangeRequests />;
       case 'feedback':
