@@ -1,8 +1,14 @@
 const { useState, useEffect, createContext, useContext } = React;
-const { BrowserRouter, Routes, Route, Link, useNavigate, Navigate } = ReactRouterDOM;
 
 // API Configuration
 const API_BASE = '/api';
+
+// Simple routing state
+const ROUTES = {
+  LOGIN: 'login',
+  REGISTER: 'register',
+  DASHBOARD: 'dashboard'
+};
 
 // Create Auth Context
 const AuthContext = createContext();
@@ -16,7 +22,7 @@ const useAuth = () => {
 };
 
 // Auth Provider
-const AuthProvider = ({ children }) => {
+const AuthProvider = ({ children, onRouteChange }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [token, setToken] = useState(localStorage.getItem('token'));
@@ -49,6 +55,12 @@ const AuthProvider = ({ children }) => {
         setToken(token);
         setUser(user);
         axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+        
+        // Navigate to dashboard
+        if (onRouteChange) {
+          onRouteChange(ROUTES.DASHBOARD);
+        }
+        
         return { success: true };
       } else {
         return { success: false, message: 'Admin access required' };
@@ -66,6 +78,11 @@ const AuthProvider = ({ children }) => {
     setToken(null);
     setUser(null);
     delete axios.defaults.headers.common['Authorization'];
+    
+    // Navigate to login
+    if (onRouteChange) {
+      onRouteChange(ROUTES.LOGIN);
+    }
   };
 
   return (
@@ -76,12 +93,11 @@ const AuthProvider = ({ children }) => {
 };
 
 // Login Component
-const Login = () => {
+const Login = ({ onNavigate }) => {
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
-  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -89,9 +105,7 @@ const Login = () => {
     setError('');
 
     const result = await login(formData.email, formData.password);
-    if (result.success) {
-      navigate('/dashboard');
-    } else {
+    if (!result.success) {
       setError(result.message);
     }
     setLoading(false);
@@ -156,9 +170,13 @@ const Login = () => {
           </button>
           
           <div className="text-center">
-            <Link to="/register" className="text-indigo-600 hover:text-indigo-500">
+            <a 
+              href="#" 
+              onClick={(e) => { e.preventDefault(); onNavigate(ROUTES.REGISTER); }}
+              className="text-indigo-600 hover:text-indigo-500"
+            >
               Need to create an admin account? Register here
-            </Link>
+            </a>
           </div>
         </form>
       </div>
@@ -1450,23 +1468,8 @@ const Dashboard = () => {
   );
 };
 
-// Protected Route Component
-const ProtectedRoute = ({ children }) => {
-  const { user, loading } = useAuth();
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <i className="fas fa-spinner fa-spin text-3xl text-indigo-600"></i>
-      </div>
-    );
-  }
-
-  return user ? children : <Navigate to="/login" />;
-};
-
 // Admin Registration Component
-const Register = () => {
+const Register = ({ onNavigate }) => {
   const [formData, setFormData] = useState({ 
     email: '', 
     password: '', 
@@ -1477,7 +1480,6 @@ const Register = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -1502,7 +1504,7 @@ const Register = () => {
 
       if (response.data.success) {
         setSuccess('Admin account created successfully! Please login.');
-        setTimeout(() => navigate('/login'), 2000);
+        setTimeout(() => onNavigate(ROUTES.LOGIN), 2000);
       } else {
         setError(response.data.message || 'Registration failed');
       }
@@ -1623,9 +1625,13 @@ const Register = () => {
           </button>
           
           <div className="text-center">
-            <Link to="/login" className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-500">
+            <a 
+              href="#" 
+              onClick={(e) => { e.preventDefault(); onNavigate(ROUTES.LOGIN); }}
+              className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-500"
+            >
               Already have an account? Sign in
-            </Link>
+            </a>
           </div>
         </form>
       </div>
@@ -1635,22 +1641,107 @@ const Register = () => {
 
 // Main App Component
 const App = () => {
+  const [currentRoute, setCurrentRoute] = useState(ROUTES.LOGIN);
+  const { user, loading } = useAuth();
+
+  // Redirect to dashboard if already logged in
+  useEffect(() => {
+    if (user && currentRoute === ROUTES.LOGIN) {
+      setCurrentRoute(ROUTES.DASHBOARD);
+    }
+  }, [user]);
+
+  const handleNavigate = (route) => {
+    setCurrentRoute(route);
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <i className="fas fa-spinner fa-spin text-3xl text-indigo-600"></i>
+      </div>
+    );
+  }
+
+  // Render based on current route
+  if (currentRoute === ROUTES.LOGIN) {
+    return user ? <Dashboard /> : <Login onNavigate={handleNavigate} />;
+  }
+
+  if (currentRoute === ROUTES.REGISTER) {
+    return <Register onNavigate={handleNavigate} />;
+  }
+
+  if (currentRoute === ROUTES.DASHBOARD) {
+    return user ? <Dashboard /> : <Login onNavigate={handleNavigate} />;
+  }
+
+  // Default to login
+  return <Login onNavigate={handleNavigate} />;
+};
+
+// Main wrapper with AuthProvider
+const AppWrapper = () => {
   return (
-    <AuthProvider>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/dashboard" element={
-            <ProtectedRoute>
-              <Dashboard />
-            </ProtectedRoute>
-          } />
-          <Route path="/" element={<Navigate to="/dashboard" />} />
-        </Routes>
-      </BrowserRouter>
+    <AuthProvider onRouteChange={(route) => {
+      // This will be called from login/logout to change routes
+      const event = new CustomEvent('navigate', { detail: { route } });
+      window.dispatchEvent(event);
+    }}>
+      <AppWithNavigation />
     </AuthProvider>
   );
+};
+
+const AppWithNavigation = () => {
+  const [currentRoute, setCurrentRoute] = useState(ROUTES.LOGIN);
+  const { user, loading } = useAuth();
+
+  // Listen for navigation events from AuthProvider
+  useEffect(() => {
+    const handleNavigate = (e) => {
+      setCurrentRoute(e.detail.route);
+    };
+    window.addEventListener('navigate', handleNavigate);
+    return () => window.removeEventListener('navigate', handleNavigate);
+  }, []);
+
+  // Redirect to dashboard if already logged in
+  useEffect(() => {
+    if (user && currentRoute === ROUTES.LOGIN) {
+      setCurrentRoute(ROUTES.DASHBOARD);
+    } else if (!user && currentRoute === ROUTES.DASHBOARD) {
+      setCurrentRoute(ROUTES.LOGIN);
+    }
+  }, [user]);
+
+  const handleNavigate = (route) => {
+    setCurrentRoute(route);
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <i className="fas fa-spinner fa-spin text-3xl text-indigo-600"></i>
+      </div>
+    );
+  }
+
+  // Render based on current route
+  if (currentRoute === ROUTES.LOGIN) {
+    return user ? <Dashboard /> : <Login onNavigate={handleNavigate} />;
+  }
+
+  if (currentRoute === ROUTES.REGISTER) {
+    return <Register onNavigate={handleNavigate} />;
+  }
+
+  if (currentRoute === ROUTES.DASHBOARD) {
+    return user ? <Dashboard /> : <Login onNavigate={handleNavigate} />;
+  }
+
+  // Default to login
+  return <Login onNavigate={handleNavigate} />;
 };
 
 // Render the app
@@ -1658,9 +1749,8 @@ try {
   console.log('Loading admin app...');
   console.log('React:', typeof React);
   console.log('ReactDOM:', typeof ReactDOM);
-  console.log('ReactRouterDOM:', typeof ReactRouterDOM);
   
-  ReactDOM.render(React.createElement(App), document.getElementById('admin-root'));
+  ReactDOM.render(React.createElement(AppWrapper), document.getElementById('admin-root'));
   console.log('Admin app loaded successfully');
 } catch (error) {
   console.error('Error loading admin app:', error);

@@ -18,22 +18,19 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
     <!-- React and ReactDOM -->
-    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    
-    <!-- Babel for JSX -->
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     
     <!-- Axios for API calls -->
     <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
     
-    <!-- React Router v6 (all-in-one for browser) -->
-    <script src="https://unpkg.com/react-router-dom@6.21.0/dist/umd/react-router-dom.production.min.js"></script>
+    <!-- Babel for JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </head>
 <body>
     <div id="admin-root"></div>
     
-    <!-- Include the admin app script -->
+    <!-- Include the admin app script (without React Router) -->
     <script type="text/babel" src="/admin/js/app.js"></script>
 </body>
 </html>
