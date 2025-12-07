@@ -3621,7 +3621,9 @@ function createSearchStudentsModal() {
                     </div>
                     
                     <div class="flex flex-wrap gap-2">
-                        <button onclick="applyStudentFilters()" class="px-4 py-2 bg-[#56AE67] text-white rounded-lg hover:bg-[#3d8b4f]">
+                        <button onclick="applyStudentFilters()" 
+                            class="px-4 py-2 text-white rounded-lg hover:bg-[#3d8b4f] transition"
+                            style="background-color: #56AE67; color: white;">
                             <i class="fas fa-search mr-2"></i>Search
                         </button>
                         <button onclick="clearStudentFilters()" class="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600">
