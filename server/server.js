@@ -89,6 +89,7 @@ db.once('open', () => {
 // Routes
 app.use('/api/auth', require('./api/routes/auth'));
 app.use('/api/password-reset', require('./api/routes/passwordReset'));
+app.use('/api/settings', require('./api/routes/settings'));
 app.use('/api/students', require('./api/routes/students'));
 app.use('/api/companies', require('./api/routes/companies'));
 app.use('/api/assessments', require('./api/routes/assessments'));

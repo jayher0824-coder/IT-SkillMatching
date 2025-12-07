@@ -29,6 +29,17 @@ const userSchema = new mongoose.Schema({
     enum: ['light', 'dark'],
     default: 'light',
   },
+  settings: {
+    notifications: {
+      email: { type: Boolean, default: true },
+      jobUpdates: { type: Boolean, default: true },
+      assessments: { type: Boolean, default: true },
+    },
+    privacy: {
+      profileVisible: { type: Boolean, default: true },
+      resumeVisible: { type: Boolean, default: true },
+    },
+  },
   googleId: {
     type: String,
     unique: true,

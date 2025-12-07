@@ -729,6 +729,13 @@ function createSettingsModal() {
     const existing = document.getElementById('settings-modal');
     if (existing) existing.remove();
     
+    // Load current settings
+    apiCall('/settings').then(response => {
+        const settings = response.success ? response.data : {
+            notifications: { email: true, jobUpdates: true, assessments: true },
+            privacy: { profileVisible: true, resumeVisible: true }
+        };
+    
     const modalHTML = `
         <div id="settings-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
             <div class="bg-white dark:bg-gray-800 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
@@ -799,14 +806,16 @@ function createSettingsModal() {
                                     <i class="fas fa-eye mr-3 text-gray-600 dark:text-gray-400"></i>
                                     <span class="text-sm text-gray-700 dark:text-gray-300">Profile Visible to Companies</span>
                                 </div>
-                                <input type="checkbox" checked class="w-4 h-4">
+                                <input type="checkbox" id="profile-visibility" ${settings.privacy.profileVisible ? 'checked' : ''} 
+                                       onchange="updatePrivacySetting('profileVisible', this.checked)" class="w-4 h-4">
                             </label>
                             <label class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition">
                                 <div class="flex items-center">
                                     <i class="fas fa-file-alt mr-3 text-gray-600 dark:text-gray-400"></i>
                                     <span class="text-sm text-gray-700 dark:text-gray-300">Show Resume to Recruiters</span>
                                 </div>
-                                <input type="checkbox" checked class="w-4 h-4">
+                                <input type="checkbox" id="resume-visibility" ${settings.privacy.resumeVisible ? 'checked' : ''} 
+                                       onchange="updatePrivacySetting('resumeVisible', this.checked)" class="w-4 h-4">
                             </label>
                         </div>
                     </div>
@@ -823,14 +832,24 @@ function createSettingsModal() {
                                     <i class="fas fa-envelope mr-3 text-gray-600 dark:text-gray-400"></i>
                                     <span class="text-sm text-gray-700 dark:text-gray-300">Email Notifications</span>
                                 </div>
-                                <input type="checkbox" checked class="w-4 h-4">
+                                <input type="checkbox" id="email-notifications" ${settings.notifications.email ? 'checked' : ''} 
+                                       onchange="updateNotificationSetting('email', this.checked)" class="w-4 h-4">
                             </label>
                             <label class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition">
                                 <div class="flex items-center">
                                     <i class="fas fa-briefcase mr-3 text-gray-600 dark:text-gray-400"></i>
                                     <span class="text-sm text-gray-700 dark:text-gray-300">Job Application Updates</span>
                                 </div>
-                                <input type="checkbox" checked class="w-4 h-4">
+                                <input type="checkbox" id="job-notifications" ${settings.notifications.jobUpdates ? 'checked' : ''} 
+                                       onchange="updateNotificationSetting('jobUpdates', this.checked)" class="w-4 h-4">
+                            </label>
+                            <label class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition">
+                                <div class="flex items-center">
+                                    <i class="fas fa-clipboard-check mr-3 text-gray-600 dark:text-gray-400"></i>
+                                    <span class="text-sm text-gray-700 dark:text-gray-300">Assessment Reminders</span>
+                                </div>
+                                <input type="checkbox" id="assessment-notifications" ${settings.notifications.assessments ? 'checked' : ''} 
+                                       onchange="updateNotificationSetting('assessments', this.checked)" class="w-4 h-4">
                             </label>
                         </div>
                     </div>
@@ -857,6 +876,10 @@ function createSettingsModal() {
     `;
     
     document.body.insertAdjacentHTML('beforeend', modalHTML);
+    }).catch(err => {
+        console.error('Error loading settings:', err);
+        showToast('Failed to load settings', 'error');
+    });
 }
 
 function showChangePasswordForm() {
@@ -944,26 +967,61 @@ async function handleChangePassword(event) {
     }
     
     try {
-        // For now, show a message that this feature is coming soon
-        // You'll need to implement the backend route for this
-        showToast('Password change feature coming soon', 'info');
-        closeChangePasswordModal();
-        
-        /* Uncomment when backend is ready:
-        const response = await apiCall('/auth/change-password', {
+        const response = await apiCall('/settings/change-password', {
             method: 'POST',
             body: JSON.stringify({ currentPassword, newPassword })
         });
         
         if (response.success) {
-            showToast('Password changed successfully', 'success');
+            showToast('Password changed successfully!', 'success');
             closeChangePasswordModal();
         } else {
             showToast(response.message || 'Failed to change password', 'error');
         }
-        */
     } catch (error) {
         showToast(error.message || 'Failed to change password', 'error');
+    }
+}
+
+async function updateNotificationSetting(setting, value) {
+    try {
+        const body = {};
+        body[setting] = value;
+        
+        const response = await apiCall('/settings/notifications', {
+            method: 'PUT',
+            body: JSON.stringify(body)
+        });
+        
+        if (response.success) {
+            showToast('Notification preference updated', 'success');
+        } else {
+            showToast('Failed to update preference', 'error');
+        }
+    } catch (error) {
+        console.error('Error updating notification:', error);
+        showToast('Failed to update preference', 'error');
+    }
+}
+
+async function updatePrivacySetting(setting, value) {
+    try {
+        const body = {};
+        body[setting] = value;
+        
+        const response = await apiCall('/settings/privacy', {
+            method: 'PUT',
+            body: JSON.stringify(body)
+        });
+        
+        if (response.success) {
+            showToast('Privacy setting updated', 'success');
+        } else {
+            showToast('Failed to update setting', 'error');
+        }
+    } catch (error) {
+        console.error('Error updating privacy:', error);
+        showToast('Failed to update setting', 'error');
     }
 }
 
