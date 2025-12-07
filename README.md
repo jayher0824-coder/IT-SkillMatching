@@ -1,4 +1,4 @@
-# 🎓 IT OJT Platform
+# 🎓 IT Skillmatching Platform
 
 *A comprehensive skill-based matching platform for IT On-the-Job Training programs*
 
