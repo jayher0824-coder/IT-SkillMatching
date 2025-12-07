@@ -702,6 +702,14 @@ const UserManagement = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState({ role: 'all', isActive: '' });
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [passwordResetModal, setPasswordResetModal] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+  const [passwordSuccess, setPasswordSuccess] = useState('');
+  const [viewUserModal, setViewUserModal] = useState(false);
+  const [userDetails, setUserDetails] = useState(null);
 
   useEffect(() => {
     fetchUsers();
@@ -724,6 +732,53 @@ const UserManagement = () => {
       fetchUsers();
     } catch (error) {
       console.error('Error updating user status:', error);
+    }
+  };
+
+  const openPasswordResetModal = (user) => {
+    setSelectedUser(user);
+    setPasswordResetModal(true);
+    setNewPassword('');
+    setConfirmPassword('');
+    setPasswordError('');
+    setPasswordSuccess('');
+  };
+
+  const handlePasswordReset = async () => {
+    setPasswordError('');
+    setPasswordSuccess('');
+
+    if (!newPassword || newPassword.length < 6) {
+      setPasswordError('Password must be at least 6 characters long');
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      setPasswordError('Passwords do not match');
+      return;
+    }
+
+    try {
+      await axios.put(`${API_BASE}/admin/users/${selectedUser._id}/reset-password`, {
+        newPassword: newPassword
+      });
+      setPasswordSuccess('Password reset successfully!');
+      setTimeout(() => {
+        setPasswordResetModal(false);
+        setSelectedUser(null);
+      }, 2000);
+    } catch (error) {
+      setPasswordError(error.response?.data?.message || 'Failed to reset password');
+    }
+  };
+
+  const viewUserDetails = async (user) => {
+    try {
+      const response = await axios.get(`${API_BASE}/admin/users/${user._id}`);
+      setUserDetails(response.data.data);
+      setViewUserModal(true);
+    } catch (error) {
+      console.error('Error fetching user details:', error);
     }
   };
 
@@ -774,7 +829,7 @@ const UserManagement = () => {
                   Created
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Action
+                  Actions
                 </th>
               </tr>
             </thead>
@@ -806,19 +861,491 @@ const UserManagement = () => {
                     {new Date(user.createdAt).toLocaleDateString()}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <button
-                      onClick={() => toggleUserStatus(user._id, user.isActive)}
-                      className={`text-sm font-medium ${
-                        user.isActive ? 'text-red-600 hover:text-red-900' : 'text-green-600 hover:text-green-900'
-                      }`}
-                    >
-                      {user.isActive ? 'Deactivate' : 'Activate'}
-                    </button>
+                    <div className="flex space-x-3">
+                      <button
+                        onClick={() => viewUserDetails(user)}
+                        className="text-indigo-600 hover:text-indigo-900"
+                        title="View Details"
+                      >
+                        <i className="fas fa-eye"></i>
+                      </button>
+                      <button
+                        onClick={() => openPasswordResetModal(user)}
+                        className="text-blue-600 hover:text-blue-900"
+                        title="Reset Password"
+                      >
+                        <i className="fas fa-key"></i>
+                      </button>
+                      <button
+                        onClick={() => toggleUserStatus(user._id, user.isActive)}
+                        className={`${
+                          user.isActive ? 'text-red-600 hover:text-red-900' : 'text-green-600 hover:text-green-900'
+                        }`}
+                        title={user.isActive ? 'Deactivate' : 'Activate'}
+                      >
+                        <i className={`fas fa-${user.isActive ? 'user-slash' : 'user-check'}`}></i>
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {/* Password Reset Modal */}
+      {passwordResetModal && selectedUser && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 className="text-lg font-medium mb-4">Reset Password</h3>
+            <div className="mb-4">
+              <p className="text-sm text-gray-600">
+                <strong>User:</strong> {selectedUser.email}
+              </p>
+              <p className="text-sm text-gray-600">
+                <strong>Role:</strong> {selectedUser.role}
+              </p>
+            </div>
+
+            {passwordError && (
+              <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+                {passwordError}
+              </div>
+            )}
+
+            {passwordSuccess && (
+              <div className="mb-4 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded">
+                {passwordSuccess}
+              </div>
+            )}
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700">New Password</label>
+                <input
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                  placeholder="Enter new password"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Confirm Password</label>
+                <input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                  placeholder="Confirm new password"
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end space-x-3 mt-6">
+              <button
+                onClick={() => {
+                  setPasswordResetModal(false);
+                  setSelectedUser(null);
+                }}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handlePasswordReset}
+                disabled={!newPassword || !confirmPassword}
+                className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 disabled:opacity-50"
+              >
+                Reset Password
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* View User Details Modal */}
+      {viewUserModal && userDetails && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto">
+            <h3 className="text-lg font-medium mb-4">User Details</h3>
+            
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm font-medium text-gray-500">Email</p>
+                  <p className="text-sm text-gray-900">{userDetails.email}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-500">Role</p>
+                  <p className="text-sm text-gray-900">{userDetails.role}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-500">Status</p>
+                  <p className="text-sm text-gray-900">{userDetails.isActive ? 'Active' : 'Inactive'}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-500">Created</p>
+                  <p className="text-sm text-gray-900">{new Date(userDetails.createdAt).toLocaleDateString()}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-500">Authentication</p>
+                  <p className="text-sm text-gray-900">
+                    {userDetails.isGoogleAuth ? 'Google OAuth' : 'Password'}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-500">Password Set</p>
+                  <p className="text-sm text-gray-900">
+                    {userDetails.hasPassword ? 'Yes' : 'No'}
+                  </p>
+                </div>
+              </div>
+
+              {userDetails.studentInfo && (
+                <div className="border-t pt-4">
+                  <h4 className="font-medium mb-2">Student Information</h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm font-medium text-gray-500">Name</p>
+                      <p className="text-sm text-gray-900">
+                        {userDetails.studentInfo.firstName} {userDetails.studentInfo.lastName}
+                      </p>
+                    </div>
+                    {userDetails.studentInfo.phone && (
+                      <div>
+                        <p className="text-sm font-medium text-gray-500">Phone</p>
+                        <p className="text-sm text-gray-900">{userDetails.studentInfo.phone}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {userDetails.companyInfo && (
+                <div className="border-t pt-4">
+                  <h4 className="font-medium mb-2">Company Information</h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm font-medium text-gray-500">Company Name</p>
+                      <p className="text-sm text-gray-900">{userDetails.companyInfo.companyName}</p>
+                    </div>
+                    {userDetails.companyInfo.contactPerson && (
+                      <div>
+                        <p className="text-sm font-medium text-gray-500">Contact Person</p>
+                        <p className="text-sm text-gray-900">{userDetails.companyInfo.contactPerson}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-end mt-6">
+              <button
+                onClick={() => {
+                  setViewUserModal(false);
+                  setUserDetails(null);
+                }}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Password Change Requests Component
+const PasswordChangeRequests = () => {
+  const [requests, setRequests] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [filters, setFilters] = useState({ status: 'pending' });
+  const [selectedRequest, setSelectedRequest] = useState(null);
+  const [reviewData, setReviewData] = useState({ status: '', adminNotes: '' });
+  const [showResetModal, setShowResetModal] = useState(false);
+  const [resetUserId, setResetUserId] = useState(null);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+
+  useEffect(() => {
+    fetchRequests();
+  }, [filters]);
+
+  const fetchRequests = async () => {
+    try {
+      const response = await axios.get(`${API_BASE}/admin/password-change-requests`, { params: filters });
+      setRequests(response.data.data);
+    } catch (error) {
+      console.error('Error fetching password change requests:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleReview = async (userId, requestId) => {
+    try {
+      await axios.put(`${API_BASE}/admin/password-change-requests/${userId}/${requestId}`, reviewData);
+      setSelectedRequest(null);
+      setReviewData({ status: '', adminNotes: '' });
+      fetchRequests();
+    } catch (error) {
+      console.error('Error reviewing request:', error);
+    }
+  };
+
+  const openResetModal = (userId) => {
+    setResetUserId(userId);
+    setShowResetModal(true);
+    setNewPassword('');
+    setConfirmPassword('');
+    setPasswordError('');
+  };
+
+  const handlePasswordReset = async () => {
+    setPasswordError('');
+
+    if (!newPassword || newPassword.length < 6) {
+      setPasswordError('Password must be at least 6 characters long');
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      setPasswordError('Passwords do not match');
+      return;
+    }
+
+    try {
+      await axios.put(`${API_BASE}/admin/users/${resetUserId}/reset-password`, {
+        newPassword: newPassword
+      });
+      setShowResetModal(false);
+      alert('Password reset successfully!');
+    } catch (error) {
+      setPasswordError(error.response?.data?.message || 'Failed to reset password');
+    }
+  };
+
+  return (
+    <div>
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-2xl font-bold text-gray-900">Password Change Requests</h2>
+        <select 
+          value={filters.status} 
+          onChange={(e) => setFilters({...filters, status: e.target.value})}
+          className="px-3 py-2 border border-gray-300 rounded-md"
+        >
+          <option value="pending">Pending</option>
+          <option value="approved">Approved</option>
+          <option value="rejected">Rejected</option>
+          <option value="all">All</option>
+        </select>
+      </div>
+
+      {loading ? (
+        <div className="flex justify-center p-8"><i className="fas fa-spinner fa-spin text-2xl"></i></div>
+      ) : requests.length === 0 ? (
+        <div className="bg-white shadow rounded-lg p-8 text-center text-gray-500">
+          No password change requests found
+        </div>
+      ) : (
+        <div className="bg-white shadow rounded-lg overflow-hidden">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  User
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Reason
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Request Date
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Status
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {requests.map((request) => (
+                <tr key={request.requestId}>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div>
+                      <div className="text-sm font-medium text-gray-900">
+                        {request.email}
+                      </div>
+                      <div className="text-sm text-gray-500">
+                        {request.role}
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="text-sm text-gray-900 max-w-xs truncate">
+                      {request.reason || 'No reason provided'}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {new Date(request.requestDate).toLocaleDateString()}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                      request.status === 'approved' ? 'bg-green-100 text-green-800' :
+                      request.status === 'rejected' ? 'bg-red-100 text-red-800' :
+                      'bg-yellow-100 text-yellow-800'
+                    }`}>
+                      {request.status}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    {request.status === 'pending' && (
+                      <div className="flex space-x-2">
+                        <button
+                          onClick={() => setSelectedRequest(request)}
+                          className="text-indigo-600 hover:text-indigo-900"
+                        >
+                          Review
+                        </button>
+                        <button
+                          onClick={() => openResetModal(request._id)}
+                          className="text-green-600 hover:text-green-900"
+                        >
+                          Reset Password
+                        </button>
+                      </div>
+                    )}
+                    {request.status === 'approved' && (
+                      <button
+                        onClick={() => openResetModal(request._id)}
+                        className="text-blue-600 hover:text-blue-900"
+                      >
+                        Reset Password
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Review Modal */}
+      {selectedRequest && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 className="text-lg font-medium mb-4">Review Password Change Request</h3>
+            <div className="mb-4">
+              <p><strong>User:</strong> {selectedRequest.email}</p>
+              <p><strong>Reason:</strong> {selectedRequest.reason || 'No reason provided'}</p>
+            </div>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Decision</label>
+                <select
+                  value={reviewData.status}
+                  onChange={(e) => setReviewData({...reviewData, status: e.target.value})}
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
+                >
+                  <option value="">Select decision</option>
+                  <option value="approved">Approve</option>
+                  <option value="rejected">Reject</option>
+                </select>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Admin Notes</label>
+                <textarea
+                  value={reviewData.adminNotes}
+                  onChange={(e) => setReviewData({...reviewData, adminNotes: e.target.value})}
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
+                  rows="3"
+                  placeholder="Optional notes for the user..."
+                />
+              </div>
+            </div>
+            
+            <div className="flex justify-end space-x-3 mt-6">
+              <button
+                onClick={() => setSelectedRequest(null)}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => handleReview(selectedRequest._id, selectedRequest.requestId)}
+                disabled={!reviewData.status}
+                className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 disabled:opacity-50"
+              >
+                Submit Review
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Password Reset Modal */}
+      {showResetModal && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 className="text-lg font-medium mb-4">Reset User Password</h3>
+
+            {passwordError && (
+              <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+                {passwordError}
+              </div>
+            )}
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700">New Password</label>
+                <input
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
+                  placeholder="Enter new password"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Confirm Password</label>
+                <input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
+                  placeholder="Confirm new password"
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end space-x-3 mt-6">
+              <button
+                onClick={() => setShowResetModal(false)}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handlePasswordReset}
+                disabled={!newPassword || !confirmPassword}
+                className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 disabled:opacity-50"
+              >
+                Reset Password
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
@@ -834,6 +1361,7 @@ const Sidebar = ({ activeTab, setActiveTab }) => {
     { id: 'retakes', label: 'Retake Requests', icon: 'fas fa-redo' },
     { id: 'feedback', label: 'Feedback', icon: 'fas fa-comment' },
     { id: 'users', label: 'Users', icon: 'fas fa-users' },
+    { id: 'password-requests', label: 'Password Requests', icon: 'fas fa-lock' },
     { id: 'jobs', label: 'Job Management', icon: 'fas fa-briefcase' },
   ];
 
@@ -886,6 +1414,8 @@ const Dashboard = () => {
         return <FeedbackManagement />;
       case 'users':
         return <UserManagement />;
+      case 'password-requests':
+        return <PasswordChangeRequests />;
       case 'jobs':
         return <JobManagement />;
       default:

@@ -1,4 +1,4 @@
-const express = require('express');
+ const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
 const { protect } = require('../../auth/middleware/auth');
@@ -194,6 +194,76 @@ router.put('/theme', protect, async (req, res) => {
     });
   } catch (error) {
     console.error('Error updating theme:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error',
+    });
+  }
+});
+
+// @desc    Request password change from admin
+// @route   POST /api/settings/request-password-change
+// @access  Private
+router.post('/request-password-change', protect, async (req, res) => {
+  try {
+    const { reason } = req.body;
+
+    const user = await User.findById(req.user._id);
+
+    // Check if there's already a pending request
+    const hasPendingRequest = user.passwordChangeRequests?.some(
+      request => request.status === 'pending'
+    );
+
+    if (hasPendingRequest) {
+      return res.status(400).json({
+        success: false,
+        message: 'You already have a pending password change request',
+      });
+    }
+
+    // Add new password change request
+    if (!user.passwordChangeRequests) {
+      user.passwordChangeRequests = [];
+    }
+
+    user.passwordChangeRequests.push({
+      reason: reason || 'User requested password reset',
+      status: 'pending',
+      requestDate: new Date(),
+    });
+
+    await user.save();
+
+    res.json({
+      success: true,
+      message: 'Password change request submitted successfully. An admin will review it shortly.',
+      data: user.passwordChangeRequests[user.passwordChangeRequests.length - 1],
+    });
+  } catch (error) {
+    console.error('Error requesting password change:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error',
+    });
+  }
+});
+
+// @desc    Get user's password change requests
+// @route   GET /api/settings/password-change-requests
+// @access  Private
+router.get('/password-change-requests', protect, async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id)
+      .select('passwordChangeRequests')
+      .populate('passwordChangeRequests.reviewedBy', 'email');
+
+    res.json({
+      success: true,
+      data: user.passwordChangeRequests || [],
+    });
+  } catch (error) {
+    console.error('Error fetching password change requests:', error);
     res.status(500).json({
       success: false,
       message: 'Server error',

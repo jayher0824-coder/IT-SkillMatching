@@ -51,6 +51,30 @@ const userSchema = new mongoose.Schema({
   resetPasswordExpires: {
     type: Date,
   },
+  passwordChangeRequests: [{
+    requestDate: {
+      type: Date,
+      default: Date.now,
+    },
+    reason: {
+      type: String,
+    },
+    status: {
+      type: String,
+      enum: ['pending', 'approved', 'rejected'],
+      default: 'pending',
+    },
+    reviewedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+    },
+    reviewedAt: {
+      type: Date,
+    },
+    adminNotes: {
+      type: String,
+    },
+  }],
   createdAt: {
     type: Date,
     default: Date.now,

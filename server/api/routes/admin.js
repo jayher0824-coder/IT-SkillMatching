@@ -489,4 +489,205 @@ router.put('/jobs/:id/status', protect, authorize('admin'), async (req, res) => 
   }
 });
 
+// @desc    Reset user password by admin
+// @route   PUT /api/admin/users/:id/reset-password
+// @access  Private (Admin only)
+router.put('/users/:id/reset-password', protect, authorize('admin'), async (req, res) => {
+  try {
+    const { newPassword } = req.body;
+    
+    if (!newPassword || newPassword.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: 'Password must be at least 6 characters long',
+      });
+    }
+
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found',
+      });
+    }
+
+    // Prevent admin from changing their own password this way
+    if (user._id.toString() === req.user._id.toString()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot reset your own password. Use the change password feature instead.',
+      });
+    }
+
+    // Update password (will be hashed by pre-save hook)
+    user.password = newPassword;
+    await user.save();
+
+    res.json({
+      success: true,
+      message: 'Password reset successfully',
+      data: {
+        userId: user._id,
+        email: user.email,
+      },
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error',
+    });
+  }
+});
+
+// @desc    Get user details including account info
+// @route   GET /api/admin/users/:id
+// @access  Private (Admin only)
+router.get('/users/:id', protect, authorize('admin'), async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id).select('-password');
+    
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found',
+      });
+    }
+
+    // Get additional user details based on role
+    let additionalInfo = {};
+    if (user.role === 'student') {
+      const student = await Student.findOne({ user: user._id });
+      additionalInfo = student ? { studentInfo: student } : {};
+    } else if (user.role === 'company') {
+      const company = await Company.findOne({ user: user._id });
+      additionalInfo = company ? { companyInfo: company } : {};
+    }
+
+    res.json({
+      success: true,
+      data: {
+        ...user.toObject(),
+        ...additionalInfo,
+        hasPassword: !!user.password,
+        isGoogleAuth: !!user.googleId,
+      },
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error',
+    });
+  }
+});
+
+// @desc    Get all password change requests
+// @route   GET /api/admin/password-change-requests
+// @access  Private (Admin only)
+router.get('/password-change-requests', protect, authorize('admin'), async (req, res) => {
+  try {
+    const { status = 'pending', page = 1, limit = 20 } = req.query;
+    
+    const matchQuery = status !== 'all' ? { 'passwordChangeRequests.status': status } : {};
+    matchQuery.passwordChangeRequests = { $exists: true, $ne: [] };
+
+    const users = await User.aggregate([
+      { $unwind: '$passwordChangeRequests' },
+      { $match: status !== 'all' ? { 'passwordChangeRequests.status': status } : {} },
+      {
+        $project: {
+          email: 1,
+          role: 1,
+          requestId: '$passwordChangeRequests._id',
+          reason: '$passwordChangeRequests.reason',
+          status: '$passwordChangeRequests.status',
+          requestDate: '$passwordChangeRequests.requestDate',
+          reviewedBy: '$passwordChangeRequests.reviewedBy',
+          reviewedAt: '$passwordChangeRequests.reviewedAt',
+          adminNotes: '$passwordChangeRequests.adminNotes',
+        }
+      },
+      { $sort: { requestDate: -1 } },
+      { $skip: (parseInt(page) - 1) * parseInt(limit) },
+      { $limit: parseInt(limit) }
+    ]);
+
+    const totalCount = await User.aggregate([
+      { $unwind: '$passwordChangeRequests' },
+      { $match: status !== 'all' ? { 'passwordChangeRequests.status': status } : {} },
+      { $count: 'total' }
+    ]);
+
+    res.json({
+      success: true,
+      count: users.length,
+      total: totalCount[0]?.total || 0,
+      data: users,
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        totalPages: Math.ceil((totalCount[0]?.total || 0) / parseInt(limit)),
+      }
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error',
+    });
+  }
+});
+
+// @desc    Review password change request
+// @route   PUT /api/admin/password-change-requests/:userId/:requestId
+// @access  Private (Admin only)
+router.put('/password-change-requests/:userId/:requestId', protect, authorize('admin'), async (req, res) => {
+  try {
+    const { status, adminNotes } = req.body;
+    
+    if (!['approved', 'rejected'].includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid status. Must be approved or rejected',
+      });
+    }
+
+    const user = await User.findById(req.params.userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found',
+      });
+    }
+
+    const request = user.passwordChangeRequests.id(req.params.requestId);
+    if (!request) {
+      return res.status(404).json({
+        success: false,
+        message: 'Password change request not found',
+      });
+    }
+
+    request.status = status;
+    request.reviewedBy = req.user._id;
+    request.reviewedAt = new Date();
+    request.adminNotes = adminNotes;
+
+    await user.save();
+
+    res.json({
+      success: true,
+      message: `Password change request ${status}`,
+      data: request,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error',
+    });
+  }
+});
+
 module.exports = router;
