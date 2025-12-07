@@ -748,7 +748,29 @@ function createSettingsModal() {
                     </button>
                 </div>
                 
-                <div class="p-6 overflow-y-auto flex-1" style="scrollbar-width: thin; scrollbar-color: #56AE67 #e5e7eb;">
+                <div class="p-6 overflow-y-auto flex-1" style="overflow-y: scroll !important; max-height: calc(90vh - 88px);">
+                    <style>
+                        #settings-modal .overflow-y-auto::-webkit-scrollbar {
+                            width: 12px;
+                        }
+                        #settings-modal .overflow-y-auto::-webkit-scrollbar-track {
+                            background: #f1f1f1;
+                            border-radius: 6px;
+                        }
+                        #settings-modal .overflow-y-auto::-webkit-scrollbar-thumb {
+                            background: #56AE67;
+                            border-radius: 6px;
+                        }
+                        #settings-modal .overflow-y-auto::-webkit-scrollbar-thumb:hover {
+                            background: #3d8b4f;
+                        }
+                        .dark #settings-modal .overflow-y-auto::-webkit-scrollbar-track {
+                            background: #374151;
+                        }
+                        .dark #settings-modal .overflow-y-auto::-webkit-scrollbar-thumb {
+                            background: #6bc481;
+                        }
+                    </style>
                     <!-- Change Password -->
                     <div class="mb-6 pb-6 border-b border-gray-200 dark:border-gray-700">
                         <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-3">
@@ -902,25 +924,43 @@ function showChangePasswordForm() {
                 <form id="change-password-form" onsubmit="handleChangePassword(event)">
                     <div class="mb-4">
                         <label class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">Current Password</label>
-                        <input type="password" id="current-password" required 
-                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg 
-                                   focus:outline-none focus:border-blue-500 dark:bg-gray-700 dark:text-white" 
-                            placeholder="Enter current password">
+                        <div class="relative">
+                            <input type="password" id="current-password" required 
+                                class="w-full px-3 py-2 pr-10 border border-gray-300 dark:border-gray-600 rounded-lg 
+                                       focus:outline-none focus:border-blue-500 dark:bg-gray-700 dark:text-white" 
+                                placeholder="Enter current password">
+                            <button type="button" onclick="togglePasswordVisibility('current-password', 'current-eye')" 
+                                class="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                                <i id="current-eye" class="fas fa-eye"></i>
+                            </button>
+                        </div>
                     </div>
                     <div class="mb-4">
                         <label class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">New Password</label>
-                        <input type="password" id="new-password" required minlength="8"
-                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg 
-                                   focus:outline-none focus:border-blue-500 dark:bg-gray-700 dark:text-white" 
-                            placeholder="Enter new password">
+                        <div class="relative">
+                            <input type="password" id="new-password" required minlength="8"
+                                class="w-full px-3 py-2 pr-10 border border-gray-300 dark:border-gray-600 rounded-lg 
+                                       focus:outline-none focus:border-blue-500 dark:bg-gray-700 dark:text-white" 
+                                placeholder="Enter new password">
+                            <button type="button" onclick="togglePasswordVisibility('new-password', 'new-eye')" 
+                                class="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                                <i id="new-eye" class="fas fa-eye"></i>
+                            </button>
+                        </div>
                         <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Minimum 8 characters</p>
                     </div>
                     <div class="mb-4">
                         <label class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">Confirm New Password</label>
-                        <input type="password" id="confirm-password" required 
-                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg 
-                                   focus:outline-none focus:border-blue-500 dark:bg-gray-700 dark:text-white" 
-                            placeholder="Confirm new password">
+                        <div class="relative">
+                            <input type="password" id="confirm-password" required 
+                                class="w-full px-3 py-2 pr-10 border border-gray-300 dark:border-gray-600 rounded-lg 
+                                       focus:outline-none focus:border-blue-500 dark:bg-gray-700 dark:text-white" 
+                                placeholder="Confirm new password">
+                            <button type="button" onclick="togglePasswordVisibility('confirm-password', 'confirm-eye')" 
+                                class="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                                <i id="confirm-eye" class="fas fa-eye"></i>
+                            </button>
+                        </div>
                     </div>
                     
                     <div class="flex justify-end space-x-3 mt-6">
@@ -942,6 +982,21 @@ function showChangePasswordForm() {
     `;
     
     document.body.insertAdjacentHTML('beforeend', modalHTML);
+}
+
+function togglePasswordVisibility(inputId, eyeIconId) {
+    const input = document.getElementById(inputId);
+    const eyeIcon = document.getElementById(eyeIconId);
+    
+    if (input.type === 'password') {
+        input.type = 'text';
+        eyeIcon.classList.remove('fa-eye');
+        eyeIcon.classList.add('fa-eye-slash');
+    } else {
+        input.type = 'password';
+        eyeIcon.classList.remove('fa-eye-slash');
+        eyeIcon.classList.add('fa-eye');
+    }
 }
 
 function closeChangePasswordModal() {
