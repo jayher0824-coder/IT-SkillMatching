@@ -12,12 +12,60 @@ const router = express.Router();
 router.get('/', protect, async (req, res) => {
   try {
     const { category } = req.query;
-    const filter = { isActive: true };
+    
+    // If category is requested, return a filtered version of the general assessment
     if (category) {
-      filter.category = category;
+      const generalAssessment = await Assessment.findOne({ isActive: true, category: 'general' })
+        .sort({ createdAt: -1 });
+      
+      if (!generalAssessment) {
+        return res.json({
+          success: true,
+          count: 0,
+          data: [],
+        });
+      }
+      
+      // Filter questions by category and create a category-specific assessment
+      const categoryQuestions = generalAssessment.questions.filter(q => q.category === category);
+      
+      if (categoryQuestions.length === 0) {
+        return res.json({
+          success: true,
+          count: 0,
+          data: [],
+        });
+      }
+      
+      // Create a category-specific assessment object
+      const categoryAssessment = {
+        _id: generalAssessment._id,
+        title: `${category.charAt(0).toUpperCase() + category.slice(1)} Assessment`,
+        description: `Assessment for ${category} skills`,
+        questions: categoryQuestions.map(q => {
+          const qObj = q.toObject();
+          delete qObj.correctAnswer; // Remove correct answers from client response
+          return qObj;
+        }),
+        timeLimit: generalAssessment.timeLimit,
+        passingScore: generalAssessment.passingScore,
+        totalPoints: categoryQuestions.reduce((sum, q) => sum + q.points, 0),
+        category: category,
+        isActive: generalAssessment.isActive,
+        createdAt: generalAssessment.createdAt
+      };
+      
+      return res.json({
+        success: true,
+        count: 1,
+        data: [categoryAssessment],
+      });
     }
-
-    const assessment = await Assessment.findOne(filter).sort({ createdAt: -1 }).select('-questions.correctAnswer');
+    
+    // If no category, return the general assessment with all questions
+    const assessment = await Assessment.findOne({ isActive: true })
+      .sort({ createdAt: -1 })
+      .select('-questions.correctAnswer');
     
     res.json({
       success: true,

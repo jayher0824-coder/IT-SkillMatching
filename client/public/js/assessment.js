@@ -141,8 +141,12 @@ async function startAssessment(category = null) {
     }
     try {
         // Get available assessments
-        console.log('Fetching assessments from API...');
-        const response = await apiCall('/assessments');
+        console.log('Fetching assessments from API...', category ? `for category: ${category}` : 'all categories');
+        
+        // Build API URL with category parameter if specified
+        const apiUrl = category ? `/assessments?category=${category}` : '/assessments';
+        const response = await apiCall(apiUrl);
+        
         console.log('Full API response:', JSON.stringify(response, null, 2));
         console.log('Response type:', typeof response);
         console.log('Response keys:', Object.keys(response || {}));
@@ -168,19 +172,14 @@ async function startAssessment(category = null) {
 
         if (!Array.isArray(assessments) || assessments.length === 0) {
             console.error('No assessments available. Full response:', response);
-            showToast('No assessments available. Please contact support.', 'error');
+            showToast('No assessments available for this category.', 'error');
             return;
         }
 
-        // Choose assessment. If a category is requested, prefer an assessment whose
-        // `category` field matches; otherwise fall back to the first assessment.
-        let chosenAssessment = null;
-        if (category) {
-            chosenAssessment = assessments.find(a => a.category === category) || assessments[0];
-            console.log('startAssessment: chosen assessment by category:', chosenAssessment?.category, chosenAssessment?.title);
-        } else {
-            chosenAssessment = assessments[0];
-        }
+        // The API now returns the properly filtered assessment
+        // So we can just use the first (and only) assessment in the response
+        const chosenAssessment = assessments[0];
+        console.log('startAssessment: loaded assessment:', chosenAssessment?.category, chosenAssessment?.title);
         window.assessmentState.currentAssessment = chosenAssessment;
 
         // Helper: shuffle array in-place
@@ -192,48 +191,10 @@ async function startAssessment(category = null) {
             return arr;
         }
 
-        let selected = [];
-
-        if (category) {
-            // If a specific category is selected, show only that category's questions
-            const catQs = window.assessmentState.currentAssessment.questions.filter(q => q.category === category);
-            shuffle(catQs);
-            selected = catQs.slice(0, 10); // Take 10 questions from the category
-            
-            // Update assessment title to reflect the category
-            const categoryNames = {
-                'programming': 'Programming',
-                'database': 'Database',
-                'webDevelopment': 'Web Development',
-                'networking': 'Networking',
-                'problemSolving': 'Problem Solving'
-            };
-            window.assessmentState.currentAssessment.title = `${categoryNames[category] || category} Assessment`;
-        } else {
-            // Build a 50-question set with 10 per category for 5 categories
-            const categories = ['programming', 'database', 'webDevelopment', 'networking', 'problemSolving'];
-            const perCategory = 10;
-            const remaining = [];
-
-            // Group and pick per category
-            categories.forEach(cat => {
-                const catQs = window.assessmentState.currentAssessment.questions.filter(q => q.category === cat);
-                shuffle(catQs);
-                const picked = catQs.slice(0, perCategory);
-                selected.push(...picked);
-                if (catQs.length > perCategory) remaining.push(...catQs.slice(perCategory));
-            });
-
-            // If we didn't reach 50 (in case of low supply), fill from remaining
-            if (selected.length < categories.length * perCategory) {
-                const allOthers = window.assessmentState.currentAssessment.questions.filter(q => !selected.find(s => s._id === q._id));
-                shuffle(allOthers);
-                selected.push(...allOthers.slice(0, categories.length * perCategory - selected.length));
-            }
-
-            // Final shuffle to mix categories
-            shuffle(selected);
-        }
+        // The API already filtered by category, so we just shuffle and limit to 10 questions
+        let selected = [...window.assessmentState.currentAssessment.questions];
+        shuffle(selected);
+        selected = selected.slice(0, 10); // Limit to 10 questions for the assessment
 
         window.assessmentState.currentAssessment.questions = selected;
 
