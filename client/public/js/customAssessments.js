@@ -93,6 +93,10 @@ function openCreateAssessmentModal(jobId) {
     `;
 
     document.body.insertAdjacentHTML('beforeend', modalHTML);
+    
+    // Reset question counter when opening modal
+    questionCounter = 0;
+    
     // Add first question by default
     addAssessmentQuestion();
 }
