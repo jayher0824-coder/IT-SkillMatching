@@ -668,7 +668,10 @@ async function loadCompanyDashboard() {
                             <h2 class="text-3xl font-bold text-gray-900 dark:text-white">Company Dashboard</h2>
                             <p class="text-gray-600 dark:text-gray-300 mt-2">Manage your job postings and find the right talent.</p>
                         </div>
-                        <div class="flex space-x-4">
+                        <div class="flex items-center space-x-4">
+                            <!-- Notification Bell -->
+                            <div id="company-notification-bell-container"></div>
+                            
                             <button onclick="showCompanyProfile()" class="bg-gray-700 text-white px-4 py-2 rounded-lg hover:bg-gray-800 dark:bg-gray-600 dark:hover:bg-gray-500 transition font-medium">
                                 <i class="fas fa-building mr-2"></i>Edit Profile
                             </button>
@@ -854,6 +857,11 @@ async function loadCompanyDashboard() {
                 </div>
             </div>
         `;
+        
+        // Load notification bell component
+        setTimeout(() => {
+            loadNotificationBell('company-notification-bell-container');
+        }, 500);
         
     } catch (error) {
         console.error('Error loading company dashboard:', error);

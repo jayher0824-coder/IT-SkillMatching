@@ -1406,7 +1406,10 @@ const Sidebar = ({ activeTab, setActiveTab }) => {
   return (
     <div className="bg-gray-800 text-white w-64 min-h-screen flex flex-col">
       <div className="p-4 border-b border-gray-700">
-        <h1 className="text-xl font-bold">Admin Dashboard</h1>
+        <div className="flex items-center justify-between mb-2">
+          <h1 className="text-xl font-bold">Admin Dashboard</h1>
+          <div id="admin-notification-bell-container"></div>
+        </div>
         <p className="text-sm text-gray-300">{user?.email}</p>
       </div>
       
@@ -1441,6 +1444,34 @@ const Sidebar = ({ activeTab, setActiveTab }) => {
 // Main Dashboard Layout
 const Dashboard = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
+
+  useEffect(() => {
+    // Load notification bell component after dashboard renders
+    const loadNotificationBell = async () => {
+      try {
+        const container = document.getElementById('admin-notification-bell-container');
+        if (!container) return;
+
+        const response = await fetch('/components/notification-bell.html');
+        if (!response.ok) return;
+        
+        const html = await response.text();
+        container.innerHTML = html;
+        
+        // Execute scripts in the loaded HTML
+        const scripts = container.querySelectorAll('script');
+        scripts.forEach(script => {
+          const newScript = document.createElement('script');
+          newScript.textContent = script.textContent;
+          document.body.appendChild(newScript);
+        });
+      } catch (error) {
+        console.error('Error loading notification bell:', error);
+      }
+    };
+
+    setTimeout(loadNotificationBell, 500);
+  }, []);
 
   const renderContent = () => {
     switch (activeTab) {
