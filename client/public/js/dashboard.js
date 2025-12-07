@@ -155,9 +155,16 @@ async function loadStudentDashboard() {
                         <!-- Dashboard Header -->
                         <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 md:p-6 mb-4 md:mb-8">
                             <div class="flex items-center justify-between">
-                                <div>
-                                    <h2 class="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">Dashboard</h2>
-                                    <p class="text-gray-600 dark:text-gray-300 mt-1 md:mt-2 text-sm md:text-base">Welcome back! Here's your OJT journey overview.</p>
+                                <div class="flex items-center space-x-4">
+                                    ${studentProfile?.avatar?.path ? `
+                                        <div class="w-16 h-16 rounded-full overflow-hidden border-2 border-[#56AE67] hidden md:block">
+                                            <img src="/${studentProfile.avatar.path}" alt="Profile" class="w-full h-full object-cover">
+                                        </div>
+                                    ` : ''}
+                                    <div>
+                                        <h2 class="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">Dashboard</h2>
+                                        <p class="text-gray-600 dark:text-gray-300 mt-1 md:mt-2 text-sm md:text-base">Welcome back${studentProfile?.firstName ? ', ' + studentProfile.firstName : ''}! Here's your OJT journey overview.</p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -4684,6 +4691,30 @@ async function loadStudentProfile() {
         }
         
         profileContent.innerHTML = `
+            <!-- Profile Header with Avatar -->
+            <div class="bg-gradient-to-r from-[#56AE67] to-[#3d8b4f] rounded-lg p-6 mb-6 text-white">
+                <div class="flex items-center space-x-6">
+                    <div class="relative">
+                        <div class="w-32 h-32 rounded-full overflow-hidden bg-white border-4 border-white shadow-lg">
+                            ${profile.avatar && profile.avatar.path ? 
+                                `<img src="/${profile.avatar.path}" alt="Profile Picture" class="w-full h-full object-cover">` :
+                                `<div class="w-full h-full flex items-center justify-center bg-gray-200">
+                                    <i class="fas fa-user text-gray-400 text-5xl"></i>
+                                </div>`
+                            }
+                        </div>
+                        <button onclick="showAvatarUpload()" class="absolute bottom-0 right-0 bg-white text-[#56AE67] rounded-full p-2 shadow-lg hover:bg-gray-100 transition">
+                            <i class="fas fa-camera"></i>
+                        </button>
+                    </div>
+                    <div class="flex-1">
+                        <h2 class="text-3xl font-bold mb-2">${profile.firstName || ''} ${profile.lastName || ''}</h2>
+                        <p class="text-white/90 mb-2"><i class="fas fa-id-card mr-2"></i>${profile.studentId || 'Not assigned'}</p>
+                        <p class="text-white/90"><i class="fas fa-envelope mr-2"></i>${profile.user?.email || 'Not available'}</p>
+                    </div>
+                </div>
+            </div>
+
             <div class="grid md:grid-cols-2 gap-6">
                 <!-- Personal Information -->
                 <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-6">
@@ -4692,14 +4723,6 @@ async function loadStudentProfile() {
                         Personal Information
                     </h3>
                     <div class="space-y-3">
-                        <div>
-                            <p class="text-sm text-gray-500 dark:text-gray-400">Full Name</p>
-                            <p class="text-gray-900 dark:text-white font-medium">${profile.firstName || ''} ${profile.lastName || ''}</p>
-                        </div>
-                        <div>
-                            <p class="text-sm text-gray-500 dark:text-gray-400">Student ID</p>
-                            <p class="text-gray-900 dark:text-white font-medium">${profile.studentId || 'Not assigned'}</p>
-                        </div>
                         <div>
                             <p class="text-sm text-gray-500 dark:text-gray-400">Date of Birth</p>
                             <p class="text-gray-900 dark:text-white font-medium">${profile.dateOfBirth ? new Date(profile.dateOfBirth).toLocaleDateString() : 'Not provided'}</p>
@@ -5377,6 +5400,134 @@ function disableAssessmentProtection() {
 // Also disable protection when user returns to dashboard
 window.returnToDashboard = function() {
     disableAssessmentProtection();
+    // Return to landing page or dashboard based on user role
+    const userData = getUserData();
+    if (userData && userData.role === 'student') {
+        loadStudentDashboard();
+    } else if (userData && userData.role === 'company') {
+        loadCompanyDashboard();
+    } else {
+        showLandingPage();
+    }
+};
+
+// ============================================
+// PROFILE PICTURE UPLOAD
+// ============================================
+
+window.showAvatarUpload = function() {
+    const modal = document.getElementById('login-modal');
+    const modalTitle = document.getElementById('modal-title');
+    const modalContent = document.getElementById('modal-content');
+    
+    modalTitle.textContent = 'Upload Profile Picture';
+    
+    modalContent.innerHTML = `
+        <form id="avatar-upload-form" onsubmit="uploadAvatar(event)">
+            <div class="text-center mb-6">
+                <div class="mb-4">
+                    <img id="avatar-preview" src="" alt="Preview" class="w-48 h-48 mx-auto rounded-full object-cover hidden border-4 border-[#56AE67]">
+                    <div id="avatar-placeholder" class="w-48 h-48 mx-auto rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+                        <i class="fas fa-camera text-gray-400 text-5xl"></i>
+                    </div>
+                </div>
+                <input type="file" id="avatar-file" accept="image/*" onchange="previewAvatar(event)" class="hidden">
+                <button type="button" onclick="document.getElementById('avatar-file').click()" 
+                    class="bg-[#56AE67] text-white px-6 py-2 rounded-lg hover:bg-[#3d8b4f] transition font-semibold">
+                    <i class="fas fa-upload mr-2"></i>Choose Photo
+                </button>
+                <p class="text-sm text-gray-500 dark:text-gray-400 mt-2">JPG, PNG, or GIF (Max 5MB)</p>
+            </div>
+            
+            <div class="flex justify-end space-x-3">
+                <button type="button" onclick="closeModal()" class="px-6 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition">
+                    Cancel
+                </button>
+                <button type="submit" id="upload-avatar-btn" disabled
+                    class="px-6 py-2 bg-[#56AE67] text-white rounded-lg hover:bg-[#3d8b4f] transition font-semibold disabled:bg-gray-300 disabled:cursor-not-allowed">
+                    <i class="fas fa-check mr-2"></i>Upload
+                </button>
+            </div>
+        </form>
+    `;
+    
+    modal.classList.remove('hidden');
+};
+
+window.previewAvatar = function(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    // Validate file size (5MB max)
+    if (file.size > 5 * 1024 * 1024) {
+        showToast('File size must be less than 5MB', 'error');
+        return;
+    }
+    
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+        showToast('Please select an image file', 'error');
+        return;
+    }
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const preview = document.getElementById('avatar-preview');
+        const placeholder = document.getElementById('avatar-placeholder');
+        preview.src = e.target.result;
+        preview.classList.remove('hidden');
+        placeholder.classList.add('hidden');
+        document.getElementById('upload-avatar-btn').disabled = false;
+    };
+    reader.readAsDataURL(file);
+};
+
+window.uploadAvatar = async function(event) {
+    event.preventDefault();
+    
+    const fileInput = document.getElementById('avatar-file');
+    const file = fileInput.files[0];
+    
+    if (!file) {
+        showToast('Please select a file', 'error');
+        return;
+    }
+    
+    const uploadBtn = document.getElementById('upload-avatar-btn');
+    uploadBtn.disabled = true;
+    uploadBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Uploading...';
+    
+    try {
+        const formData = new FormData();
+        formData.append('avatar', file);
+        
+        const token = getAuthToken();
+        const response = await fetch('/api/students/upload-avatar', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            },
+            body: formData
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showToast('Profile picture uploaded successfully!', 'success');
+            closeModal();
+            loadStudentProfile(); // Reload profile to show new avatar
+        } else {
+            showToast(data.message || 'Failed to upload avatar', 'error');
+            uploadBtn.disabled = false;
+            uploadBtn.innerHTML = '<i class="fas fa-check mr-2"></i>Upload';
+        }
+    } catch (error) {
+        console.error('Error uploading avatar:', error);
+        showToast('Error uploading profile picture', 'error');
+        uploadBtn.disabled = false;
+        uploadBtn.innerHTML = '<i class="fas fa-check mr-2"></i>Upload';
+    }
+};
     
     // Hide assessment and results pages
     document.getElementById('assessment-page')?.classList.add('hidden');
