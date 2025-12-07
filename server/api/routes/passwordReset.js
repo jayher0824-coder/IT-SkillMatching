@@ -102,12 +102,15 @@ router.post('/request-verification-code', async (req, res) => {
     const user = await User.findOne({ email: email.toLowerCase() });
 
     if (!user) {
+      console.log('Password reset requested for non-existent user:', email);
       // Don't reveal if user exists
       return res.status(200).json({ 
         success: true, 
         message: 'If an account exists, a verification code has been sent to your email.' 
       });
     }
+
+    console.log('Password reset request - User found:', email);
 
     // Check if user has Google OAuth
     if (user.googleId && !user.password) {
@@ -488,6 +491,33 @@ router.get('/verify-reset-token/:token', async (req, res) => {
       success: false, 
       message: 'Server error' 
     });
+  }
+});
+
+// Test email endpoint (for debugging)
+router.post('/test-email', async (req, res) => {
+  try {
+    const { email } = req.body;
+    
+    if (!email) {
+      return res.status(400).json({ success: false, message: 'Email required' });
+    }
+
+    console.log('Testing email to:', email);
+    console.log('EMAIL_USER:', process.env.EMAIL_USER ? 'Set' : 'NOT SET');
+    console.log('EMAIL_PASS:', process.env.EMAIL_PASS ? 'Set' : 'NOT SET');
+
+    const testCode = '123456';
+    const result = await sendVerificationCode(email, testCode, 'Test User');
+    
+    res.json({ 
+      success: result.success, 
+      message: result.success ? 'Test email sent!' : 'Failed to send email',
+      details: result
+    });
+  } catch (error) {
+    console.error('Test email error:', error);
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 
