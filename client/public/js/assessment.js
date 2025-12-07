@@ -339,15 +339,28 @@ async function showQuestion(index) {
     const questionContainer = document.getElementById('question-container');
     
     if (question.type === 'multiple-choice') {
+        // Ensure options array exists
+        const options = question.options || [];
+        if (options.length === 0) {
+            console.error('Question has no options:', question);
+            showToast('Error: Question data is incomplete. Skipping question.', 'error');
+            // Auto-advance to next question
+            if (index < window.assessmentState.currentAssessment.questions.length - 1) {
+                await showQuestion(index + 1);
+            }
+            return;
+        }
+        
         questionContainer.innerHTML = `
             <div class="mb-6">
-                <h4 class="text-lg font-semibold mb-4">${question.question}</h4>
+                <h4 class="text-xl font-semibold mb-6 text-gray-800 dark:text-gray-100">${question.question || 'Question text missing'}</h4>
                 <div class="space-y-3">
-                    ${question.options.map((option, optionIndex) => `
-                        <div class="flex items-center">
+                    ${options.map((option, optionIndex) => `
+                        <div class="flex items-center group">
                             <input type="radio" id="option-${optionIndex}" name="answer" value="${option}" 
-                                   class="mr-3" ${window.assessmentState.userAnswers[index] && window.assessmentState.userAnswers[index].answer === option ? 'checked' : ''}>
-                            <label for="option-${optionIndex}" class="text-gray-700 cursor-pointer flex-1 p-3 rounded-lg hover:bg-gray-50">
+                                   class="mr-3 w-5 h-5 text-[#56AE67] focus:ring-[#56AE67]" 
+                                   ${window.assessmentState.userAnswers[index] && window.assessmentState.userAnswers[index].answer === option ? 'checked' : ''}>
+                            <label for="option-${optionIndex}" class="text-gray-700 dark:text-gray-300 cursor-pointer flex-1 p-4 rounded-lg border-2 border-gray-200 dark:border-gray-700 hover:border-[#56AE67] dark:hover:border-[#56AE67] hover:bg-gray-50 dark:hover:bg-gray-800 transition-all group-hover:shadow-md">
                                 ${option}
                             </label>
                         </div>
@@ -358,20 +371,22 @@ async function showQuestion(index) {
     } else if (question.type === 'true-false') {
         questionContainer.innerHTML = `
             <div class="mb-6">
-                <h4 class="text-lg font-semibold mb-4">${question.question}</h4>
+                <h4 class="text-xl font-semibold mb-6 text-gray-800 dark:text-gray-100">${question.question || 'Question text missing'}</h4>
                 <div class="space-y-3">
-                    <div class="flex items-center">
+                    <div class="flex items-center group">
                         <input type="radio" id="option-true" name="answer" value="True" 
-                               class="mr-3" ${window.assessmentState.userAnswers[index] && window.assessmentState.userAnswers[index].answer === 'True' ? 'checked' : ''}>
-                        <label for="option-true" class="text-gray-700 cursor-pointer flex-1 p-3 rounded-lg hover:bg-gray-50">
-                            True
+                               class="mr-3 w-5 h-5 text-[#56AE67] focus:ring-[#56AE67]" 
+                               ${window.assessmentState.userAnswers[index] && window.assessmentState.userAnswers[index].answer === 'True' ? 'checked' : ''}>
+                        <label for="option-true" class="text-gray-700 dark:text-gray-300 cursor-pointer flex-1 p-4 rounded-lg border-2 border-gray-200 dark:border-gray-700 hover:border-green-500 dark:hover:border-green-500 hover:bg-green-50 dark:hover:bg-green-900/20 transition-all group-hover:shadow-md">
+                            ✓ True
                         </label>
                     </div>
-                    <div class="flex items-center">
+                    <div class="flex items-center group">
                         <input type="radio" id="option-false" name="answer" value="False" 
-                               class="mr-3" ${window.assessmentState.userAnswers[index] && window.assessmentState.userAnswers[index].answer === 'False' ? 'checked' : ''}>
-                        <label for="option-false" class="text-gray-700 cursor-pointer flex-1 p-3 rounded-lg hover:bg-gray-50">
-                            False
+                               class="mr-3 w-5 h-5 text-[#56AE67] focus:ring-[#56AE67]" 
+                               ${window.assessmentState.userAnswers[index] && window.assessmentState.userAnswers[index].answer === 'False' ? 'checked' : ''}>
+                        <label for="option-false" class="text-gray-700 dark:text-gray-300 cursor-pointer flex-1 p-4 rounded-lg border-2 border-gray-200 dark:border-gray-700 hover:border-red-500 dark:hover:border-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all group-hover:shadow-md">
+                            ✗ False
                         </label>
                     </div>
                 </div>
@@ -380,10 +395,13 @@ async function showQuestion(index) {
     } else if (question.type === 'short-answer') {
         questionContainer.innerHTML = `
             <div class="mb-6">
-                <h4 class="text-lg font-semibold mb-4">${question.question}</h4>
-                <textarea name="answer" placeholder="Enter your answer..." 
-                          class="w-full p-3 border rounded-lg focus:outline-none focus:border-[#56AE67]"
-                          rows="4">${window.assessmentState.userAnswers[index] ? window.assessmentState.userAnswers[index].answer : ''}</textarea>
+                <h4 class="text-xl font-semibold mb-6 text-gray-800 dark:text-gray-100">${question.question || 'Question text missing'}</h4>
+                <textarea name="answer" placeholder="Enter your answer here..." 
+                          class="w-full p-4 border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:border-[#56AE67] dark:focus:border-[#56AE67] bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 transition-all shadow-sm"
+                          rows="5">${window.assessmentState.userAnswers[index] ? window.assessmentState.userAnswers[index].answer : ''}</textarea>
+                <p class="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                    <i class="fas fa-info-circle mr-1"></i>Be concise and specific in your answer
+                </p>
             </div>
         `;
     }
@@ -588,14 +606,14 @@ function showAssessmentResults(results) {
 
     // Update results display with language-specific elements
     const iconHtml = langConfig ? `<i class="${langConfig.icon}"></i>` : '<i class="fas fa-trophy"></i>';
-    const scoreColor = langConfig ? `text-${langConfig.color}-600` : 'text-[#56AE67]';
+    const scoreColor = 'text-white';
     const message = langConfig ? langConfig.message : 'Assessment Complete!';
 
     if (resultsDiv) {
         const h2 = resultsDiv.querySelector('h2');
         if (h2) {
             h2.innerHTML = `
-                <div class="text-6xl ${langConfig ? `text-${langConfig.color}-500` : 'text-green-500'} mb-4">
+                <div class="text-7xl ${langConfig ? `text-${langConfig.color}-500` : 'text-[#56AE67]'} mb-4 animate-bounce">
                     ${iconHtml}
                 </div>
                 <h2 class="text-3xl font-bold text-gray-900 dark:text-white mb-2">${message}</h2>
@@ -605,7 +623,7 @@ function showAssessmentResults(results) {
 
     const overallScoreEl = document.getElementById('overall-score');
     if (overallScoreEl) {
-        overallScoreEl.className = `text-4xl font-bold ${scoreColor} dark:${scoreColor} mb-2`;
+        overallScoreEl.className = `text-6xl font-bold text-white mb-2 drop-shadow-lg`;
         overallScoreEl.textContent = (results.percentage || 0) + '%';
     }
 
@@ -615,16 +633,17 @@ function showAssessmentResults(results) {
 
     if (categoryScoresContainer) {
         categoryScoresContainer.innerHTML = Object.entries(categoryScores).map(([category, score]) => {
-        const barColor = score >= 80 ? 'bg-green-500' : score >= 60 ? 'bg-yellow-500' : 'bg-red-500';
+        const barColor = score >= 80 ? 'bg-gradient-to-r from-green-500 to-green-600' : score >= 60 ? 'bg-gradient-to-r from-yellow-500 to-yellow-600' : 'bg-gradient-to-r from-red-500 to-red-600';
+        const icon = score >= 80 ? '🏆' : score >= 60 ? '⭐' : '📚';
 
         return `
-            <div class="mb-3">
-                <div class="flex justify-between items-center mb-1">
-                    <span class="text-sm font-medium">${capitalizeFirst(category)}</span>
-                    <span class="text-sm font-bold">${score}%</span>
+            <div class="mb-4 p-3 bg-white dark:bg-gray-800 rounded-lg shadow-sm hover:shadow-md transition-shadow">
+                <div class="flex justify-between items-center mb-2">
+                    <span class="text-sm font-semibold text-gray-700 dark:text-gray-300">${icon} ${capitalizeFirst(category)}</span>
+                    <span class="text-sm font-bold ${score >= 80 ? 'text-green-600' : score >= 60 ? 'text-yellow-600' : 'text-red-600'}">${score}%</span>
                 </div>
-                <div class="w-full bg-gray-200 rounded-full h-2">
-                    <div class="${barColor} h-2 rounded-full transition-all duration-1000"
+                <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3 overflow-hidden">
+                    <div class="${barColor} h-3 rounded-full transition-all duration-1000 shadow-inner"
                          style="width: ${score}%"></div>
                 </div>
             </div>
