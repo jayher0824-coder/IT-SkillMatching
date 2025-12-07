@@ -74,7 +74,43 @@ const userSchema = new mongoose.Schema({
     adminNotes: {
       type: String,
     },
+    // Security enhancements
+    verificationCode: {
+      type: String,
+    },
+    verificationCodeExpires: {
+      type: Date,
+    },
+    verified: {
+      type: Boolean,
+      default: false,
+    },
+    ipAddress: {
+      type: String,
+    },
+    userAgent: {
+      type: String,
+    },
+    securityAnswers: {
+      type: Map,
+      of: String,
+    },
   }],
+  // Security features
+  securityQuestions: [{
+    question: String,
+    answerHash: String,
+  }],
+  lastPasswordRequestDate: {
+    type: Date,
+  },
+  passwordRequestCount: {
+    type: Number,
+    default: 0,
+  },
+  passwordRequestResetDate: {
+    type: Date,
+  },
   createdAt: {
     type: Date,
     default: Date.now,

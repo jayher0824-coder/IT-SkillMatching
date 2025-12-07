@@ -1396,8 +1396,22 @@ const PasswordChangeRequests = () => {
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    <div className="text-sm text-gray-900 max-w-xs truncate">
-                      {request.reason || 'No reason provided'}
+                    <div className="text-sm text-gray-900">
+                      <div className="mb-1">{request.reason || 'No reason provided'}</div>
+                      {request.verified && (
+                        <span className="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                          <i className="fas fa-check-circle mr-1"></i>
+                          Email Verified
+                        </span>
+                      )}
+                      {request.ipAddress && (
+                        <div className="text-xs text-gray-500 mt-1">
+                          <i className="fas fa-map-marker-alt mr-1"></i>
+                          IP: {request.ipAddress}
+                        </div>
+                      )}
+                    </div>
+                  </td>
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
