@@ -19,7 +19,15 @@ const questionSchema = new mongoose.Schema({
   },
   category: {
     type: String,
-    enum: ['programming', 'database', 'webDevelopment', 'networking', 'problemSolving', 'cloudComputing', 'devOps', 'security', 'systemDesign', 'dataStructures', 'algorithms', 'mobile', 'backend', 'frontend', 'apiDesign'],
+    enum: [
+      'programming', 'database', 'webDevelopment', 'networking', 'problemSolving', 
+      'cloudComputing', 'devOps', 'security', 'systemDesign', 'dataStructures', 
+      'algorithms', 'mobile', 'backend', 'frontend', 'apiDesign',
+      // Programming Languages
+      'python', 'java', 'javascript', 'csharp', 'php', 'swift', 'go', 'ruby', 
+      'sql', 'cpp', 'rust', 'kotlin', 'c', 'typescript', 'r', 'perl', 
+      'html', 'objectivec', 'visualbasic', 'assembly', 'css', 'matlab', 'scala'
+    ],
     required: true,
   },
   points: {
@@ -50,7 +58,15 @@ const assessmentSchema = new mongoose.Schema({
   },
   category: {
     type: String,
-    enum: ['general', 'programming', 'database', 'webDevelopment', 'networking', 'problemSolving', 'cloudComputing', 'devOps', 'security', 'systemDesign', 'dataStructures', 'algorithms', 'mobile', 'backend', 'frontend', 'apiDesign'],
+    enum: [
+      'general', 'programming', 'database', 'webDevelopment', 'networking', 'problemSolving', 
+      'cloudComputing', 'devOps', 'security', 'systemDesign', 'dataStructures', 
+      'algorithms', 'mobile', 'backend', 'frontend', 'apiDesign',
+      // Programming Languages
+      'python', 'java', 'javascript', 'csharp', 'php', 'swift', 'go', 'ruby', 
+      'sql', 'cpp', 'rust', 'kotlin', 'c', 'typescript', 'r', 'perl', 
+      'html', 'objectivec', 'visualbasic', 'assembly', 'css', 'matlab', 'scala'
+    ],
     required: true,
   },
   isActive: {
@@ -121,6 +137,30 @@ const assessmentResultSchema = new mongoose.Schema({
     backend: Number,
     frontend: Number,
     apiDesign: Number,
+    // Programming Languages
+    python: Number,
+    java: Number,
+    javascript: Number,
+    csharp: Number,
+    php: Number,
+    swift: Number,
+    go: Number,
+    ruby: Number,
+    sql: Number,
+    cpp: Number,
+    rust: Number,
+    kotlin: Number,
+    c: Number,
+    typescript: Number,
+    r: Number,
+    perl: Number,
+    html: Number,
+    objectivec: Number,
+    visualbasic: Number,
+    assembly: Number,
+    css: Number,
+    matlab: Number,
+    scala: Number,
   },
 });
 
