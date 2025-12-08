@@ -8,7 +8,7 @@ class NotificationManager {
     }
 
     // Start polling for notifications
-    startPolling(intervalMs = 30000) {
+    startPolling(intervalMs = 10000) {
         this.fetchNotifications();
         this.pollInterval = setInterval(() => {
             this.fetchNotifications();
@@ -138,11 +138,14 @@ class NotificationManager {
             'password_reset': 'fa-key',
             'password_change_approved': 'fa-check-circle',
             'password_change_rejected': 'fa-times-circle',
+            'application_submitted': 'fa-paper-plane',
             'application_received': 'fa-file-alt',
             'application_status': 'fa-clipboard-check',
+            'new_application': 'fa-user-plus',
             'assessment_reminder': 'fa-clock',
             'job_posted': 'fa-briefcase',
             'feedback_received': 'fa-comment',
+            'feedback_response': 'fa-comment-dots',
             'retake_approved': 'fa-redo',
             'retake_rejected': 'fa-ban',
             'system': 'fa-info-circle'

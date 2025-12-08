@@ -3,6 +3,7 @@ const { protect, authorize, requireAssessment } = require('../../auth/middleware
 const Job = require('../../database/models/Job');
 const Company = require('../../database/models/Company');
 const Student = require('../../database/models/Student');
+const NotificationService = require('../../services/notificationService');
 
 const router = express.Router();
 
@@ -237,6 +238,29 @@ router.post('/', protect, authorize('company'), async (req, res) => {
     await company.save();
 
     const populatedJob = await Job.findById(job._id).populate('company');
+
+    // Notify all students about new job posting
+    try {
+      const students = await Student.find({}).populate('user');
+      for (const student of students) {
+        if (student.user) {
+          await NotificationService.create({
+            recipient: student.user._id,
+            type: 'job_posted',
+            title: 'New Job Posted',
+            message: `${company.companyName} posted a new job: ${job.title}`,
+            link: `/jobs/${job._id}`,
+            data: {
+              jobId: job._id,
+              jobTitle: job.title,
+              companyName: company.companyName
+            }
+          });
+        }
+      }
+    } catch (notifError) {
+      console.error('Error creating job posting notifications:', notifError);
+    }
 
     res.status(201).json({
       success: true,
@@ -478,6 +502,34 @@ router.put('/:id/applications/:applicationId', protect, authorize('company'), as
       if (studentApplication) {
         studentApplication.status = status;
         await student.save();
+      }
+
+      // Notify student about status change
+      try {
+        const statusMessages = {
+          'reviewing': 'is being reviewed',
+          'interviewed': 'has moved to interview stage',
+          'accepted': 'has been accepted! Congratulations!',
+          'rejected': 'was not selected this time'
+        };
+
+        if (student.user) {
+          await NotificationService.create({
+            recipient: student.user,
+            type: 'application_status',
+            title: 'Application Status Update',
+            message: `Your application for ${job.title} ${statusMessages[status] || 'has been updated'}`,
+            link: `/student/applications`,
+            data: {
+              jobId: job._id,
+              jobTitle: job.title,
+              status: status,
+              companyName: job.company.companyName
+            }
+          });
+        }
+      } catch (notifError) {
+        console.error('Error creating application status notification:', notifError);
       }
     }
 

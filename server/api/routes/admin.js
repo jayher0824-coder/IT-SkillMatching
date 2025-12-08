@@ -274,6 +274,24 @@ router.put('/feedback/:id/respond', protect, authorize('admin'), async (req, res
       .populate('user', 'email role')
       .populate('respondedBy', 'email');
 
+    // Notify user about feedback response
+    try {
+      await NotificationService.create({
+        recipient: feedback.user,
+        type: 'feedback_response',
+        title: 'Admin Responded to Your Feedback',
+        message: `An administrator has responded to your feedback: "${feedback.subject.substring(0, 50)}${feedback.subject.length > 50 ? '...' : ''}"`,
+        link: `/feedback`,
+        data: {
+          feedbackId: feedback._id,
+          subject: feedback.subject,
+          status: feedback.status
+        }
+      });
+    } catch (notifError) {
+      console.error('Error creating feedback response notification:', notifError);
+    }
+
     res.json({
       success: true,
       message: 'Feedback response saved successfully',
