@@ -3,12 +3,12 @@ const { Resend } = require('resend');
 
 // Create email client based on available configuration
 const createEmailClient = () => {
-  // Priority 1: Resend (best for transactional emails) - TEMPORARILY DISABLED FOR TESTING
-  // Resend test mode only allows emails to verified addresses
-  // if (process.env.RESEND_API_KEY) {
-  //   console.log('Using Resend for email delivery');
-  //   return { type: 'resend', client: new Resend(process.env.RESEND_API_KEY) };
-  // }
+  // Priority 1: Resend (best for transactional emails)
+  // Note: In test mode, can only send to verified email addresses
+  if (process.env.RESEND_API_KEY) {
+    console.log('Using Resend for email delivery');
+    return { type: 'resend', client: new Resend(process.env.RESEND_API_KEY) };
+  }
 
   // Priority 2: SendGrid
   if (process.env.SENDGRID_API_KEY) {
