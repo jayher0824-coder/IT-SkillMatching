@@ -1333,9 +1333,17 @@ const PasswordChangeRequests = () => {
   const handleReview = async (userId, requestId) => {
     try {
       await axios.put(`${API_BASE}/admin/password-change-requests/${userId}/${requestId}`, reviewData);
-      setSelectedRequest(null);
-      setReviewData({ status: '', adminNotes: '' });
-      fetchRequests();
+      
+      // If approved, automatically open password reset modal
+      if (reviewData.status === 'approved') {
+        setSelectedRequest(null);
+        setReviewData({ status: '', adminNotes: '' });
+        openResetModal(userId);
+      } else {
+        setSelectedRequest(null);
+        setReviewData({ status: '', adminNotes: '' });
+        fetchRequests();
+      }
     } catch (error) {
       console.error('Error reviewing request:', error);
     }
