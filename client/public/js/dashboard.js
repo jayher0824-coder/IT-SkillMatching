@@ -5761,3 +5761,120 @@ window.uploadAvatar = async function(event) {
         }
     }
 };
+
+// Feedback Modal Functions
+window.openFeedbackModal = function() {
+    const modal = document.getElementById('feedback-modal');
+    if (modal) {
+        modal.classList.remove('hidden');
+        document.getElementById('feedback-form').reset();
+        document.getElementById('feedback-success').classList.add('hidden');
+        document.getElementById('feedback-error').classList.add('hidden');
+    }
+};
+
+window.closeFeedbackModal = function() {
+    const modal = document.getElementById('feedback-modal');
+    if (modal) {
+        modal.classList.add('hidden');
+    }
+};
+
+// Show feedback button for logged in users
+function showFeedbackButton() {
+    const feedbackBtn = document.getElementById('feedback-btn');
+    const authToken = sessionStorage.getItem('authToken');
+    
+    if (feedbackBtn && authToken) {
+        feedbackBtn.classList.remove('hidden');
+        feedbackBtn.onclick = openFeedbackModal;
+    }
+}
+
+// Call this when dashboard loads
+setTimeout(showFeedbackButton, 1000);
+
+// Handle feedback form submission
+const feedbackFormHandler = function() {
+    const feedbackForm = document.getElementById('feedback-form');
+    const feedbackMessage = document.getElementById('feedback-message');
+    const charCount = document.getElementById('feedback-char-count');
+    
+    if (feedbackMessage && charCount) {
+        feedbackMessage.addEventListener('input', function() {
+            charCount.textContent = this.value.length;
+        });
+    }
+    
+    if (feedbackForm) {
+        feedbackForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const submitBtn = document.getElementById('feedback-submit-btn');
+            const successMsg = document.getElementById('feedback-success');
+            const errorMsg = document.getElementById('feedback-error');
+            
+            // Hide previous messages
+            successMsg.classList.add('hidden');
+            errorMsg.classList.add('hidden');
+            
+            // Disable button
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Submitting...';
+            
+            try {
+                const authToken = sessionStorage.getItem('authToken');
+                if (!authToken) {
+                    throw new Error('Not authenticated');
+                }
+                
+                const formData = {
+                    subject: document.getElementById('feedback-subject').value,
+                    message: document.getElementById('feedback-message').value,
+                    category: document.getElementById('feedback-category').value,
+                    priority: document.getElementById('feedback-priority').value
+                };
+                
+                const response = await fetch('/api/feedback', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify(formData)
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    successMsg.classList.remove('hidden');
+                    feedbackForm.reset();
+                    charCount.textContent = '0';
+                    
+                    // Close modal after 3 seconds
+                    setTimeout(() => {
+                        closeFeedbackModal();
+                    }, 3000);
+                } else {
+                    errorMsg.textContent = data.message || 'Failed to submit feedback';
+                    errorMsg.classList.remove('hidden');
+                }
+            } catch (error) {
+                console.error('Error submitting feedback:', error);
+                errorMsg.textContent = 'Error submitting feedback. Please try again.';
+                errorMsg.classList.remove('hidden');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fas fa-paper-plane mr-2"></i>Submit Feedback';
+            }
+        });
+    }
+};
+
+// Initialize feedback handler when DOM is ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', feedbackFormHandler);
+} else {
+    feedbackFormHandler();
+}
+
