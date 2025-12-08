@@ -88,6 +88,9 @@ const sendVerificationCode = async (email, code, userName) => {
 };
 
 // Step 1: Request verification code
+// OTP Endpoint Disabled - No longer using email verification codes
+// Users can now directly request password reset via /forgot-password
+/*
 router.post('/request-verification-code', async (req, res) => {
   try {
     const { email } = req.body;
@@ -192,6 +195,7 @@ router.post('/request-verification-code', async (req, res) => {
     });
   }
 });
+*/
 
 // Step 2: Verify code and submit password reset request
 router.post('/forgot-password', async (req, res) => {
@@ -211,6 +215,52 @@ router.post('/forgot-password', async (req, res) => {
       return res.status(400).json({ 
         success: false, 
         message: 'No account found with this email address' 
+      });
+    }
+
+    // Check if user has Google OAuth
+    if (user.googleId && !user.password) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'This account uses Google Sign-In. Please sign in with Google or contact admin to set a password.' 
+      });
+    }
+
+    // Rate limiting check - max 3 requests per day
+    const now = new Date();
+    const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+    
+    // Reset count if it's been more than 24 hours
+    if (!user.passwordRequestResetDate || user.passwordRequestResetDate < oneDayAgo) {
+      user.passwordRequestCount = 0;
+      user.passwordRequestResetDate = now;
+    }
+
+    if (user.passwordRequestCount >= MAX_REQUESTS_PER_DAY) {
+      return res.status(429).json({ 
+        success: false, 
+        message: 'Too many password reset requests. Please try again tomorrow.' 
+      });
+    }
+
+    // Cooldown check - 10 minutes between successful requests
+    if (user.lastPasswordRequestDate) {
+      const cooldownEnd = new Date(user.lastPasswordRequestDate.getTime() + REQUEST_COOLDOWN_MINUTES * 60 * 1000);
+      if (now < cooldownEnd) {
+        const minutesLeft = Math.ceil((cooldownEnd - now) / (60 * 1000));
+        return res.status(429).json({ 
+          success: false, 
+          message: `Please wait ${minutesLeft} minute${minutesLeft > 1 ? 's' : ''} before requesting another password reset.` 
+        });
+      }
+    }
+
+    // Check for pending request
+    const hasPendingRequest = user.passwordChangeRequests?.some(req => req.status === 'pending');
+    if (hasPendingRequest) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'You already have a pending password change request.' 
       });
     }
 
@@ -267,10 +317,11 @@ router.post('/forgot-password', async (req, res) => {
       securityAnswers: securityAnswers ? new Map(Object.entries(securityAnswers)) : undefined,
     });
 
-    // Clear any existing reset tokens
+    // Clear any existing reset tokens and update rate limiting counters
     user.resetPasswordToken = undefined;
     user.resetPasswordExpires = undefined;
     user.lastPasswordRequestDate = new Date();
+    user.passwordRequestCount += 1;
     
     await user.save();
     
