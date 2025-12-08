@@ -780,21 +780,6 @@ function createSettingsModal() {
                             scrollbar-color: #6bc481 #1f2937;
                         }
                     </style>
-                    <!-- Profile Management -->
-                    <div class="mb-6 pb-6 border-b border-gray-200 dark:border-gray-700">
-                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-3">
-                            <i class="fas fa-user-edit mr-2 text-green-600"></i>Profile Information
-                        </h3>
-                        <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">Update your personal information and profile details</p>
-                        <button onclick="closeSettingsModal(); setTimeout(() => { switchToSection('profile'); setTimeout(showStudentProfileModal, 100); }, 100)" 
-                            style="background-color: #56AE67; color: white; border: 2px solid #2d6b3c;"
-                            class="px-4 py-2 rounded-lg hover:bg-[#3d8b4f] transition font-medium"
-                            onmouseover="this.style.backgroundColor='#3d8b4f'" 
-                            onmouseout="this.style.backgroundColor='#56AE67'">
-                            <i class="fas fa-edit mr-2"></i>Edit Profile
-                        </button>
-                    </div>
-
                     <!-- Theme Preference -->
                     <div class="mb-6 pb-6 border-b border-gray-200 dark:border-gray-700">
                         <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-3">
