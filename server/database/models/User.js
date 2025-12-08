@@ -59,6 +59,9 @@ const userSchema = new mongoose.Schema({
     reason: {
       type: String,
     },
+    phoneNumber: {
+      type: String,
+    },
     status: {
       type: String,
       enum: ['pending', 'approved', 'rejected'],

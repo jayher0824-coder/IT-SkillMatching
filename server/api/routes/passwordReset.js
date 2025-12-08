@@ -200,7 +200,7 @@ router.post('/request-verification-code', async (req, res) => {
 // Step 2: Verify code and submit password reset request
 router.post('/forgot-password', async (req, res) => {
   try {
-    const { email, reason, securityAnswers } = req.body;
+    const { email, reason, securityAnswers, phoneNumber } = req.body;
 
     if (!email) {
       return res.status(400).json({ 
@@ -309,6 +309,7 @@ router.post('/forgot-password', async (req, res) => {
 
     user.passwordChangeRequests.push({
       reason: reason || 'Forgot password - verified via security questions',
+      phoneNumber: phoneNumber,
       requestDate: new Date(),
       status: 'pending',
       verified: true,

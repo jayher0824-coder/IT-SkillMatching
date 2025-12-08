@@ -1350,21 +1350,31 @@ const PasswordChangeRequests = () => {
       const userData = response.data.data;
       const generatedPassword = userData.newPassword;
       
+      // Get the request details to show phone number
+      const request = requests.find(r => r._id === resetUserId);
+      
       setShowResetModal(false);
       
       // Show alert with the password so admin can copy it
-      alert(
+      let alertMessage = 
         `Password Reset Successful!\n\n` +
-        `User Email: ${userData.email}\n` +
+        `User Email: ${userData.email}\n`;
+      
+      if (request && request.phoneNumber) {
+        alertMessage += `Phone Number: ${request.phoneNumber}\n`;
+      }
+      
+      alertMessage +=
         `New Password: ${generatedPassword}\n\n` +
         `IMPORTANT: Please copy this password and send it to the user.\n` +
         `You can send it via:\n` +
-        `- SMS/Text message\n` +
+        `- SMS/Text message` + (request && request.phoneNumber ? ` to ${request.phoneNumber}` : '') + `\n` +
         `- Phone call\n` +
         `- Personal email\n` +
         `- Any other secure communication method\n\n` +
-        `The user has also been notified in their dashboard.`
-      );
+        `The user has also been notified in their dashboard.`;
+      
+      alert(alertMessage);
       
       // Reload the requests to show updated status
       loadRequests();
@@ -1433,6 +1443,12 @@ const PasswordChangeRequests = () => {
                   <td className="px-6 py-4">
                     <div className="text-sm text-gray-900">
                       <div className="mb-1">{request.reason || 'No reason provided'}</div>
+                      {request.phoneNumber && (
+                        <div className="mb-1 text-xs text-gray-600">
+                          <i className="fas fa-phone mr-1"></i>
+                          {request.phoneNumber}
+                        </div>
+                      )}
                       {request.verified && (
                         <span className="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
                           <i className="fas fa-check-circle mr-1"></i>
@@ -1500,6 +1516,9 @@ const PasswordChangeRequests = () => {
             <div className="mb-4">
               <p><strong>User:</strong> {selectedRequest.email}</p>
               <p><strong>Reason:</strong> {selectedRequest.reason || 'No reason provided'}</p>
+              {selectedRequest.phoneNumber && (
+                <p><strong>Phone Number:</strong> {selectedRequest.phoneNumber}</p>
+              )}
             </div>
             
             <div className="space-y-4">
