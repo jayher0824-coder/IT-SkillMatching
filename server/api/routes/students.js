@@ -185,7 +185,7 @@ const dest = 'uploads/avatars/';
 });
 const uploadAvatar = multer({
   storage: avatarStorage,
-  limits: { fileSize: 2 * 1024 * 1024 }, //2MB
+  limits: { fileSize: 10 * 1024 * 1024 }, //10MB
   fileFilter: (req, file, cb) => {
     if (file.mimetype.startsWith('image/')) cb(null, true);
     else cb(new Error('Only image files allowed'), false);

@@ -158,7 +158,7 @@ async function loadStudentDashboard() {
                                 <div class="flex items-center space-x-4">
                                     ${studentProfile?.avatar?.path ? `
                                         <div class="w-16 h-16 rounded-full overflow-hidden border-2 border-[#56AE67] hidden md:block">
-                                            <img src="/${studentProfile.avatar.path}" alt="Profile" class="w-full h-full object-cover">
+                                            <img src="/uploads/avatars/${studentProfile.avatar.path.split('/').pop()}" alt="Profile" class="w-full h-full object-cover" onerror="this.style.display='none'">
                                         </div>
                                     ` : ''}
                                     <div>
@@ -4914,25 +4914,25 @@ async function loadStudentProfile() {
         
         profileContent.innerHTML = `
             <!-- Profile Header with Avatar -->
-            <div class="bg-gradient-to-r from-[#56AE67] to-[#3d8b4f] rounded-lg p-6 mb-6 text-white">
+            <div class="bg-gradient-to-r from-[#56AE67] to-[#3d8b4f] rounded-lg p-6 mb-6 text-white shadow-xl">
                 <div class="flex items-center space-x-6">
                     <div class="relative">
                         <div class="w-32 h-32 rounded-full overflow-hidden bg-white border-4 border-white shadow-lg">
                             ${profile.avatar && profile.avatar.path ? 
-                                `<img src="/${profile.avatar.path}" alt="Profile Picture" class="w-full h-full object-cover">` :
+                                `<img src="/uploads/avatars/${profile.avatar.path.split('/').pop()}" alt="Profile Picture" class="w-full h-full object-cover" onerror="this.parentElement.innerHTML='<div class=\"w-full h-full flex items-center justify-center bg-gray-200\"><i class=\"fas fa-user text-gray-400 text-5xl\"></i></div>'">` :
                                 `<div class="w-full h-full flex items-center justify-center bg-gray-200">
                                     <i class="fas fa-user text-gray-400 text-5xl"></i>
                                 </div>`
                             }
                         </div>
-                        <button onclick="showAvatarUpload()" class="absolute bottom-0 right-0 bg-white text-[#56AE67] rounded-full p-2 shadow-lg hover:bg-gray-100 transition">
-                            <i class="fas fa-camera"></i>
+                        <button onclick="showAvatarUpload()" class="absolute bottom-0 right-0 bg-white text-[#56AE67] rounded-full p-3 shadow-lg hover:bg-gray-100 transition">
+                            <i class="fas fa-camera text-lg"></i>
                         </button>
                     </div>
                     <div class="flex-1">
-                        <h2 class="text-3xl font-bold mb-2">${profile.firstName || ''} ${profile.lastName || ''}</h2>
-                        <p class="text-white/90 mb-2"><i class="fas fa-id-card mr-2"></i>${profile.studentId || 'Not assigned'}</p>
-                        <p class="text-white/90"><i class="fas fa-envelope mr-2"></i>${profile.user?.email || 'Not available'}</p>
+                        <h2 class="text-3xl font-bold mb-2 text-white drop-shadow-lg">${profile.firstName || ''} ${profile.lastName || ''}</h2>
+                        <p class="text-white text-base mb-2 drop-shadow"><i class="fas fa-id-card mr-2"></i>${profile.studentId || 'Not assigned'}</p>
+                        <p class="text-white text-base drop-shadow"><i class="fas fa-envelope mr-2"></i>${profile.user?.email || 'Not available'}</p>
                     </div>
                 </div>
             </div>
@@ -5653,7 +5653,7 @@ window.showAvatarUpload = function() {
                     class="bg-[#56AE67] text-white px-6 py-2 rounded-lg hover:bg-[#3d8b4f] transition font-semibold">
                     <i class="fas fa-upload mr-2"></i>Choose Photo
                 </button>
-                <p class="text-sm text-gray-500 dark:text-gray-400 mt-2">JPG, PNG, or GIF (Max 2MB)</p>
+                <p class="text-sm text-gray-500 dark:text-gray-400 mt-2">JPG, PNG, or GIF (Max 10MB)</p>
             </div>
             
             <div class="flex justify-end space-x-3">
@@ -5675,9 +5675,9 @@ window.previewAvatar = function(event) {
     const file = event.target.files[0];
     if (!file) return;
     
-    // Validate file size (2MB max to match backend)
-    if (file.size > 2 * 1024 * 1024) {
-        showToast('File size must be less than 2MB', 'error');
+    // Validate file size (10MB max to match backend)
+    if (file.size > 10 * 1024 * 1024) {
+        showToast('File size must be less than 10MB', 'error');
         event.target.value = ''; // Clear the input
         return;
     }
