@@ -7,7 +7,7 @@ const emailService = require('../../services/emailService');
 
 // Security constants
 const MAX_REQUESTS_PER_DAY = 3;
-const REQUEST_COOLDOWN_HOURS = 24;
+const REQUEST_COOLDOWN_MINUTES = 10; // Changed from hours to minutes
 const VERIFICATION_CODE_EXPIRY_MINUTES = 15;
 
 // Helper function to get client IP
@@ -137,14 +137,14 @@ router.post('/request-verification-code', async (req, res) => {
       });
     }
 
-    // Cooldown check - 24 hours between successful requests
+    // Cooldown check - 10 minutes between successful requests
     if (user.lastPasswordRequestDate) {
-      const cooldownEnd = new Date(user.lastPasswordRequestDate.getTime() + REQUEST_COOLDOWN_HOURS * 60 * 60 * 1000);
+      const cooldownEnd = new Date(user.lastPasswordRequestDate.getTime() + REQUEST_COOLDOWN_MINUTES * 60 * 1000);
       if (now < cooldownEnd) {
-        const hoursLeft = Math.ceil((cooldownEnd - now) / (60 * 60 * 1000));
+        const minutesLeft = Math.ceil((cooldownEnd - now) / (60 * 1000));
         return res.status(429).json({ 
           success: false, 
-          message: `Please wait ${hoursLeft} hours before requesting another password reset.` 
+          message: `Please wait ${minutesLeft} minute${minutesLeft > 1 ? 's' : ''} before requesting another password reset.` 
         });
       }
     }
