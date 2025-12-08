@@ -6,7 +6,7 @@ const User = require('../../database/models/User');
 const emailService = require('../../services/emailService');
 
 // Security constants
-const MAX_REQUESTS_PER_DAY = 3;
+const MAX_REQUESTS_PER_DAY = 999; // Effectively unlimited
 const REQUEST_COOLDOWN_MINUTES = 10; // Changed from hours to minutes
 const VERIFICATION_CODE_EXPIRY_MINUTES = 15;
 
