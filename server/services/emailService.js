@@ -1,45 +1,59 @@
 const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
 
-// Create transporter
-const createTransporter = () => {
-  // Check if email is configured
-  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-    console.warn('Email credentials not configured. Email notifications will be disabled.');
-    return null;
+// Create email client based on available configuration
+const createEmailClient = () => {
+  // Priority 1: Resend (best for transactional emails)
+  if (process.env.RESEND_API_KEY) {
+    console.log('Using Resend for email delivery');
+    return { type: 'resend', client: new Resend(process.env.RESEND_API_KEY) };
   }
 
-  // Try SendGrid first if configured (more reliable for production)
+  // Priority 2: SendGrid
   if (process.env.SENDGRID_API_KEY) {
     console.log('Using SendGrid for email delivery');
-    return nodemailer.createTransport({
-      host: 'smtp.sendgrid.net',
-      port: 587,
-      secure: false,
-      auth: {
-        user: 'apikey',
-        pass: process.env.SENDGRID_API_KEY
-      }
-    });
+    return {
+      type: 'smtp',
+      client: nodemailer.createTransport({
+        host: 'smtp.sendgrid.net',
+        port: 587,
+        secure: false,
+        auth: {
+          user: 'apikey',
+          pass: process.env.SENDGRID_API_KEY
+        }
+      })
+    };
   }
 
-  // Fall back to Gmail
-  console.log('Using Gmail for email delivery');
-  return nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 587,
-    secure: false, // use TLS
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS
-    },
-    tls: {
-      rejectUnauthorized: false
-    },
-    connectionTimeout: 10000, // 10 seconds
-    greetingTimeout: 10000,
-    socketTimeout: 15000
-  });
+  // Priority 3: Gmail (fallback)
+  if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
+    console.log('Using Gmail for email delivery');
+    return {
+      type: 'smtp',
+      client: nodemailer.createTransport({
+        host: 'smtp.gmail.com',
+        port: 587,
+        secure: false,
+        auth: {
+          user: process.env.EMAIL_USER,
+          pass: process.env.EMAIL_PASS
+        },
+        tls: {
+          rejectUnauthorized: false
+        },
+        connectionTimeout: 10000,
+        greetingTimeout: 10000,
+        socketTimeout: 15000
+      })
+    };
+  }
+
+  console.warn('No email service configured. Email notifications will be disabled.');
+  return null;
 };
+
+const emailClient = createEmailClient();
 
 // Email templates
 const emailTemplates = {
@@ -276,27 +290,41 @@ const emailTemplates = {
   })
 };
 
-// Send email function
+// Send email function with Resend and SMTP support
 const sendEmail = async (to, template) => {
-  const transporter = createTransporter();
-  
-  // If no transporter (email not configured), just log and return
-  if (!transporter) {
+  if (!emailClient) {
     console.log(`Email would be sent to ${to}: ${template.subject}`);
     return { success: true, message: 'Email service not configured, skipped' };
   }
 
   try {
-    const mailOptions = {
-      from: `"IT OJT Platform" <${process.env.EMAIL_USER}>`,
-      to,
-      subject: template.subject,
-      html: template.html
-    };
+    // Use Resend API
+    if (emailClient.type === 'resend') {
+      const result = await emailClient.client.emails.send({
+        from: 'IT OJT Platform <onboarding@resend.dev>', // Use your verified domain later
+        to: to,
+        subject: template.subject,
+        html: template.html
+      });
+      console.log(`Email sent successfully via Resend to ${to}: ${result.id}`);
+      return { success: true, messageId: result.id };
+    }
 
-    const info = await transporter.sendMail(mailOptions);
-    console.log(`Email sent successfully to ${to}: ${info.messageId}`);
-    return { success: true, messageId: info.messageId };
+    // Use SMTP (SendGrid or Gmail)
+    if (emailClient.type === 'smtp') {
+      const mailOptions = {
+        from: `"IT OJT Platform" <${process.env.EMAIL_USER || 'noreply@it-ojt-platform.com'}>`,
+        to,
+        subject: template.subject,
+        html: template.html
+      };
+
+      const info = await emailClient.client.sendMail(mailOptions);
+      console.log(`Email sent successfully via SMTP to ${to}: ${info.messageId}`);
+      return { success: true, messageId: info.messageId };
+    }
+
+    return { success: false, error: 'Unknown email client type' };
   } catch (error) {
     console.error('Error sending email:', error);
     return { success: false, error: error.message };
