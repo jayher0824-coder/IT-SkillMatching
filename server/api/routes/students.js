@@ -8,8 +8,10 @@ const { protect, authorize, requireAssessment } = require('../../auth/middleware
 const Student = require('../../database/models/Student');
 const Job = require('../../database/models/Job');
 const User = require('../../database/models/User');
+const Company = require('../../database/models/Company');
 const { AssessmentResult } = require('../../database/models/Assessment');
 const CustomAssessmentSubmission = require('../../database/models/CustomAssessmentSubmission');
+const NotificationService = require('../../services/notificationService');
 
 const router = express.Router();
 
@@ -568,6 +570,43 @@ router.post('/apply/:jobId', protect, authorize('student'), async (req, res) => 
     });
 
     await job.save();
+
+    // Create notifications for both student and company
+    try {
+      // Notify student
+      await NotificationService.create({
+        recipient: req.user._id,
+        type: 'application_submitted',
+        title: 'Application Submitted',
+        message: `Your application for ${job.title} has been submitted successfully.`,
+        link: `/student/applications`,
+        data: {
+          jobId: job._id,
+          jobTitle: job.title,
+          matchScore
+        }
+      });
+
+      // Notify company
+      const company = await Company.findById(job.company);
+      if (company && company.user) {
+        await NotificationService.create({
+          recipient: company.user,
+          type: 'new_application',
+          title: 'New Job Application',
+          message: `${student.firstName} ${student.lastName} applied for ${job.title}`,
+          link: `/company/jobs/${job._id}/applications`,
+          data: {
+            studentId: student._id,
+            jobId: job._id,
+            jobTitle: job.title,
+            matchScore
+          }
+        });
+      }
+    } catch (notifError) {
+      console.error('Error creating application notifications:', notifError);
+    }
 
     res.json({
       success: true,
