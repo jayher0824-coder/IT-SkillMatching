@@ -68,6 +68,11 @@ module.exports = function (passportInstance = passport) {
               });
             }
           }
+          
+          // Update last login timestamp
+          user.lastLogin = new Date();
+          await user.save();
+          
           return done(null, user);
         } catch (err) {
           console.error('Google OAuth error:', err);

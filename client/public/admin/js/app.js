@@ -1032,6 +1032,9 @@ const UserManagement = () => {
                   Status
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Last Login
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Created
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -1067,6 +1070,18 @@ const UserManagement = () => {
                     }`}>
                       {user.isActive ? 'Active' : 'Inactive'}
                     </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {user.lastLogin ? (
+                      <div>
+                        <div>{new Date(user.lastLogin).toLocaleDateString()}</div>
+                        <div className="text-xs text-gray-400">
+                          {new Date(user.lastLogin).toLocaleTimeString()}
+                        </div>
+                      </div>
+                    ) : (
+                      <span className="text-gray-400 italic">Never logged in</span>
+                    )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {new Date(user.createdAt).toLocaleDateString()}
@@ -1743,6 +1758,7 @@ const Sidebar = ({ activeTab, setActiveTab }) => {
   
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: 'fas fa-tachometer-alt' },
+    { id: 'users', label: 'User Management', icon: 'fas fa-users' },
     { id: 'password-requests', label: 'Password Requests', icon: 'fas fa-lock' },
     { id: 'feedback', label: 'Feedback', icon: 'fas fa-comment' },
   ];
@@ -1818,6 +1834,8 @@ const Dashboard = () => {
     switch (activeTab) {
       case 'dashboard':
         return <DashboardStats />;
+      case 'users':
+        return <UserManagement />;
       case 'password-requests':
         return <PasswordChangeRequests />;
       case 'feedback':

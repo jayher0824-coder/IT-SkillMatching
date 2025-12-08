@@ -224,6 +224,10 @@ router.post('/login', [
       });
     }
 
+    // Update last login timestamp
+    user.lastLogin = new Date();
+    await user.save();
+
     // For students, check if they have completed the assessment
     let requiresAssessment = false;
     if (user.role === 'student') {

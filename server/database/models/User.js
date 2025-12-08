@@ -114,6 +114,9 @@ const userSchema = new mongoose.Schema({
   passwordRequestResetDate: {
     type: Date,
   },
+  lastLogin: {
+    type: Date,
+  },
   createdAt: {
     type: Date,
     default: Date.now,
