@@ -17,6 +17,7 @@ const notificationSchema = new mongoose.Schema({
       'assessment_reminder',
       'job_posted',
       'feedback_received',
+      'feedback_response',
       'retake_approved',
       'retake_rejected',
       'system'
