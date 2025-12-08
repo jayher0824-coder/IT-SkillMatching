@@ -2277,8 +2277,8 @@ async function showAllJobs() {
             const matchedSkills = jobData.matchedSkills || [];
             const assessmentInfluenced = jobData.assessmentInfluenced || false;
             
-            // Check if job has assessment using enhanced detection
-            const hasAssessment = job.requireCustomAssessment || job.customAssessment;
+            // Check if job has assessment using enhanced detection - normalize boolean
+            const hasAssessment = (job.requireCustomAssessment === true || job.requireCustomAssessment === 'true') || (job.customAssessment != null && job.customAssessment !== '');
             
             // Check assessment status for students
             let assessmentStatus = { completed: false, passed: false };
@@ -2501,6 +2501,13 @@ async function viewJob(jobId) {
         console.log('Assessment condition result:', (job.requireCustomAssessment === true || job.requireCustomAssessment === 'true'));
         console.log('========================');
 
+        // Normalize boolean value - handle string "true"/"false" from database
+        const hasRequiredAssessment = job.requireCustomAssessment === true || job.requireCustomAssessment === 'true';
+        const hasAssessmentId = job.customAssessment != null && job.customAssessment !== '';
+        
+        console.log('Normalized hasRequiredAssessment:', hasRequiredAssessment);
+        console.log('Normalized hasAssessmentId:', hasAssessmentId);
+
         // Create or update job details modal
         let modal = document.getElementById('job-details-modal');
         if (!modal) {
@@ -2572,7 +2579,7 @@ async function viewJob(jobId) {
                     </div>
                 ` : ''}
 
-                ${job.requireCustomAssessment || job.customAssessment ? `
+                ${hasRequiredAssessment || hasAssessmentId ? `
                     <div class="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-6 rounded-lg shadow-lg">
                         <div class="flex items-start">
                             <div class="flex-shrink-0">
@@ -2612,7 +2619,7 @@ async function viewJob(jobId) {
                         Close
                     </button>
                     ${currentUser && currentUser.role === 'student' ? `
-                        ${(job.requireCustomAssessment || job.customAssessment) ? `
+                        ${(hasRequiredAssessment || hasAssessmentId) ? `
                             <button onclick="takeCustomAssessmentForJob('${job._id}')" id="take-assessment-btn-${job._id}"
                                 class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold text-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200">
                                 <i class="fas fa-clipboard-list mr-2"></i>Take Assessment

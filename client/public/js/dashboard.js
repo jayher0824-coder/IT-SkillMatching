@@ -1868,7 +1868,7 @@ function viewJob(jobId) {
             apiCall('/students/applications')
                 .then(appsResponse => {
                     const applications = appsResponse.data || [];
-                    const hasApplied = applications.some(app => app.job._id === jobId);
+                    const hasApplied = applications.some(app => app.job && app.job._id === jobId);
 
                     modalContent.innerHTML = `
                         <div class="max-h-96 overflow-y-auto">
