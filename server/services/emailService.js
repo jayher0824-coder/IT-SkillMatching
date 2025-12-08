@@ -33,9 +33,10 @@ const createEmailClient = () => {
     return {
       type: 'smtp',
       client: nodemailer.createTransport({
+        service: 'gmail',
         host: 'smtp.gmail.com',
-        port: 587,
-        secure: false,
+        port: 465,
+        secure: true, // Use SSL
         auth: {
           user: process.env.EMAIL_USER,
           pass: process.env.EMAIL_PASS
@@ -43,9 +44,9 @@ const createEmailClient = () => {
         tls: {
           rejectUnauthorized: false
         },
-        connectionTimeout: 10000,
-        greetingTimeout: 10000,
-        socketTimeout: 15000
+        connectionTimeout: 20000,
+        greetingTimeout: 20000,
+        socketTimeout: 20000
       })
     };
   }
