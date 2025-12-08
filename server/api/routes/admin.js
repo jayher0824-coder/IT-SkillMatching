@@ -255,6 +255,10 @@ router.put('/feedback/:id/respond', protect, authorize('admin'), async (req, res
   try {
     const { adminResponse, status } = req.body;
 
+    console.log('Responding to feedback:', req.params.id);
+    console.log('Admin response:', adminResponse);
+    console.log('Status:', status);
+    
     const feedback = await Feedback.findById(req.params.id);
     if (!feedback) {
       return res.status(404).json({
@@ -263,6 +267,9 @@ router.put('/feedback/:id/respond', protect, authorize('admin'), async (req, res
       });
     }
 
+    console.log('Feedback found:', feedback._id);
+    console.log('Current adminResponse:', feedback.adminResponse);
+    
     feedback.adminResponse = adminResponse;
     feedback.status = status || 'in_progress';
     feedback.respondedBy = req.user._id;
@@ -272,6 +279,8 @@ router.put('/feedback/:id/respond', protect, authorize('admin'), async (req, res
     const feedbackUserId = feedback.user;
 
     await feedback.save();
+    console.log('Feedback saved successfully');
+    console.log('Updated adminResponse:', feedback.adminResponse);
 
     const updatedFeedback = await Feedback.findById(req.params.id)
       .populate('user', 'email role')
@@ -439,12 +448,14 @@ router.put('/users/:id/reset-password', protect, authorize('admin'), async (req,
     
     await user.save();
 
-    // Send notification to user
+    // Send email notification to user (but don't create in-app notification to avoid showing password)
     try {
-      await NotificationService.notifyPasswordResetApproved(user._id, newPassword);
-    } catch (notifError) {
-      console.error('Error sending notification:', notifError);
-      // Don't fail the password reset if notification fails
+      const emailService = require('../../services/emailService');
+      await emailService.sendPasswordResetEmail(user.email, user.email.split('@')[0], newPassword);
+      console.log('Password reset email sent to:', user.email);
+    } catch (emailError) {
+      console.error('Error sending password reset email:', emailError);
+      // Don't fail the password reset if email fails
     }
 
     const message = user.googleId 
