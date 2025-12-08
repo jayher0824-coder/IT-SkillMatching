@@ -95,6 +95,29 @@ router.put('/read-all', protect, async (req, res) => {
   }
 });
 
+// @desc    Delete all read notifications
+// @route   DELETE /api/notifications/clear-read
+// @access  Private
+router.delete('/clear-read', protect, async (req, res) => {
+  try {
+    await Notification.deleteMany({
+      recipient: req.user._id,
+      read: true
+    });
+
+    res.json({
+      success: true,
+      message: 'Read notifications cleared'
+    });
+  } catch (error) {
+    console.error('Clear notifications error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
+  }
+});
+
 // @desc    Delete notification
 // @route   DELETE /api/notifications/:id
 // @access  Private
@@ -118,29 +141,6 @@ router.delete('/:id', protect, async (req, res) => {
     });
   } catch (error) {
     console.error('Delete notification error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Server error'
-    });
-  }
-});
-
-// @desc    Delete all read notifications
-// @route   DELETE /api/notifications/clear-read
-// @access  Private
-router.delete('/clear-read', protect, async (req, res) => {
-  try {
-    await Notification.deleteMany({
-      recipient: req.user._id,
-      read: true
-    });
-
-    res.json({
-      success: true,
-      message: 'Read notifications cleared'
-    });
-  } catch (error) {
-    console.error('Clear notifications error:', error);
     res.status(500).json({
       success: false,
       message: 'Server error'
