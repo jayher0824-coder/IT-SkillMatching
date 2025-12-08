@@ -720,4 +720,101 @@ router.put('/password-change-requests/:userId/:requestId', protect, authorize('a
   }
 });
 
+// @route   POST /api/admin/send-password-email
+// @desc    Send password reset email to user
+// @access  Private (Admin only)
+router.post('/send-password-email', protect, authorize('admin'), async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email and password are required'
+      });
+    }
+
+    const emailService = require('../../services/emailService');
+
+    const template = {
+      subject: '🔑 Your New Password - IT OJT Platform',
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background: linear-gradient(135deg, #56AE67 0%, #3d8b4f 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+            .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
+            .password-box { background: white; border: 2px solid #56AE67; padding: 20px; margin: 20px 0; border-radius: 8px; text-align: center; }
+            .password { font-size: 24px; font-weight: bold; color: #56AE67; letter-spacing: 2px; font-family: monospace; }
+            .warning { background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0; }
+            .footer { text-align: center; margin-top: 30px; color: #666; font-size: 12px; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>🔑 Password Reset</h1>
+            </div>
+            <div class="content">
+              <p>Hello,</p>
+              <p>Your password reset request has been approved by our administrator. Your new password is:</p>
+              
+              <div class="password-box">
+                <p style="margin: 0 0 10px 0; font-size: 14px; color: #666;">Your new password:</p>
+                <div class="password">${password}</div>
+              </div>
+              
+              <p>Please log in using this password and change it immediately after logging in for security purposes.</p>
+              
+              <div class="warning">
+                <strong>⚠️ Security Recommendations:</strong>
+                <ul style="margin: 10px 0;">
+                  <li>Change this password after your first login</li>
+                  <li>Do not share your password with anyone</li>
+                  <li>Use a strong, unique password</li>
+                </ul>
+              </div>
+              
+              <p style="text-align: center; margin-top: 30px;">
+                <a href="${process.env.CLIENT_URL || 'http://localhost:3000'}" 
+                   style="display: inline-block; padding: 12px 30px; background: #56AE67; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;">
+                  Login Now
+                </a>
+              </p>
+            </div>
+            <div class="footer">
+              <p>© 2025 IT OJT Platform. All rights reserved.</p>
+              <p>This is an automated email. Please do not reply.</p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `
+    };
+
+    const result = await emailService.sendEmail(email, template);
+
+    if (result.success) {
+      res.json({
+        success: true,
+        message: 'Password email sent successfully'
+      });
+    } else {
+      res.status(500).json({
+        success: false,
+        message: result.error || 'Failed to send email'
+      });
+    }
+  } catch (error) {
+    console.error('Error sending password email:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error while sending email'
+    });
+  }
+});
+
 module.exports = router;

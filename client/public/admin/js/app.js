@@ -1294,6 +1294,11 @@ const PasswordChangeRequests = () => {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [passwordError, setPasswordError] = useState('');
+  const [showEmailModal, setShowEmailModal] = useState(false);
+  const [emailData, setEmailData] = useState({ email: '', password: '', phoneNumber: '' });
+  const [emailSending, setEmailSending] = useState(false);
+  const [emailSuccess, setEmailSuccess] = useState('');
+  const [emailError, setEmailError] = useState('');
 
   useEffect(() => {
     fetchRequests();
@@ -1355,31 +1360,42 @@ const PasswordChangeRequests = () => {
       
       setShowResetModal(false);
       
-      // Show alert with the password so admin can copy it
-      let alertMessage = 
-        `Password Reset Successful!\n\n` +
-        `User Email: ${userData.email}\n`;
-      
-      if (request && request.phoneNumber) {
-        alertMessage += `Phone Number: ${request.phoneNumber}\n`;
-      }
-      
-      alertMessage +=
-        `New Password: ${generatedPassword}\n\n` +
-        `IMPORTANT: Please copy this password and send it to the user.\n` +
-        `You can send it via:\n` +
-        `- SMS/Text message` + (request && request.phoneNumber ? ` to ${request.phoneNumber}` : '') + `\n` +
-        `- Phone call\n` +
-        `- Personal email\n` +
-        `- Any other secure communication method\n\n` +
-        `The user has also been notified in their dashboard.`;
-      
-      alert(alertMessage);
+      // Show email modal option
+      setEmailData({
+        email: userData.email,
+        password: generatedPassword,
+        phoneNumber: request && request.phoneNumber ? request.phoneNumber : ''
+      });
+      setShowEmailModal(true);
       
       // Reload the requests to show updated status
       loadRequests();
     } catch (error) {
       setPasswordError(error.response?.data?.message || 'Failed to reset password');
+    }
+  };
+
+  const handleSendEmail = async () => {
+    setEmailSending(true);
+    setEmailError('');
+    setEmailSuccess('');
+
+    try {
+      await axios.post(`${API_BASE}/admin/send-password-email`, {
+        email: emailData.email,
+        password: emailData.password
+      });
+      
+      setEmailSuccess('Email sent successfully!');
+      setTimeout(() => {
+        setShowEmailModal(false);
+        setEmailSuccess('');
+        setEmailData({ email: '', password: '', phoneNumber: '' });
+      }, 2000);
+    } catch (error) {
+      setEmailError(error.response?.data?.message || 'Failed to send email');
+    } finally {
+      setEmailSending(false);
     }
   };
 
@@ -1615,6 +1631,103 @@ const PasswordChangeRequests = () => {
                 className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 disabled:opacity-50"
               >
                 Reset Password
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Email Modal */}
+      {showEmailModal && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 className="text-lg font-medium mb-4">
+              <i className="fas fa-envelope mr-2 text-indigo-600"></i>
+              Send Password to User
+            </h3>
+
+            {emailSuccess && (
+              <div className="mb-4 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded flex items-center">
+                <i className="fas fa-check-circle mr-2"></i>
+                {emailSuccess}
+              </div>
+            )}
+
+            {emailError && (
+              <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+                {emailError}
+              </div>
+            )}
+
+            <div className="space-y-4 mb-6">
+              <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                <p className="text-sm text-gray-600 mb-2"><strong>User Email:</strong></p>
+                <p className="text-gray-900 mb-3">{emailData.email}</p>
+                
+                {emailData.phoneNumber && (
+                  <>
+                    <p className="text-sm text-gray-600 mb-2"><strong>Phone Number:</strong></p>
+                    <p className="text-gray-900 mb-3">
+                      <i className="fas fa-phone mr-2 text-green-600"></i>
+                      {emailData.phoneNumber}
+                    </p>
+                  </>
+                )}
+                
+                <p className="text-sm text-gray-600 mb-2"><strong>New Password:</strong></p>
+                <div className="flex items-center">
+                  <code className="flex-1 bg-white px-3 py-2 rounded border border-gray-300 font-mono text-sm">
+                    {emailData.password}
+                  </code>
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(emailData.password);
+                      alert('Password copied to clipboard!');
+                    }}
+                    className="ml-2 px-3 py-2 text-sm bg-gray-200 hover:bg-gray-300 rounded"
+                    title="Copy password"
+                  >
+                    <i className="fas fa-copy"></i>
+                  </button>
+                </div>
+              </div>
+              
+              <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg">
+                <p className="text-sm text-blue-800">
+                  <i className="fas fa-info-circle mr-2"></i>
+                  You can send the password via email or manually via SMS/call using the information above.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex justify-between space-x-3">
+              <button
+                onClick={() => {
+                  setShowEmailModal(false);
+                  setEmailData({ email: '', password: '', phoneNumber: '' });
+                  setEmailError('');
+                  setEmailSuccess('');
+                }}
+                className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300"
+              >
+                Close
+              </button>
+              <button
+                onClick={handleSendEmail}
+                disabled={emailSending}
+                className="flex-1 px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 disabled:opacity-50 flex items-center justify-center"
+              >
+                {emailSending ? (
+                  <>
+                    <i className="fas fa-spinner fa-spin mr-2"></i>
+                    Sending...
+                  </>
+                ) : (
+                  <>
+                    <i className="fas fa-paper-plane mr-2"></i>
+                    Send via Email
+                  </>
+                )}
               </button>
             </div>
           </div>
