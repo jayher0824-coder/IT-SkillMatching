@@ -437,6 +437,7 @@ router.put('/users/:id/reset-password', protect, authorize('admin'), async (req,
         email: user.email,
         hasGoogleAuth: !!user.googleId,
         canLoginWithPassword: true,
+        newPassword: newPassword, // Include password so admin can copy and send it to user
       },
     });
   } catch (error) {

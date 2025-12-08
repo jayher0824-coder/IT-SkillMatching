@@ -950,14 +950,29 @@ const UserManagement = () => {
     }
 
     try {
-      await axios.put(`${API_BASE}/admin/users/${selectedUser._id}/reset-password`, {
+      const response = await axios.put(`${API_BASE}/admin/users/${selectedUser._id}/reset-password`, {
         newPassword: newPassword
       });
-      setPasswordSuccess('Password reset successfully!');
+      
+      const userData = response.data.data;
+      const generatedPassword = userData.newPassword;
+      
+      // Show success message with the password
+      setPasswordSuccess(`Password reset successfully! New password: ${generatedPassword}`);
+      
+      // Also show an alert so admin can easily copy the password
+      alert(
+        `Password Reset Successful!\n\n` +
+        `User: ${selectedUser.email}\n` +
+        `New Password: ${generatedPassword}\n\n` +
+        `Please copy this password and send it to the user via SMS, email, or phone call.\n` +
+        `The user has also been notified in their dashboard.`
+      );
+      
       setTimeout(() => {
         setPasswordResetModal(false);
         setSelectedUser(null);
-      }, 2000);
+      }, 3000);
     } catch (error) {
       setPasswordError(error.response?.data?.message || 'Failed to reset password');
     }
@@ -1328,11 +1343,31 @@ const PasswordChangeRequests = () => {
     }
 
     try {
-      await axios.put(`${API_BASE}/admin/users/${resetUserId}/reset-password`, {
+      const response = await axios.put(`${API_BASE}/admin/users/${resetUserId}/reset-password`, {
         newPassword: newPassword
       });
+      
+      const userData = response.data.data;
+      const generatedPassword = userData.newPassword;
+      
       setShowResetModal(false);
-      alert('Password reset successfully!');
+      
+      // Show alert with the password so admin can copy it
+      alert(
+        `Password Reset Successful!\n\n` +
+        `User Email: ${userData.email}\n` +
+        `New Password: ${generatedPassword}\n\n` +
+        `IMPORTANT: Please copy this password and send it to the user.\n` +
+        `You can send it via:\n` +
+        `- SMS/Text message\n` +
+        `- Phone call\n` +
+        `- Personal email\n` +
+        `- Any other secure communication method\n\n` +
+        `The user has also been notified in their dashboard.`
+      );
+      
+      // Reload the requests to show updated status
+      loadRequests();
     } catch (error) {
       setPasswordError(error.response?.data?.message || 'Failed to reset password');
     }
