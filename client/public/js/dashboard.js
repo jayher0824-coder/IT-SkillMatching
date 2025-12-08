@@ -1563,6 +1563,31 @@ function showCreateJob() {
                 <input type="date" id="applicationDeadline" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-[#56AE67]">
             </div>
             
+            <!-- Custom Assessment -->
+            <div class="mt-6">
+                <h4 class="font-semibold mb-3 flex items-center">
+                    <i class="fas fa-clipboard-list mr-2 text-blue-600"></i>
+                    Custom Assessment
+                </h4>
+                <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                    <div class="flex items-start mb-3">
+                        <input type="checkbox" id="requireCustomAssessment" class="mr-3 mt-1">
+                        <div class="flex-1">
+                            <label for="requireCustomAssessment" class="text-gray-700 dark:text-gray-300 font-medium cursor-pointer">
+                                Require Custom Assessment
+                            </label>
+                            <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                                Students must complete a custom assessment before applying to this job.
+                            </p>
+                        </div>
+                    </div>
+                    <div id="assessment-note" class="text-sm text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded p-3">
+                        <i class="fas fa-info-circle text-blue-500 mr-2"></i>
+                        <span>After posting the job, you can create a custom assessment for this position from the job management page.</span>
+                    </div>
+                </div>
+            </div>
+            
             <div class="flex justify-between mt-8">
                 <button type="button" onclick="closeModal()" class="bg-gray-700 text-white px-6 py-2 rounded-lg hover:bg-gray-800 dark:bg-gray-500 dark:hover:bg-gray-400 dark:text-gray-900 transition font-medium">
                     Cancel
@@ -1654,6 +1679,7 @@ async function saveJob(event) {
             skillsRequired: skills,
             numberOfPositions: parseInt(document.getElementById('numberOfPositions').value) || 1,
             applicationDeadline: document.getElementById('applicationDeadline').value || null,
+            requireCustomAssessment: document.getElementById('requireCustomAssessment').checked,
             status: 'active',
         };
         
@@ -3472,6 +3498,31 @@ function createEditJobModal() {
                         </label>
                         <input type="date" id="edit-deadline" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:border-[#56AE67] dark:bg-gray-700 dark:text-white">
                     </div>
+                    
+                    <!-- Custom Assessment -->
+                    <div>
+                        <h4 class="font-semibold mb-3 flex items-center text-gray-900 dark:text-white">
+                            <i class="fas fa-clipboard-list mr-2 text-blue-600"></i>
+                            Custom Assessment
+                        </h4>
+                        <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                            <div class="flex items-start mb-3">
+                                <input type="checkbox" id="edit-requireCustomAssessment" class="mr-3 mt-1">
+                                <div class="flex-1">
+                                    <label for="edit-requireCustomAssessment" class="text-gray-700 dark:text-gray-300 font-medium cursor-pointer">
+                                        Require Custom Assessment
+                                    </label>
+                                    <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                                        Students must complete a custom assessment before applying to this job.
+                                    </p>
+                                </div>
+                            </div>
+                            <div id="edit-assessment-status" class="text-sm text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded p-3">
+                                <i class="fas fa-info-circle text-blue-500 mr-2"></i>
+                                <span id="edit-assessment-status-text">Loading assessment status...</span>
+                            </div>
+                        </div>
+                    </div>
                 </form>
             </div>
             
@@ -3590,6 +3641,27 @@ function populateEditJobForm(job, jobId) {
         document.getElementById('edit-deadline').value = deadline.toISOString().split('T')[0];
     }
     
+    // Set custom assessment status
+    const requireAssessmentCheckbox = document.getElementById('edit-requireCustomAssessment');
+    const assessmentStatusText = document.getElementById('edit-assessment-status-text');
+    
+    if (requireAssessmentCheckbox) {
+        requireAssessmentCheckbox.checked = job.requireCustomAssessment || false;
+    }
+    
+    if (assessmentStatusText) {
+        if (job.customAssessment) {
+            const assessmentInfo = typeof job.customAssessment === 'object' ? job.customAssessment : null;
+            if (assessmentInfo && assessmentInfo.title) {
+                assessmentStatusText.innerHTML = `<i class="fas fa-check-circle text-green-500 mr-2"></i><strong>Assessment Created:</strong> ${assessmentInfo.title} (${assessmentInfo.questions?.length || 0} questions)`;
+            } else {
+                assessmentStatusText.innerHTML = `<i class="fas fa-check-circle text-green-500 mr-2"></i>Assessment has been created for this job.`;
+            }
+        } else {
+            assessmentStatusText.innerHTML = `<i class="fas fa-info-circle text-blue-500 mr-2"></i>No assessment created yet. Use the "Create Custom Assessment" button below to add one.`;
+        }
+    }
+    
     // Set up form submission
     document.getElementById('edit-job-form').onsubmit = (e) => handleEditJobSubmit(e, jobId);
 }
@@ -3682,6 +3754,9 @@ async function handleEditJobSubmit(event, jobId) {
         if (deadline) {
             formData.applicationDeadline = new Date(deadline).toISOString();
         }
+        
+        // Add custom assessment requirement
+        formData.requireCustomAssessment = document.getElementById('edit-requireCustomAssessment').checked;
         
         // Update job
         const response = await apiCall(`/jobs/${jobId}`, {
