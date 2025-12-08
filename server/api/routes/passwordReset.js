@@ -196,12 +196,12 @@ router.post('/request-verification-code', async (req, res) => {
 // Step 2: Verify code and submit password reset request
 router.post('/forgot-password', async (req, res) => {
   try {
-    const { email, verificationCode, reason, securityAnswers } = req.body;
+    const { email, reason, securityAnswers } = req.body;
 
-    if (!email || !verificationCode) {
+    if (!email) {
       return res.status(400).json({ 
         success: false, 
-        message: 'Email and verification code are required' 
+        message: 'Email is required' 
       });
     }
 
@@ -210,23 +210,7 @@ router.post('/forgot-password', async (req, res) => {
     if (!user) {
       return res.status(400).json({ 
         success: false, 
-        message: 'Invalid verification code or email' 
-      });
-    }
-
-    // Verify the code
-    if (!user.resetPasswordToken || user.resetPasswordToken !== verificationCode) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Invalid or expired verification code' 
-      });
-    }
-
-    // Check if code expired
-    if (!user.resetPasswordExpires || user.resetPasswordExpires < new Date()) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Verification code has expired. Please request a new one.' 
+        message: 'No account found with this email address' 
       });
     }
 
@@ -274,17 +258,16 @@ router.post('/forgot-password', async (req, res) => {
     }
 
     user.passwordChangeRequests.push({
-      reason: reason || 'Forgot password - verified via email code',
+      reason: reason || 'Forgot password - verified via security questions',
       requestDate: new Date(),
       status: 'pending',
-      verificationCode: verificationCode,
       verified: true,
       ipAddress: ipAddress,
       userAgent: userAgent,
       securityAnswers: securityAnswers ? new Map(Object.entries(securityAnswers)) : undefined,
     });
 
-    // Clear verification code
+    // Clear any existing reset tokens
     user.resetPasswordToken = undefined;
     user.resetPasswordExpires = undefined;
     user.lastPasswordRequestDate = new Date();
@@ -293,7 +276,7 @@ router.post('/forgot-password', async (req, res) => {
     
     res.status(200).json({ 
       success: true, 
-      message: 'Password change request sent to admin. You will be notified once approved.' 
+      message: 'Password reset request submitted successfully. An admin will review and approve your request.' 
     });
 
   } catch (error) {
