@@ -268,6 +268,9 @@ router.put('/feedback/:id/respond', protect, authorize('admin'), async (req, res
     feedback.respondedBy = req.user._id;
     feedback.respondedAt = new Date();
 
+    // Store the user ID before saving
+    const feedbackUserId = feedback.user;
+
     await feedback.save();
 
     const updatedFeedback = await Feedback.findById(req.params.id)
@@ -277,17 +280,18 @@ router.put('/feedback/:id/respond', protect, authorize('admin'), async (req, res
     // Notify user about feedback response
     try {
       await NotificationService.create({
-        recipient: feedback.user,
+        recipient: feedbackUserId,
         type: 'feedback_response',
         title: 'Admin Responded to Your Feedback',
         message: `An administrator has responded to your feedback: "${feedback.subject.substring(0, 50)}${feedback.subject.length > 50 ? '...' : ''}"`,
-        link: `/feedback`,
+        link: `/dashboard.html`,
         data: {
           feedbackId: feedback._id,
           subject: feedback.subject,
           status: feedback.status
         }
       });
+      console.log('Feedback response notification created for user:', feedbackUserId);
     } catch (notifError) {
       console.error('Error creating feedback response notification:', notifError);
     }
