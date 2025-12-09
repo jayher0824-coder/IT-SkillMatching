@@ -114,9 +114,25 @@
             <div class="space-y-4">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Select User</label>
-                    <select id="new-chat-user" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#56AE67]">
-                        <option value="">Loading users...</option>
-                    </select>
+                    <div class="relative">
+                        <!-- Search Input -->
+                        <input type="text" id="user-search-input" 
+                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#56AE67] mb-2"
+                            placeholder="Search by name or email...">
+                        
+                        <!-- User List Dropdown -->
+                        <div id="user-dropdown" class="hidden absolute top-full left-0 right-0 mt-0 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg z-10 max-h-64 overflow-y-auto">
+                            <div id="user-list" class="space-y-0">
+                                <!-- Users will be populated here -->
+                            </div>
+                        </div>
+                        
+                        <!-- Hidden select for form submission -->
+                        <select id="new-chat-user" class="hidden" required>
+                            <option value="">Select a user...</option>
+                        </select>
+                    </div>
+                    <div id="selected-user-display" class="text-sm text-gray-600 dark:text-gray-400 mt-2"></div>
                 </div>
                 
                 <button id="start-chat-btn" class="w-full px-4 py-2 bg-[#56AE67] hover:bg-[#3d8b4f] text-white rounded-lg font-semibold transition">
@@ -276,27 +292,65 @@
         // New chat modal functions
         async function showNewChatModal() {
             const modal = document.getElementById('new-chat-modal');
+            const userList = document.getElementById('user-list');
             const select = document.getElementById('new-chat-user');
+            const searchInput = document.getElementById('user-search-input');
             
             modal.classList.remove('hidden');
+            searchInput.value = '';
             
             // Load users
             try {
-                select.innerHTML = '<option value="">Loading users...</option>';
+                userList.innerHTML = '<div class="px-4 py-2 text-gray-500">Loading users...</div>';
                 
                 const response = await apiCall('/messages/available-users');
                 
                 if (response.success && response.data.length > 0) {
-                    select.innerHTML = '<option value="">Select a user...</option>' + 
-                        response.data.map(u => `<option value="${u._id}">${u.displayName} - ${u.email} (${u.type})</option>`).join('');
+                    window.availableUsers = response.data;
+                    renderUserList(response.data);
                 } else {
-                    select.innerHTML = '<option value="">No users available</option>';
+                    userList.innerHTML = '<div class="px-4 py-2 text-gray-500">No users available</div>';
                 }
                     
             } catch (error) {
                 console.error('Error loading users:', error);
-                select.innerHTML = '<option value="">Error loading users</option>';
+                userList.innerHTML = '<div class="px-4 py-2 text-red-500">Error loading users</div>';
             }
+        }
+
+        function renderUserList(users) {
+            const userList = document.getElementById('user-list');
+            const userDropdown = document.getElementById('user-dropdown');
+            
+            if (users.length === 0) {
+                userList.innerHTML = '<div class="px-4 py-2 text-gray-500">No users found</div>';
+                userDropdown.classList.remove('hidden');
+                return;
+            }
+            
+            userList.innerHTML = users.map(u => `
+                <button type="button" 
+                    class="w-full text-left px-4 py-2 hover:bg-[#56AE67] hover:text-white dark:hover:bg-[#3d8b4f] transition border-b border-gray-200 dark:border-gray-600 last:border-b-0"
+                    onclick="selectUser('${u._id}', '${u.displayName} - ${u.email} (${u.type})')">
+                    <div class="font-medium">${u.displayName}</div>
+                    <div class="text-xs text-gray-500 dark:text-gray-400">${u.email}</div>
+                    <div class="text-xs"><span class="inline-block px-2 py-0.5 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded">${u.type}</span></div>
+                </button>
+            `).join('');
+            
+            userDropdown.classList.remove('hidden');
+        }
+
+        function selectUser(userId, displayText) {
+            const select = document.getElementById('new-chat-user');
+            const selectedDisplay = document.getElementById('selected-user-display');
+            const userDropdown = document.getElementById('user-dropdown');
+            const searchInput = document.getElementById('user-search-input');
+            
+            select.value = userId;
+            selectedDisplay.textContent = '✓ Selected: ' + displayText;
+            userDropdown.classList.add('hidden');
+            searchInput.value = displayText;
         }
 
         function closeNewChatModal() {
@@ -315,6 +369,41 @@
             closeNewChatModal();
             await window.chatManager.createConversation(userId);
         }
+
+        // Setup search functionality when modal is shown
+        document.addEventListener('DOMContentLoaded', () => {
+            const searchInput = document.getElementById('user-search-input');
+            const userDropdown = document.getElementById('user-dropdown');
+            
+            if (searchInput) {
+                searchInput.addEventListener('focus', () => {
+                    if (window.availableUsers) {
+                        renderUserList(window.availableUsers);
+                    }
+                });
+                
+                searchInput.addEventListener('input', (e) => {
+                    const searchTerm = e.target.value.toLowerCase();
+                    
+                    if (!window.availableUsers) return;
+                    
+                    const filtered = window.availableUsers.filter(u => 
+                        u.displayName.toLowerCase().includes(searchTerm) ||
+                        u.email.toLowerCase().includes(searchTerm) ||
+                        u.type.toLowerCase().includes(searchTerm)
+                    );
+                    
+                    renderUserList(filtered);
+                });
+            }
+            
+            // Close dropdown when clicking outside
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('#user-search-input') && !e.target.closest('#user-dropdown')) {
+                    userDropdown.classList.add('hidden');
+                }
+            });
+        });
 
         // Toast notification function
         function showToast(message, type = 'info') {
