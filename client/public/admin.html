@@ -6,6 +6,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#000000" />
     <meta name="description" content="SkillSync Admin Dashboard" />
+    
+    <!-- Prevent Search Engine Indexing -->
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="googlebot" content="noindex, nofollow">
+    
+    <!-- Security Headers -->
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://unpkg.com https://cdn.tailwindcss.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://cdn.tailwindcss.com;">
+    
+    <!-- Prevent Caching of Admin Pages -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    
     <title>Admin Dashboard - SkillSync</title>
     
     <!-- Tailwind CSS -->
@@ -32,6 +46,79 @@
 </head>
 <body>
     <div id="admin-root"></div>
+    
+    <!-- Authentication Guard - Must run before everything else -->
+    <script>
+        (function() {
+            // Check if user is authenticated and has admin/company role
+            const authToken = sessionStorage.getItem('authToken') || localStorage.getItem('token');
+            const userDataStr = sessionStorage.getItem('userData') || localStorage.getItem('user');
+            
+            if (!authToken) {
+                console.warn('Unauthorized access attempt: No authentication token found');
+                window.location.href = '/index.html';
+                return;
+            }
+            
+            let userData = null;
+            try {
+                userData = userDataStr ? JSON.parse(userDataStr) : null;
+            } catch (e) {
+                console.error('Failed to parse user data:', e);
+                sessionStorage.clear();
+                localStorage.clear();
+                window.location.href = '/index.html';
+                return;
+            }
+            
+            if (!userData) {
+                console.warn('Unauthorized access attempt: No user data found');
+                sessionStorage.clear();
+                localStorage.clear();
+                window.location.href = '/index.html';
+                return;
+            }
+            
+            // Check if user has admin or company role
+            const allowedRoles = ['admin', 'company'];
+            if (!allowedRoles.includes(userData.role)) {
+                console.warn(`Unauthorized access attempt: User has role "${userData.role}" but needs admin/company`);
+                sessionStorage.clear();
+                localStorage.clear();
+                window.location.href = '/index.html';
+                return;
+            }
+            
+            // If all checks pass, verify token with server
+            fetch('/api/auth/verify', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${authToken}`,
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Token verification failed');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (!data.success || !data.valid) {
+                    console.warn('Invalid or expired token');
+                    sessionStorage.clear();
+                    localStorage.clear();
+                    window.location.href = '/index.html';
+                }
+            })
+            .catch(error => {
+                console.error('Token verification error:', error);
+                sessionStorage.clear();
+                localStorage.clear();
+                window.location.href = '/index.html';
+            });
+        })();
+    </script>
     
     <!-- Include the admin app script (without React Router) -->
     <script type="text/babel" src="/admin/js/app.js"></script>

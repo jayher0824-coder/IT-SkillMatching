@@ -1,0 +1,12 @@
+# Prevent search engines from indexing admin and sensitive pages
+User-agent: *
+Disallow: /admin.html
+Disallow: /admin/
+Disallow: /api/
+Disallow: /uploads/
+
+# Allow indexing of public pages
+Allow: /
+Allow: /index.html
+Allow: /dashboard.html
+Allow: /messages.html

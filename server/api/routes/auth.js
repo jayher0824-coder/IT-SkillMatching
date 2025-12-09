@@ -279,6 +279,73 @@ router.post('/login', authLimiter, [
   }
 });
 
+// @desc    Verify authentication token and user role
+// @route   POST /api/auth/verify
+// @access  Private
+router.post('/verify', async (req, res) => {
+  try {
+    const token = req.header('Authorization')?.replace('Bearer ', '');
+    if (!token) {
+      return res.status(401).json({
+        success: false,
+        valid: false,
+        message: 'No token provided',
+      });
+    }
+
+    // Verify JWT token
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await User.findById(decoded.id);
+
+    if (!user || !user.isActive) {
+      return res.status(401).json({
+        success: false,
+        valid: false,
+        message: 'User not found or inactive',
+      });
+    }
+
+    // Check if user is admin or company
+    if (!['admin', 'company'].includes(user.role)) {
+      return res.status(403).json({
+        success: false,
+        valid: false,
+        message: 'User does not have admin/company access',
+      });
+    }
+
+    res.json({
+      success: true,
+      valid: true,
+      user: {
+        _id: user._id,
+        email: user.email,
+        role: user.role,
+      },
+    });
+  } catch (error) {
+    if (error.name === 'TokenExpiredError') {
+      return res.status(401).json({
+        success: false,
+        valid: false,
+        message: 'Token expired',
+      });
+    }
+    if (error.name === 'JsonWebTokenError') {
+      return res.status(401).json({
+        success: false,
+        valid: false,
+        message: 'Invalid token',
+      });
+    }
+    res.status(500).json({
+      success: false,
+      valid: false,
+      message: 'Server error',
+    });
+  }
+});
+
 // @desc    Get current user
 // @route   GET /api/auth/me
 // @access  Private
