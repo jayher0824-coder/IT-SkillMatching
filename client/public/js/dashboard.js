@@ -2817,6 +2817,93 @@ function closeSubmissionDetailsModal() {
 }
 
 // ============================================
+// SHOW ALL JOBS
+// ============================================
+
+function showAllJobs() {
+    const modal = document.getElementById('login-modal');
+    const modalTitle = document.getElementById('modal-title');
+    const modalContent = document.getElementById('modal-content');
+
+    modalTitle.textContent = 'All Available Jobs';
+
+    // Show loading state
+    modalContent.innerHTML = `
+        <div class="flex items-center justify-center py-12">
+            <div class="text-center">
+                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                <p class="text-gray-600">Loading jobs...</p>
+            </div>
+        </div>
+    `;
+
+    modal.classList.remove('hidden');
+
+    // Load all jobs
+    apiCall('/jobs')
+        .then(response => {
+            const jobs = response.data || [];
+            
+            // Filter only active jobs with positions available
+            const validJobs = jobs.filter(job => 
+                job.isActive && 
+                job.positionsAvailable > 0 &&
+                job.company
+            );
+
+            if (validJobs.length === 0) {
+                modalContent.innerHTML = `
+                    <div class="text-center py-8">
+                        <p class="text-gray-500 dark:text-gray-400">No jobs available at the moment.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Create jobs list
+            modalContent.innerHTML = `
+                <div class="max-h-[600px] overflow-y-auto">
+                    <div class="space-y-4">
+                        ${validJobs.map(job => `
+                            <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:shadow-md transition cursor-pointer" onclick="viewJob('${job._id}')">
+                                <div class="flex justify-between items-start mb-2">
+                                    <div>
+                                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">${job.title}</h3>
+                                        <p class="text-gray-600 dark:text-gray-300 text-sm">${job.company.companyName}</p>
+                                    </div>
+                                    <button onclick="event.stopPropagation(); viewJob('${job._id}')" class="text-[#56AE67] hover:text-[#2d6b3c] text-sm font-medium">
+                                        View Details
+                                    </button>
+                                </div>
+                                <div class="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 flex-wrap">
+                                    <span><i class="fas fa-map-marker-alt mr-1"></i>${job.location?.city || 'Remote'}, ${job.location?.state || ''}</span>
+                                    <span><i class="fas fa-briefcase mr-1"></i>${capitalizeFirst(job.jobType)}</span>
+                                    <span><i class="fas fa-user-graduate mr-1"></i>${capitalizeFirst(job.experienceLevel)}</span>
+                                    ${job.salary?.min || job.salary?.max ? `
+                                        <span><i class="fas fa-coins mr-1"></i>₱${job.salary.min ? job.salary.min.toLocaleString() : '0'} - ₱${job.salary.max ? job.salary.max.toLocaleString() : '0'}</span>
+                                    ` : ''}
+                                    ${job.location?.remote ? `<span class="bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-200 px-2 py-1 rounded">Remote</span>` : ''}
+                                </div>
+                                <div class="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                                    <span>${job.positionsAvailable} position${job.positionsAvailable !== 1 ? 's' : ''} available</span>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        })
+        .catch(error => {
+            console.error('Error loading jobs:', error);
+            modalContent.innerHTML = `
+                <div class="text-center py-8">
+                    <p class="text-red-500">Error loading jobs. Please try again.</p>
+                </div>
+            `;
+        });
+}
+
+// ============================================
 // JOB APPLICATIONS
 // ============================================
 
