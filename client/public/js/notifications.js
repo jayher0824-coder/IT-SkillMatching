@@ -420,3 +420,21 @@ async function deleteNotification(notificationId) {
         await window.notificationManager.deleteNotification(notificationId);
     }
 }
+
+// Fetch and update notifications (for use after loading notification bell)
+async function fetchAndUpdateNotifications() {
+    if (window.notificationManager) {
+        console.log('Fetching notifications...');
+        await window.notificationManager.fetchNotifications();
+        // Start polling if not already started
+        if (!window.notificationManager.pollInterval) {
+            window.notificationManager.startPolling(10000);
+        }
+    }
+}
+
+// Make function available globally
+if (typeof window !== 'undefined') {
+    window.fetchAndUpdateNotifications = window.fetchAndUpdateNotifications || fetchAndUpdateNotifications;
+}
+
