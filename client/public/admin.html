@@ -760,76 +760,304 @@
         
         // Messages Management - All Conversations
         function MessagesManagement() {
+            const [users, setUsers] = useState([]);
             const [conversations, setConversations] = useState([]);
+            const [selectedUser, setSelectedUser] = useState(null);
             const [loading, setLoading] = useState(true);
+            const [searchTerm, setSearchTerm] = useState('');
+            const [messageText, setMessageText] = useState('');
+            const [messages, setMessages] = useState([]);
+            const [conversationLoading, setConversationLoading] = useState(false);
             
             useEffect(() => {
-                axios.get(`${API_BASE}/messages`)
-                    .then(res => {
-                        const allConversations = res.data.data || [];
-                        setConversations(allConversations);
-                    })
-                    .catch(err => {
-                        console.error('Error fetching messages:', err);
-                        setConversations([]);
-                    })
-                    .finally(() => setLoading(false));
+                fetchUsersAndConversations();
             }, []);
             
-            if (loading) return <div className="loading"><i className="fas fa-spinner fa-spin"></i> Loading conversations...</div>;
+            const fetchUsersAndConversations = async () => {
+                try {
+                    setLoading(true);
+                    const [usersRes, conversationsRes] = await Promise.all([
+                        axios.get(`${API_BASE}/admin/users`),
+                        axios.get(`${API_BASE}/messages`)
+                    ]);
+                    
+                    const allUsers = usersRes.data.data || [];
+                    // Filter out the current admin user
+                    const filteredUsers = allUsers.filter(u => u.role !== 'admin');
+                    setUsers(filteredUsers);
+                    setConversations(conversationsRes.data.data || []);
+                } catch (err) {
+                    console.error('Error fetching data:', err);
+                } finally {
+                    setLoading(false);
+                }
+            };
+            
+            const handleSelectUser = async (user) => {
+                setSelectedUser(user);
+                setMessages([]);
+                setMessageText('');
+                
+                try {
+                    setConversationLoading(true);
+                    // Fetch existing conversation or messages
+                    const res = await axios.get(`${API_BASE}/messages`);
+                    const userConv = (res.data.data || []).find(conv => 
+                        conv.participants?.some(p => p._id === user._id)
+                    );
+                    
+                    if (userConv && userConv.messages) {
+                        setMessages(userConv.messages);
+                    }
+                } catch (err) {
+                    console.error('Error fetching conversation:', err);
+                } finally {
+                    setConversationLoading(false);
+                }
+            };
+            
+            const handleSendMessage = async () => {
+                if (!messageText.trim() || !selectedUser) return;
+                
+                try {
+                    await axios.post(`${API_BASE}/messages`, {
+                        recipientId: selectedUser._id,
+                        message: messageText.trim()
+                    });
+                    
+                    setMessageText('');
+                    // Refresh conversation
+                    handleSelectUser(selectedUser);
+                } catch (err) {
+                    console.error('Error sending message:', err);
+                    alert('Error sending message: ' + (err.response?.data?.message || err.message));
+                }
+            };
+            
+            const filteredUsers = users.filter(user => {
+                const fullName = `${user.firstName} ${user.lastName}`.toLowerCase();
+                const email = user.email.toLowerCase();
+                const search = searchTerm.toLowerCase();
+                return fullName.includes(search) || email.includes(search);
+            });
+            
+            if (loading) return <div className="loading"><i className="fas fa-spinner fa-spin"></i> Loading messages...</div>;
             
             return (
-                <div>
-                    <h2 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '20px', color: '#1f2937' }}>
-                        Conversations ({conversations.length} total)
-                    </h2>
-                    
-                    {conversations.length === 0 ? (
-                        <div className="error">No conversations yet</div>
-                    ) : (
-                        <div style={{ backgroundColor: 'white', borderRadius: '8px', overflow: 'hidden' }}>
-                            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                                <thead style={{ backgroundColor: '#f3f4f6' }}>
-                                    <tr>
-                                        <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #e5e7eb', fontWeight: '600', color: '#374151' }}>Participants</th>
-                                        <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #e5e7eb', fontWeight: '600', color: '#374151' }}>Messages</th>
-                                        <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #e5e7eb', fontWeight: '600', color: '#374151' }}>Last Activity</th>
-                                        <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #e5e7eb', fontWeight: '600', color: '#374151' }}>Status</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {conversations.map((conv, idx) => {
-                                        const lastMessage = conv.messages?.[conv.messages.length - 1];
-                                        return (
-                                            <tr key={idx} style={{ borderBottom: '1px solid #e5e7eb', hover: { backgroundColor: '#f9fafb' } }}>
-                                                <td style={{ padding: '12px', color: '#1f2937' }}>
-                                                    {conv.participants?.map(p => `${p.firstName} ${p.lastName}`).join(', ') || conv.name || 'Conversation'}
-                                                </td>
-                                                <td style={{ padding: '12px', color: '#1f2937' }}>
-                                                    {conv.messages?.length || 0}
-                                                </td>
-                                                <td style={{ padding: '12px', color: '#6b7280', fontSize: '14px' }}>
-                                                    {lastMessage ? new Date(lastMessage.createdAt || lastMessage.timestamp).toLocaleDateString() : new Date(conv.updatedAt || conv.createdAt).toLocaleDateString()}
-                                                </td>
-                                                <td style={{ padding: '12px' }}>
-                                                    <span style={{ 
-                                                        padding: '4px 8px', 
-                                                        borderRadius: '4px',
-                                                        fontSize: '12px',
-                                                        fontWeight: '600',
-                                                        backgroundColor: '#d1fae5',
-                                                        color: '#065f46'
-                                                    }}>
-                                                        Active
-                                                    </span>
-                                                </td>
-                                            </tr>
-                                        );
-                                    })}
-                                </tbody>
-                            </table>
+                <div style={{ display: 'flex', height: '90vh', backgroundColor: 'white', borderRadius: '8px', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+                    {/* Sidebar with user list */}
+                    <div style={{ width: '350px', borderRight: '1px solid #e5e7eb', display: 'flex', flexDirection: 'column', backgroundColor: '#f9fafb' }}>
+                        <div style={{ padding: '16px', borderBottom: '1px solid #e5e7eb' }}>
+                            <h3 style={{ margin: '0 0 12px 0', color: '#1f2937', fontSize: '16px', fontWeight: '600' }}>
+                                <i className="fas fa-comments" style={{ marginRight: '8px' }}></i>
+                                Conversations
+                            </h3>
+                            <input
+                                type="text"
+                                placeholder="Search conversations..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                style={{
+                                    width: '100%',
+                                    padding: '8px 12px',
+                                    border: '1px solid #d1d5db',
+                                    borderRadius: '6px',
+                                    fontSize: '13px',
+                                    boxSizing: 'border-box'
+                                }}
+                            />
                         </div>
-                    )}
+                        
+                        {/* Users list */}
+                        <div style={{ flex: 1, overflowY: 'auto' }}>
+                            {filteredUsers.length === 0 ? (
+                                <div style={{ padding: '20px', textAlign: 'center', color: '#6b7280', fontSize: '14px' }}>
+                                    {searchTerm ? 'No users found' : 'No users available'}
+                                </div>
+                            ) : (
+                                filteredUsers.map((user) => (
+                                    <div
+                                        key={user._id}
+                                        onClick={() => handleSelectUser(user)}
+                                        style={{
+                                            padding: '12px 16px',
+                                            borderBottom: '1px solid #e5e7eb',
+                                            cursor: 'pointer',
+                                            backgroundColor: selectedUser?._id === user._id ? '#e0f2fe' : 'transparent',
+                                            transition: 'background-color 0.2s',
+                                            ':hover': { backgroundColor: '#f3f4f6' }
+                                        }}
+                                        onMouseEnter={(e) => {
+                                            if (selectedUser?._id !== user._id) {
+                                                e.currentTarget.style.backgroundColor = '#f3f4f6';
+                                            }
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            if (selectedUser?._id !== user._id) {
+                                                e.currentTarget.style.backgroundColor = 'transparent';
+                                            }
+                                        }}
+                                    >
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                            <div style={{
+                                                width: '40px',
+                                                height: '40px',
+                                                borderRadius: '50%',
+                                                backgroundColor: '#4f46e5',
+                                                color: 'white',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                fontSize: '16px',
+                                                fontWeight: 'bold',
+                                                flexShrink: 0
+                                            }}>
+                                                {user.firstName?.charAt(0)}{user.lastName?.charAt(0)}
+                                            </div>
+                                            <div style={{ flex: 1, minWidth: 0 }}>
+                                                <div style={{ fontWeight: '600', color: '#1f2937', fontSize: '14px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                                    {user.firstName} {user.lastName}
+                                                </div>
+                                                <div style={{ fontSize: '12px', color: '#6b7280', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                                    {user.email}
+                                                </div>
+                                            </div>
+                                            <span style={{
+                                                padding: '2px 6px',
+                                                borderRadius: '3px',
+                                                fontSize: '11px',
+                                                fontWeight: '600',
+                                                backgroundColor: user.role === 'student' ? '#d1fae5' : '#bfdbfe',
+                                                color: user.role === 'student' ? '#065f46' : '#1e40af',
+                                                flexShrink: 0
+                                            }}>
+                                                {user.role}
+                                            </span>
+                                        </div>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    </div>
+                    
+                    {/* Chat area */}
+                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                        {!selectedUser ? (
+                            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#6b7280' }}>
+                                <div style={{ textAlign: 'center' }}>
+                                    <i className="fas fa-comments" style={{ fontSize: '48px', marginBottom: '16px', color: '#d1d5db' }}></i>
+                                    <p style={{ margin: 0, fontSize: '16px', fontWeight: '500' }}>Select a conversation</p>
+                                    <p style={{ margin: '8px 0 0 0', fontSize: '14px', color: '#9ca3af' }}>Choose a user from the list to start messaging</p>
+                                </div>
+                            </div>
+                        ) : (
+                            <>
+                                {/* Chat header */}
+                                <div style={{ padding: '16px', borderBottom: '1px solid #e5e7eb', backgroundColor: 'white' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                        <div style={{
+                                            width: '40px',
+                                            height: '40px',
+                                            borderRadius: '50%',
+                                            backgroundColor: '#4f46e5',
+                                            color: 'white',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            fontSize: '16px',
+                                            fontWeight: 'bold'
+                                        }}>
+                                            {selectedUser.firstName?.charAt(0)}{selectedUser.lastName?.charAt(0)}
+                                        </div>
+                                        <div>
+                                            <div style={{ fontWeight: '600', color: '#1f2937', fontSize: '16px' }}>
+                                                {selectedUser.firstName} {selectedUser.lastName}
+                                            </div>
+                                            <div style={{ fontSize: '13px', color: '#6b7280' }}>
+                                                {selectedUser.email}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                {/* Messages area */}
+                                <div style={{ flex: 1, overflowY: 'auto', padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                    {conversationLoading ? (
+                                        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100px' }}>
+                                            <i className="fas fa-spinner fa-spin" style={{ color: '#4f46e5', fontSize: '20px' }}></i>
+                                        </div>
+                                    ) : messages.length === 0 ? (
+                                        <div style={{ textAlign: 'center', color: '#6b7280', marginTop: 'auto', marginBottom: 'auto' }}>
+                                            <p>No messages yet. Start the conversation!</p>
+                                        </div>
+                                    ) : (
+                                        messages.map((msg, idx) => (
+                                            <div key={idx} style={{
+                                                display: 'flex',
+                                                justifyContent: msg.senderId === selectedUser._id ? 'flex-start' : 'flex-end',
+                                                marginBottom: '8px'
+                                            }}>
+                                                <div style={{
+                                                    maxWidth: '70%',
+                                                    backgroundColor: msg.senderId === selectedUser._id ? '#e5e7eb' : '#4f46e5',
+                                                    color: msg.senderId === selectedUser._id ? '#1f2937' : 'white',
+                                                    padding: '10px 14px',
+                                                    borderRadius: '8px',
+                                                    fontSize: '14px',
+                                                    lineHeight: '1.4',
+                                                    wordWrap: 'break-word'
+                                                }}>
+                                                    {msg.message || msg.text}
+                                                </div>
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
+                                
+                                {/* Message input */}
+                                <div style={{ padding: '16px', borderTop: '1px solid #e5e7eb', backgroundColor: 'white' }}>
+                                    <div style={{ display: 'flex', gap: '8px' }}>
+                                        <input
+                                            type="text"
+                                            placeholder="Type a message..."
+                                            value={messageText}
+                                            onChange={(e) => setMessageText(e.target.value)}
+                                            onKeyPress={(e) => {
+                                                if (e.key === 'Enter') {
+                                                    handleSendMessage();
+                                                }
+                                            }}
+                                            style={{
+                                                flex: 1,
+                                                padding: '10px 14px',
+                                                border: '1px solid #d1d5db',
+                                                borderRadius: '6px',
+                                                fontSize: '14px',
+                                                boxSizing: 'border-box'
+                                            }}
+                                        />
+                                        <button
+                                            onClick={handleSendMessage}
+                                            disabled={!messageText.trim()}
+                                            style={{
+                                                padding: '10px 20px',
+                                                backgroundColor: messageText.trim() ? '#4f46e5' : '#d1d5db',
+                                                color: 'white',
+                                                border: 'none',
+                                                borderRadius: '6px',
+                                                cursor: messageText.trim() ? 'pointer' : 'not-allowed',
+                                                fontWeight: '500',
+                                                transition: 'background-color 0.2s'
+                                            }}
+                                        >
+                                            <i className="fas fa-paper-plane" style={{ marginRight: '6px' }}></i>
+                                            Send
+                                        </button>
+                                    </div>
+                                </div>
+                            </>
+                        )}
+                    </div>
                 </div>
             );
         }
