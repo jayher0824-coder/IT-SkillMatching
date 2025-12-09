@@ -75,6 +75,26 @@ router.get('/stats', protect, authorize('admin'), async (req, res) => {
   }
 });
 
+// @desc    Get all users for admin management
+// @route   GET /api/admin/users
+// @access  Private (Admin only)
+router.get('/users', protect, authorize('admin'), async (req, res) => {
+  try {
+    const users = await User.find().select('firstName lastName email role isActive lastLogin createdAt').sort({ createdAt: -1 });
+    
+    res.json({
+      success: true,
+      data: users,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error',
+    });
+  }
+});
+
 // @desc    Get all retake requests
 // @route   GET /api/admin/retake-requests
 // @access  Private (Admin only)
@@ -471,6 +491,56 @@ router.put('/users/:id/reset-password', protect, authorize('admin'), async (req,
         hasGoogleAuth: !!user.googleId,
         canLoginWithPassword: true,
         newPassword: newPassword, // Include password so admin can copy and send it to user
+      },
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error',
+    });
+  }
+});
+
+// @desc    Change user password by admin
+// @route   PUT /api/admin/users/:id/password
+// @access  Private (Admin only)
+router.put('/users/:id/password', protect, authorize('admin'), async (req, res) => {
+  try {
+    const { password } = req.body;
+    
+    if (!password || password.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: 'Password must be at least 6 characters long',
+      });
+    }
+
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found',
+      });
+    }
+
+    // Prevent admin from changing their own password this way
+    if (user._id.toString() === req.user._id.toString()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot change your own password. Use the change password feature in settings instead.',
+      });
+    }
+
+    user.password = password;
+    await user.save();
+
+    res.json({
+      success: true,
+      message: 'Password changed successfully',
+      data: {
+        userId: user._id,
+        email: user.email,
       },
     });
   } catch (error) {
