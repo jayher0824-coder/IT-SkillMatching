@@ -1,6 +1,6 @@
-# 🎓 IT Skillmatching Platform
+# 🎓 SkillSync - Cloud-Based Career Placement Platform
 
-*A comprehensive skill-based matching platform for IT On-the-Job Training programs*
+*An AI-powered career placement system connecting CCS IT students with opportunities*
 
 ## 🚀 Quick Start
 
@@ -24,20 +24,22 @@ npm run dev
 
 ## 📋 Overview
 
-### What is IT OJT Platform?
-A modern web application that connects IT students with companies for On-the-Job Training opportunities through intelligent skill-based matching.
+### What is SkillSync?
+SkillSync is a cloud-based career placement system specifically designed for CCS IT students. The platform connects students with employers through intelligent skill-based matching, comprehensive assessments, and personalized career guidance.
 
 ### Key Features
 - 👤 **User Management**: Students, companies, and administrators
-- 🔍 **Smart Matching**: Skill-based job recommendations  
-- 📊 **Assessment System**: Technical skill evaluations
-- 📈 **Progress Tracking**: OJT monitoring and reporting
+- 🔍 **Smart Matching**: AI-powered job recommendations based on skills
+- 📊 **Assessment System**: Comprehensive technical skill evaluations
+- 📈 **Skills Progress Tracking**: Monitor improvement over time
+- 🎯 **Career Path Recommendations**: Personalized IT career suggestions
+- 📚 **Learning Resources**: Curated recommendations for skill development
 - 🔐 **Secure Authentication**: Google OAuth integration
 - 📱 **Responsive Design**: Works on desktop and mobile
 
 ### Target Users
-- **Students**: Find OJT opportunities matching their skills
-- **Companies**: Post jobs and find qualified IT trainees
+- **Students**: Find career opportunities matching their skills with personalized guidance
+- **Companies**: Post jobs and discover qualified IT talent
 - **Administrators**: Manage the platform and oversee operations
 
 ## 🏗️ Architecture
