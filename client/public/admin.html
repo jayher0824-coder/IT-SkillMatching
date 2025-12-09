@@ -117,10 +117,18 @@
                             if (res.data.data?.role === 'admin') {
                                 setUser(res.data.data);
                             } else {
-                                logout();
+                                // Redirect non-admin users to their dashboard
+                                localStorage.removeItem('token');
+                                delete axios.defaults.headers.common['Authorization'];
+                                
+                                const redirectUrl = res.data.data?.role === 'student' ? '/' : '/company-dashboard';
+                                window.location.href = redirectUrl;
                             }
                         })
-                        .catch(() => logout())
+                        .catch(() => {
+                            logout();
+                            window.location.href = '/';
+                        })
                         .finally(() => setLoading(false));
                 } else {
                     setLoading(false);
@@ -129,6 +137,7 @@
             
             const logout = () => {
                 localStorage.removeItem('token');
+                delete axios.defaults.headers.common['Authorization'];
                 setUser(null);
             };
             
