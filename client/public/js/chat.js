@@ -98,13 +98,25 @@ class ChatManager {
     }
 
     async sendMessage(content) {
-        if (!this.currentConversation || !content.trim()) return;
+        if (!this.currentConversation) {
+            console.error('No conversation selected');
+            alert('Please select a conversation first');
+            return;
+        }
+        
+        if (!content.trim()) {
+            console.error('Empty message');
+            return;
+        }
 
         try {
+            console.log('Sending message to conversation:', this.currentConversation._id);
             const response = await apiCall(`/messages/conversations/${this.currentConversation._id}/messages`, {
                 method: 'POST',
                 body: JSON.stringify({ content: content.trim() })
             });
+            
+            console.log('Message sent response:', response);
             
             if (response.success) {
                 this.messages.push(response.data);
@@ -120,10 +132,13 @@ class ChatManager {
                     input.value = '';
                     input.style.height = 'auto';
                 }
+            } else {
+                console.error('Failed to send message:', response);
+                alert('Failed to send message: ' + (response.message || 'Unknown error'));
             }
         } catch (error) {
             console.error('Error sending message:', error);
-            showToast('Failed to send message', 'error');
+            alert('Failed to send message: ' + error.message);
         }
     }
 
@@ -195,6 +210,8 @@ class ChatManager {
     updateChatView() {
         const chatHeader = document.getElementById('chat-header');
         const messagesContainer = document.getElementById('chat-messages-container');
+        const messageInput = document.getElementById('chat-message-input');
+        const sendButton = document.querySelector('.chat-send-btn');
         
         if (!this.currentConversation) {
             if (chatHeader) chatHeader.innerHTML = '';
@@ -207,8 +224,21 @@ class ChatManager {
                     </div>
                 `;
             }
+            // Disable input when no conversation selected
+            if (messageInput) {
+                messageInput.disabled = true;
+                messageInput.placeholder = 'Select a conversation to start messaging...';
+            }
+            if (sendButton) sendButton.disabled = true;
             return;
         }
+
+        // Enable input when conversation is selected
+        if (messageInput) {
+            messageInput.disabled = false;
+            messageInput.placeholder = 'Type a message...';
+        }
+        if (sendButton) sendButton.disabled = false;
 
         const other = this.currentConversation.otherParticipant;
         

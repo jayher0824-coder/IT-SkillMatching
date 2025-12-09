@@ -214,10 +214,10 @@ router.post('/conversations/:id/messages', protect, async (req, res) => {
       try {
         await NotificationService.create({
           recipient: participantId,
-          type: 'system',
+          type: 'new_message',
           title: 'New Message',
           message: `You have a new message from ${req.user.email}`,
-          link: '/dashboard.html?tab=messages',
+          link: '/messages.html?conversation=' + conversation._id,
           data: {
             conversationId: conversation._id,
             messageId: message._id

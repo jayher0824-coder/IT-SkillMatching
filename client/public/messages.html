@@ -84,13 +84,15 @@
                     <div class="chat-input">
                         <textarea 
                             id="chat-message-input"
-                            placeholder="Type a message..."
+                            placeholder="Select a conversation to start messaging..."
                             rows="1"
+                            disabled
                             oninput="autoResizeTextarea(this)"
                             onkeypress="handleChatKeyPress(event)"
                             class="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg resize-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#56AE67]"></textarea>
                         <button 
                             onclick="sendChatMessage()"
+                            disabled
                             class="chat-send-btn">
                             <i class="fas fa-paper-plane"></i>
                             <span>Send</span>
