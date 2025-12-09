@@ -56,7 +56,8 @@
             
             if (!authToken) {
                 console.warn('Unauthorized access attempt: No authentication token found');
-                window.location.href = '/index.html';
+                // Redirect to landing page with admin login modal
+                window.location.href = '/index.html?login=admin';
                 return;
             }
             
@@ -67,7 +68,8 @@
                 console.error('Failed to parse user data:', e);
                 sessionStorage.clear();
                 localStorage.clear();
-                window.location.href = '/index.html';
+                // Redirect to landing page with admin login modal
+                window.location.href = '/index.html?login=admin';
                 return;
             }
             
@@ -75,7 +77,8 @@
                 console.warn('Unauthorized access attempt: No user data found');
                 sessionStorage.clear();
                 localStorage.clear();
-                window.location.href = '/index.html';
+                // Redirect to landing page with admin login modal
+                window.location.href = '/index.html?login=admin';
                 return;
             }
             
@@ -85,7 +88,8 @@
                 console.warn(`Unauthorized access attempt: User has role "${userData.role}" but needs admin/company`);
                 sessionStorage.clear();
                 localStorage.clear();
-                window.location.href = '/index.html';
+                // Redirect to landing page with admin login modal
+                window.location.href = '/index.html?login=admin';
                 return;
             }
             
@@ -108,14 +112,16 @@
                     console.warn('Invalid or expired token');
                     sessionStorage.clear();
                     localStorage.clear();
-                    window.location.href = '/index.html';
+                    // Redirect to landing page with admin login modal
+                    window.location.href = '/index.html?login=admin';
                 }
             })
             .catch(error => {
                 console.error('Token verification error:', error);
                 sessionStorage.clear();
                 localStorage.clear();
-                window.location.href = '/index.html';
+                // Redirect to landing page with admin login modal
+                window.location.href = '/index.html?login=admin';
             });
         })();
     </script>

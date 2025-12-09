@@ -215,6 +215,19 @@ function showLandingPage() {
     updateNavigation();
     // Load real-time statistics
     loadPlatformStatistics();
+    
+    // Check for admin login query parameter
+    const urlParams = new URLSearchParams(window.location.search);
+    const loginRole = urlParams.get('login');
+    
+    if (loginRole === 'admin') {
+        // Auto-open admin login modal
+        setTimeout(() => {
+            showLoginModal('admin');
+            // Remove the query parameter from URL
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }, 500);
+    }
 }
 
 // Load and display real platform statistics
