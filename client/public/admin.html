@@ -47,7 +47,15 @@
     <!-- Babel for JSX -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </head>
-<body>
+<body class="bg-gray-50">
+    <!-- Loading indicator -->
+    <div id="loading-indicator" class="fixed inset-0 bg-white flex items-center justify-center z-50">
+        <div class="text-center">
+            <i class="fas fa-spinner fa-spin text-6xl text-indigo-600 mb-4"></i>
+            <p class="text-gray-600 text-lg">Loading Admin Dashboard...</p>
+        </div>
+    </div>
+    
     <div id="admin-root"></div>
     
     <!-- Authentication Guard - Must run before everything else -->
@@ -56,6 +64,11 @@
             // Check if user is authenticated and has admin/company role
             const authToken = sessionStorage.getItem('authToken') || localStorage.getItem('token');
             const userDataStr = sessionStorage.getItem('userData') || localStorage.getItem('user');
+            
+            console.log('Admin Dashboard Auth Check:', {
+                hasToken: !!authToken,
+                hasUserData: !!userDataStr
+            });
             
             if (!authToken) {
                 console.warn('Unauthorized access attempt: No authentication token found');

@@ -2160,14 +2160,31 @@ try {
   console.log('ReactDOM:', typeof ReactDOM);
   
   ReactDOM.render(React.createElement(AppWrapper), document.getElementById('admin-root'));
+  
+  // Remove loading indicator
+  const loadingIndicator = document.getElementById('loading-indicator');
+  if (loadingIndicator) {
+    loadingIndicator.style.display = 'none';
+  }
+  
   console.log('Admin app loaded successfully');
 } catch (error) {
   console.error('Error loading admin app:', error);
+  
+  // Remove loading indicator
+  const loadingIndicator = document.getElementById('loading-indicator');
+  if (loadingIndicator) {
+    loadingIndicator.style.display = 'none';
+  }
+  
   document.getElementById('admin-root').innerHTML = `
     <div style="padding: 20px; color: red; font-family: Arial, sans-serif;">
       <h1>Error Loading Admin Dashboard</h1>
       <p>Please check the browser console for more details.</p>
       <p>Error: ${error.message}</p>
+      <button onclick="location.reload()" style="margin-top: 20px; padding: 10px 20px; background: #4F46E5; color: white; border: none; border-radius: 5px; cursor: pointer;">
+        Reload Page
+      </button>
     </div>
   `;
 }
