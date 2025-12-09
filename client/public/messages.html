@@ -211,7 +211,25 @@
             const backBtn = document.getElementById('back-to-dashboard-btn');
             if (backBtn) {
                 backBtn.addEventListener('click', () => {
-                    window.location.href = '/dashboard.html';
+                    // Get user role from session storage
+                    const userDataStr = sessionStorage.getItem('userData');
+                    let userRole = 'student'; // default
+                    
+                    if (userDataStr) {
+                        try {
+                            const userData = JSON.parse(userDataStr);
+                            userRole = userData.role || 'student';
+                        } catch (e) {
+                            console.error('Failed to parse user data:', e);
+                        }
+                    }
+                    
+                    // Redirect based on user role
+                    if (userRole === 'company' || userRole === 'admin') {
+                        window.location.href = '/admin.html';
+                    } else {
+                        window.location.href = '/dashboard.html';
+                    }
                 });
             }
 
