@@ -157,16 +157,24 @@ router.post('/:id/reply', protect, authorize('admin'), async (req, res) => {
     }
 
     // Create notification for user about admin reply
-    const NotificationService = require('../../services/notificationService');
-    await NotificationService.createNotification({
-      user: feedback.user._id,
-      title: 'Feedback Reply',
-      message: `Admin replied to your feedback: "${feedback.subject}"`,
-      type: 'feedback_reply',
-      link: '/dashboard?tab=feedback',
-      relatedId: feedback._id,
-      relatedModel: 'Feedback'
-    });
+    try {
+      const NotificationService = require('../../services/notificationService');
+      await NotificationService.create({
+        recipient: feedback.user._id,
+        title: 'Feedback Reply',
+        message: `Admin replied to your feedback: "${feedback.subject}"`,
+        type: 'feedback_reply',
+        link: '/dashboard?tab=feedback',
+        data: {
+          feedbackId: feedback._id,
+          feedbackSubject: feedback.subject
+        }
+      });
+      console.log('Notification created for feedback reply');
+    } catch (notificationError) {
+      console.error('Error creating notification:', notificationError);
+      // Don't fail the whole request if notification fails
+    }
 
     res.json({
       success: true,
