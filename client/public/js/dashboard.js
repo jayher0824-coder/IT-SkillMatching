@@ -140,6 +140,9 @@ async function loadStudentDashboard() {
                             <button id="nav-applications" onclick="switchToSection('applications')" class="nav-item w-full text-left px-3 md:px-4 py-2 md:py-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition flex items-center text-sm md:text-base">
                                 <i class="fas fa-paper-plane mr-2 md:mr-3"></i><span class="truncate">Applications</span>
                             </button>
+                            <button id="nav-messages" onclick="window.location.href='/messages.html'" class="nav-item w-full text-left px-3 md:px-4 py-2 md:py-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition flex items-center text-sm md:text-base">
+                                <i class="fas fa-comments mr-2 md:mr-3"></i><span class="truncate">Messages</span>
+                            </button>
                         </div>
                     </nav>
 
@@ -839,6 +842,10 @@ async function loadCompanyDashboard() {
                         <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
                             <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Quick Actions</h3>
                             <div class="space-y-3">
+                                <button onclick="window.location.href='/messages.html'" class="w-full text-left p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition">
+                                    <i class="fas fa-comments text-blue-600 dark:text-blue-400 mr-3"></i>
+                                    <span class="text-sm text-gray-900 dark:text-white">Messages</span>
+                                </button>
                                 <button onclick="searchStudents()" class="w-full text-left p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition">
                                     <i class="fas fa-search text-[#56AE67] dark:text-[#6bc481] mr-3"></i>
                                     <span class="text-sm text-gray-900 dark:text-white">Search Students</span>

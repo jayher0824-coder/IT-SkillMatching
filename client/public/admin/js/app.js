@@ -1769,6 +1769,7 @@ const Sidebar = ({ activeTab, setActiveTab }) => {
     { id: 'users', label: 'User Management', icon: 'fas fa-users' },
     { id: 'password-requests', label: 'Password Requests', icon: 'fas fa-lock' },
     { id: 'feedback', label: 'Feedback', icon: 'fas fa-comment' },
+    { id: 'messages', label: 'Messages', icon: 'fas fa-comments', isExternal: true, href: '/messages.html' },
   ];
 
   return (
@@ -1780,16 +1781,27 @@ const Sidebar = ({ activeTab, setActiveTab }) => {
       
       <nav className="flex-1 mt-4">
         {menuItems.map((item) => (
-          <button
-            key={item.id}
-            onClick={() => setActiveTab(item.id)}
-            className={`w-full text-left px-4 py-3 hover:bg-gray-700 flex items-center space-x-3 ${
-              activeTab === item.id ? 'bg-gray-700 border-r-2 border-indigo-500' : ''
-            }`}
-          >
-            <i className={item.icon}></i>
-            <span>{item.label}</span>
-          </button>
+          item.isExternal ? (
+            <a
+              key={item.id}
+              href={item.href}
+              className="w-full text-left px-4 py-3 hover:bg-gray-700 flex items-center space-x-3 block"
+            >
+              <i className={item.icon}></i>
+              <span>{item.label}</span>
+            </a>
+          ) : (
+            <button
+              key={item.id}
+              onClick={() => setActiveTab(item.id)}
+              className={`w-full text-left px-4 py-3 hover:bg-gray-700 flex items-center space-x-3 ${
+                activeTab === item.id ? 'bg-gray-700 border-r-2 border-indigo-500' : ''
+              }`}
+            >
+              <i className={item.icon}></i>
+              <span>{item.label}</span>
+            </button>
+          )
         ))}
       </nav>
       
