@@ -81,6 +81,10 @@ function switchToSection(sectionName) {
         loadAssessmentSection();
     } else if (sectionName === 'history') {
         loadAssessmentHistory();
+    } else if (sectionName === 'career-paths') {
+        loadCareerPaths();
+    } else if (sectionName === 'skill-progress') {
+        loadSkillProgress();
     }
 }
 
@@ -139,6 +143,12 @@ async function loadStudentDashboard() {
                             </button>
                             <button id="nav-applications" onclick="switchToSection('applications')" class="nav-item w-full text-left px-3 md:px-4 py-2 md:py-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition flex items-center text-sm md:text-base">
                                 <i class="fas fa-paper-plane mr-2 md:mr-3"></i><span class="truncate">Applications</span>
+                            </button>
+                            <button id="nav-career-paths" onclick="switchToSection('career-paths')" class="nav-item w-full text-left px-3 md:px-4 py-2 md:py-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition flex items-center text-sm md:text-base">
+                                <i class="fas fa-route mr-2 md:mr-3"></i><span class="truncate">Career Paths</span>
+                            </button>
+                            <button id="nav-skill-progress" onclick="switchToSection('skill-progress')" class="nav-item w-full text-left px-3 md:px-4 py-2 md:py-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition flex items-center text-sm md:text-base">
+                                <i class="fas fa-chart-line mr-2 md:mr-3"></i><span class="truncate">Skills Progress</span>
                             </button>
                             <button id="nav-messages" onclick="window.location.href='/messages.html'" class="nav-item w-full text-left px-3 md:px-4 py-2 md:py-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition flex items-center text-sm md:text-base">
                                 <i class="fas fa-comments mr-2 md:mr-3"></i><span class="truncate">Messages</span>
@@ -543,6 +553,44 @@ async function loadStudentDashboard() {
                             </div>
                         </div>
                     </div>
+
+                    <!-- Career Paths Section -->
+                    <div id="career-paths-section" class="section hidden p-8">
+                        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                            <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+                                <i class="fas fa-route text-[#56AE67] mr-2"></i>
+                                Recommended Career Paths
+                            </h2>
+                            <p class="text-gray-600 dark:text-gray-300 mb-6">Based on your skills and assessment results, here are IT career paths that match your profile.</p>
+                            <div id="career-paths-content">
+                                <div class="flex items-center justify-center py-12">
+                                    <div class="text-center">
+                                        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                                        <p class="text-gray-600 dark:text-gray-300">Loading career recommendations...</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Skills Progress Section -->
+                    <div id="skill-progress-section" class="section hidden p-8">
+                        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                            <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+                                <i class="fas fa-chart-line text-[#56AE67] mr-2"></i>
+                                Skills Progress Tracking
+                            </h2>
+                            <p class="text-gray-600 dark:text-gray-300 mb-6">Track your skill development over time and see your improvement.</p>
+                            <div id="skill-progress-content">
+                                <div class="flex items-center justify-center py-12">
+                                    <div class="text-center">
+                                        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                                        <p class="text-gray-600 dark:text-gray-300">Loading skills progress...</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         `;
@@ -553,6 +601,8 @@ async function loadStudentDashboard() {
             attachAssessmentCardListeners();
             loadAssessmentHistory();
             loadStudentProfile();
+            loadCareerPaths();
+            loadSkillProgress();
             
             // Load notification bell component
             loadNotificationBell('student-notification-bell-container');
@@ -4885,6 +4935,127 @@ function showAssessmentResults(resultData) {
         
         verifiedSkillsElement.innerHTML = skillsHTML;
     }
+    
+    // Display learning recommendations for weak areas
+    displayLearningRecommendations(resultData.categoryScores);
+}
+
+// ============================================
+// LEARNING RECOMMENDATIONS
+// ============================================
+
+function displayLearningRecommendations(categoryScores) {
+    if (!categoryScores) return;
+    
+    const weakAreas = [];
+    const categoryNames = {
+        programming: 'Programming',
+        database: 'Database',
+        webDevelopment: 'Web Development',
+        networking: 'Networking',
+        problemSolving: 'Problem Solving'
+    };
+    
+    // Find areas that need improvement (< 60%)
+    Object.keys(categoryScores).forEach(category => {
+        const score = categoryScores[category];
+        if (score < 60) {
+            weakAreas.push({ category, score, name: categoryNames[category] });
+        }
+    });
+    
+    if (weakAreas.length === 0) return;
+    
+    // Get learning resources for each weak area
+    const recommendations = weakAreas.map(area => {
+        const resources = getLearningResources(area.category);
+        return `
+            <div class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4 mb-4">
+                <div class="flex items-start">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-lightbulb text-yellow-600 dark:text-yellow-400 text-2xl"></i>
+                    </div>
+                    <div class="ml-4 flex-1">
+                        <h4 class="font-semibold text-gray-900 dark:text-white mb-2">
+                            Improve Your ${area.name} Skills (Current: ${area.score}%)
+                        </h4>
+                        <p class="text-sm text-gray-700 dark:text-gray-300 mb-3">
+                            We recommend these resources to help you strengthen this area:
+                        </p>
+                        <div class="space-y-2">
+                            ${resources.map(resource => `
+                                <a href="${resource.url}" target="_blank" rel="noopener noreferrer" 
+                                   class="flex items-center text-sm text-blue-600 dark:text-blue-400 hover:underline">
+                                    <i class="${resource.icon} mr-2"></i>
+                                    <span>${resource.title}</span>
+                                    <i class="fas fa-external-link-alt ml-2 text-xs"></i>
+                                </a>
+                            `).join('')}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+    
+    // Insert recommendations into the results page
+    const resultsContainer = document.querySelector('#assessment-results .max-w-4xl');
+    if (resultsContainer) {
+        const recommendationsSection = `
+            <div class="mt-8">
+                <h3 class="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+                    <i class="fas fa-graduation-cap text-[#56AE67] mr-2"></i>
+                    Recommended Learning Resources
+                </h3>
+                ${recommendations}
+            </div>
+        `;
+        
+        // Find the continue button and insert before it
+        const continueButton = resultsContainer.querySelector('button[onclick*="continueToPlatform"]');
+        if (continueButton) {
+            continueButton.insertAdjacentHTML('beforebegin', recommendationsSection);
+        } else {
+            resultsContainer.insertAdjacentHTML('beforeend', recommendationsSection);
+        }
+    }
+}
+
+function getLearningResources(category) {
+    const resources = {
+        programming: [
+            { title: 'Python Tutorial - W3Schools', url: 'https://www.w3schools.com/python/', icon: 'fab fa-python' },
+            { title: 'Java Programming - Oracle', url: 'https://docs.oracle.com/javase/tutorial/', icon: 'fab fa-java' },
+            { title: 'JavaScript Basics - MDN', url: 'https://developer.mozilla.org/en-US/docs/Learn/JavaScript', icon: 'fab fa-js' },
+            { title: 'Codecademy - Programming Courses', url: 'https://www.codecademy.com/catalog/language/python', icon: 'fas fa-code' }
+        ],
+        database: [
+            { title: 'SQL Tutorial - W3Schools', url: 'https://www.w3schools.com/sql/', icon: 'fas fa-database' },
+            { title: 'SQLZoo Interactive Exercises', url: 'https://sqlzoo.net/', icon: 'fas fa-laptop-code' },
+            { title: 'MongoDB University', url: 'https://university.mongodb.com/', icon: 'fas fa-leaf' },
+            { title: 'Database Design - Coursera', url: 'https://www.coursera.org/learn/database-design', icon: 'fas fa-graduation-cap' }
+        ],
+        webDevelopment: [
+            { title: 'HTML & CSS - MDN Web Docs', url: 'https://developer.mozilla.org/en-US/docs/Learn', icon: 'fab fa-html5' },
+            { title: 'React Tutorial - Official Docs', url: 'https://react.dev/learn', icon: 'fab fa-react' },
+            { title: 'FreeCodeCamp - Web Development', url: 'https://www.freecodecamp.org/', icon: 'fab fa-free-code-camp' },
+            { title: 'The Odin Project', url: 'https://www.theodinproject.com/', icon: 'fas fa-code-branch' }
+        ],
+        networking: [
+            { title: 'Networking Basics - Cisco', url: 'https://www.netacad.com/', icon: 'fas fa-network-wired' },
+            { title: 'Computer Networking - Coursera', url: 'https://www.coursera.org/learn/computer-networking', icon: 'fas fa-graduation-cap' },
+            { title: 'TCP/IP Guide', url: 'http://www.tcpipguide.com/', icon: 'fas fa-book' },
+            { title: 'Networking Tutorials - GeeksforGeeks', url: 'https://www.geeksforgeeks.org/computer-network-tutorials/', icon: 'fas fa-laptop' }
+        ],
+        problemSolving: [
+            { title: 'LeetCode Practice Problems', url: 'https://leetcode.com/', icon: 'fas fa-code' },
+            { title: 'HackerRank Challenges', url: 'https://www.hackerrank.com/', icon: 'fas fa-trophy' },
+            { title: 'Project Euler - Math Problems', url: 'https://projecteuler.net/', icon: 'fas fa-calculator' },
+            { title: 'Codewars Kata', url: 'https://www.codewars.com/', icon: 'fas fa-fighter-jet' }
+        ]
+    };
+    
+    return resources[category] || [];
 }
 
 // Continue to platform from results
@@ -5885,3 +6056,386 @@ if (document.readyState === 'loading') {
     feedbackFormHandler();
 }
 
+// ============================================
+// CAREER PATH RECOMMENDATIONS
+// ============================================
+
+async function loadCareerPaths() {
+    const careerPathsContent = document.getElementById('career-paths-content');
+    if (!careerPathsContent) return;
+
+    try {
+        // Fetch student profile and assessment results
+        const [profileResponse, assessmentResponse] = await Promise.all([
+            apiCall('/students/profile').catch(() => ({ success: false, data: null })),
+            apiCall('/assessments/results/me').catch(() => ({ success: false, data: [] }))
+        ]);
+
+        const profile = profileResponse.data;
+        const assessments = assessmentResponse.data || [];
+
+        // Get latest assessment scores
+        let categoryScores = {};
+        if (assessments.length > 0) {
+            const latestAssessment = assessments[0];
+            categoryScores = latestAssessment.categoryScores || {};
+        }
+
+        // Generate career recommendations based on skills and scores
+        const careerPaths = generateCareerRecommendations(profile, categoryScores);
+
+        if (careerPaths.length === 0) {
+            careerPathsContent.innerHTML = `
+                <div class="text-center py-8">
+                    <div class="text-gray-400 text-5xl mb-4">
+                        <i class="fas fa-route"></i>
+                    </div>
+                    <p class="text-gray-600 dark:text-gray-400">Complete your assessment to get personalized career path recommendations.</p>
+                    <button onclick="switchToSection('assessment')" class="mt-4 bg-[#56AE67] text-white px-6 py-2 rounded-lg hover:bg-[#3d8b4f] transition font-semibold border-2 border-green-800">
+                        Take Assessment
+                    </button>
+                </div>
+            `;
+            return;
+        }
+
+        careerPathsContent.innerHTML = `
+            <div class="grid md:grid-cols-2 gap-6">
+                ${careerPaths.map(path => `
+                    <div class="bg-gradient-to-br from-${path.color}-50 to-${path.color}-100 dark:from-${path.color}-900/20 dark:to-${path.color}-800/20 rounded-lg p-6 border-2 border-${path.color}-200 dark:border-${path.color}-800 hover:shadow-lg transition">
+                        <div class="flex items-start justify-between mb-4">
+                            <div class="flex items-center">
+                                <div class="bg-${path.color}-500 text-white p-3 rounded-lg mr-4">
+                                    <i class="${path.icon} text-2xl"></i>
+                                </div>
+                                <div>
+                                    <h3 class="text-xl font-bold text-gray-900 dark:text-white">${path.title}</h3>
+                                    <div class="flex items-center mt-1">
+                                        <span class="text-sm font-medium text-${path.color}-700 dark:text-${path.color}-400">Match: ${path.matchScore}%</span>
+                                        <div class="ml-2 w-20 bg-gray-200 dark:bg-gray-600 rounded-full h-2">
+                                            <div class="bg-${path.color}-500 h-2 rounded-full" style="width: ${path.matchScore}%"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <p class="text-gray-700 dark:text-gray-300 text-sm mb-4">${path.description}</p>
+                        
+                        <div class="mb-4">
+                            <h4 class="font-semibold text-gray-900 dark:text-white mb-2 text-sm">Required Skills:</h4>
+                            <div class="flex flex-wrap gap-2">
+                                ${path.requiredSkills.map(skill => `
+                                    <span class="text-xs px-2 py-1 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded border border-${path.color}-300 dark:border-${path.color}-700">
+                                        ${skill}
+                                    </span>
+                                `).join('')}
+                            </div>
+                        </div>
+                        
+                        ${path.skillGap.length > 0 ? `
+                            <div class="mb-4">
+                                <h4 class="font-semibold text-yellow-700 dark:text-yellow-400 mb-2 text-sm flex items-center">
+                                    <i class="fas fa-exclamation-triangle mr-2"></i>Skills to Develop:
+                                </h4>
+                                <div class="flex flex-wrap gap-2">
+                                    ${path.skillGap.map(skill => `
+                                        <span class="text-xs px-2 py-1 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300 rounded">
+                                            ${skill}
+                                        </span>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        ` : ''}
+                        
+                        <div class="pt-4 border-t border-${path.color}-200 dark:border-${path.color}-800">
+                            <div class="flex items-center justify-between text-sm">
+                                <span class="text-gray-600 dark:text-gray-400">Avg. Salary:</span>
+                                <span class="font-bold text-gray-900 dark:text-white">${path.salary}</span>
+                            </div>
+                            <div class="flex items-center justify-between text-sm mt-2">
+                                <span class="text-gray-600 dark:text-gray-400">Job Demand:</span>
+                                <span class="font-bold text-${path.color}-700 dark:text-${path.color}-400">${path.demand}</span>
+                            </div>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+
+    } catch (error) {
+        console.error('Error loading career paths:', error);
+        careerPathsContent.innerHTML = `
+            <div class="text-center py-8">
+                <div class="text-red-500 text-5xl mb-4">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <p class="text-gray-600 dark:text-gray-400">Failed to load career recommendations.</p>
+            </div>
+        `;
+    }
+}
+
+function generateCareerRecommendations(profile, categoryScores) {
+    const careerPaths = [
+        {
+            title: 'Full Stack Developer',
+            icon: 'fas fa-layer-group',
+            color: 'blue',
+            description: 'Build complete web applications from front-end to back-end, working with databases, servers, and user interfaces.',
+            requiredSkills: ['HTML/CSS', 'JavaScript', 'React/Vue', 'Node.js', 'SQL', 'REST APIs'],
+            primaryCategories: ['webDevelopment', 'programming', 'database'],
+            salary: '₱30,000 - ₱60,000',
+            demand: 'Very High'
+        },
+        {
+            title: 'Frontend Developer',
+            icon: 'fas fa-palette',
+            color: 'purple',
+            description: 'Create beautiful and responsive user interfaces, focusing on user experience and visual design.',
+            requiredSkills: ['HTML5', 'CSS3', 'JavaScript', 'React', 'Responsive Design', 'UI/UX'],
+            primaryCategories: ['webDevelopment', 'programming'],
+            salary: '₱25,000 - ₱50,000',
+            demand: 'High'
+        },
+        {
+            title: 'Backend Developer',
+            icon: 'fas fa-server',
+            color: 'green',
+            description: 'Build server-side logic, databases, and APIs that power applications behind the scenes.',
+            requiredSkills: ['Node.js/Python', 'SQL', 'REST APIs', 'Authentication', 'Server Management'],
+            primaryCategories: ['programming', 'database'],
+            salary: '₱28,000 - ₱55,000',
+            demand: 'High'
+        },
+        {
+            title: 'Data Analyst',
+            icon: 'fas fa-chart-bar',
+            color: 'indigo',
+            description: 'Analyze data to help businesses make informed decisions using SQL, Python, and visualization tools.',
+            requiredSkills: ['SQL', 'Python', 'Data Visualization', 'Statistics', 'Excel'],
+            primaryCategories: ['database', 'programming', 'problemSolving'],
+            salary: '₱25,000 - ₱50,000',
+            demand: 'Very High'
+        },
+        {
+            title: 'Network Administrator',
+            icon: 'fas fa-network-wired',
+            color: 'red',
+            description: 'Manage and maintain computer networks, ensuring connectivity, security, and optimal performance.',
+            requiredSkills: ['TCP/IP', 'Network Security', 'Cisco', 'Troubleshooting', 'Protocols'],
+            primaryCategories: ['networking'],
+            salary: '₱22,000 - ₱45,000',
+            demand: 'Medium'
+        },
+        {
+            title: 'Software Engineer',
+            icon: 'fas fa-code',
+            color: 'yellow',
+            description: 'Design and develop software solutions, write clean code, and solve complex technical problems.',
+            requiredSkills: ['Java/Python', 'OOP', 'Algorithms', 'Git', 'Testing', 'Problem Solving'],
+            primaryCategories: ['programming', 'problemSolving'],
+            salary: '₱30,000 - ₱70,000',
+            demand: 'Very High'
+        }
+    ];
+
+    // Calculate match score for each career path
+    return careerPaths.map(path => {
+        let totalScore = 0;
+        let categoryCount = 0;
+
+        path.primaryCategories.forEach(category => {
+            if (categoryScores[category] !== undefined) {
+                totalScore += categoryScores[category];
+                categoryCount++;
+            }
+        });
+
+        const matchScore = categoryCount > 0 ? Math.round(totalScore / categoryCount) : 0;
+
+        // Determine skill gap
+        const userSkills = profile?.skills?.map(s => s.name.toLowerCase()) || [];
+        const skillGap = path.requiredSkills.filter(skill => 
+            !userSkills.some(userSkill => userSkill.includes(skill.toLowerCase().split('/')[0]))
+        );
+
+        return {
+            ...path,
+            matchScore,
+            skillGap
+        };
+    }).filter(path => path.matchScore > 0).sort((a, b) => b.matchScore - a.matchScore);
+}
+
+// ============================================
+// SKILLS PROGRESS TRACKING
+// ============================================
+
+async function loadSkillProgress() {
+    const skillProgressContent = document.getElementById('skill-progress-content');
+    if (!skillProgressContent) return;
+
+    try {
+        const response = await apiCall('/assessments/results/me');
+        const assessments = response.data || [];
+
+        if (assessments.length === 0) {
+            skillProgressContent.innerHTML = `
+                <div class="text-center py-8">
+                    <div class="text-gray-400 text-5xl mb-4">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <p class="text-gray-600 dark:text-gray-400">No assessment history to track progress.</p>
+                    <p class="text-sm text-gray-500 dark:text-gray-500 mt-2">Take multiple assessments to see your skill progression over time.</p>
+                    <button onclick="switchToSection('assessment')" class="mt-4 bg-[#56AE67] text-white px-6 py-2 rounded-lg hover:bg-[#3d8b4f] transition font-semibold border-2 border-green-800">
+                        Take Assessment
+                    </button>
+                </div>
+            `;
+            return;
+        }
+
+        // Sort assessments by date (oldest to newest)
+        const sortedAssessments = [...assessments].sort((a, b) => 
+            new Date(a.completedAt) - new Date(b.completedAt)
+        );
+
+        // Track progress for each category
+        const categoryNames = {
+            programming: 'Programming',
+            database: 'Database',
+            webDevelopment: 'Web Development',
+            networking: 'Networking',
+            problemSolving: 'Problem Solving'
+        };
+
+        const categoryProgress = {};
+        Object.keys(categoryNames).forEach(category => {
+            categoryProgress[category] = sortedAssessments
+                .filter(a => a.categoryScores && a.categoryScores[category] !== undefined)
+                .map(a => ({
+                    score: a.categoryScores[category],
+                    date: new Date(a.completedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+                }));
+        });
+
+        // Calculate improvements
+        const improvements = {};
+        Object.keys(categoryProgress).forEach(category => {
+            const scores = categoryProgress[category];
+            if (scores.length >= 2) {
+                const firstScore = scores[0].score;
+                const lastScore = scores[scores.length - 1].score;
+                improvements[category] = lastScore - firstScore;
+            }
+        });
+
+        skillProgressContent.innerHTML = `
+            <!-- Overall Stats -->
+            <div class="grid md:grid-cols-3 gap-4 mb-8">
+                <div class="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-6 border-2 border-blue-200 dark:border-blue-800">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-600 dark:text-gray-400">Total Assessments</p>
+                            <p class="text-3xl font-bold text-gray-900 dark:text-white mt-2">${assessments.length}</p>
+                        </div>
+                        <i class="fas fa-clipboard-check text-4xl text-blue-500"></i>
+                    </div>
+                </div>
+                <div class="bg-green-50 dark:bg-green-900/20 rounded-lg p-6 border-2 border-green-200 dark:border-green-800">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-600 dark:text-gray-400">Latest Score</p>
+                            <p class="text-3xl font-bold text-gray-900 dark:text-white mt-2">${sortedAssessments[sortedAssessments.length - 1].percentage}%</p>
+                        </div>
+                        <i class="fas fa-chart-line text-4xl text-green-500"></i>
+                    </div>
+                </div>
+                <div class="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-6 border-2 border-purple-200 dark:border-purple-800">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-600 dark:text-gray-400">Avg. Improvement</p>
+                            <p class="text-3xl font-bold text-gray-900 dark:text-white mt-2">
+                                ${Object.values(improvements).length > 0 ? 
+                                    '+' + Math.round(Object.values(improvements).reduce((a, b) => a + b, 0) / Object.values(improvements).length) + '%' 
+                                    : 'N/A'}
+                            </p>
+                        </div>
+                        <i class="fas fa-trophy text-4xl text-purple-500"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Category Progress -->
+            <div class="space-y-6">
+                ${Object.keys(categoryProgress).filter(cat => categoryProgress[cat].length > 0).map(category => {
+                    const data = categoryProgress[category];
+                    const latestScore = data[data.length - 1].score;
+                    const improvement = improvements[category] || 0;
+                    const improvementClass = improvement > 0 ? 'text-green-600 dark:text-green-400' : improvement < 0 ? 'text-red-600 dark:text-red-400' : 'text-gray-600 dark:text-gray-400';
+                    const improvementIcon = improvement > 0 ? 'fa-arrow-up' : improvement < 0 ? 'fa-arrow-down' : 'fa-minus';
+
+                    return `
+                        <div class="bg-white dark:bg-gray-700 rounded-lg p-6 shadow">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-lg font-bold text-gray-900 dark:text-white">${categoryNames[category]}</h3>
+                                <div class="flex items-center space-x-4">
+                                    <span class="text-2xl font-bold text-gray-900 dark:text-white">${latestScore}%</span>
+                                    ${data.length >= 2 ? `
+                                        <span class="${improvementClass} text-sm font-semibold flex items-center">
+                                            <i class="fas ${improvementIcon} mr-1"></i>
+                                            ${Math.abs(improvement)}%
+                                        </span>
+                                    ` : ''}
+                                </div>
+                            </div>
+                            
+                            <!-- Progress Chart -->
+                            <div class="relative h-32 flex items-end space-x-2">
+                                ${data.map((point, idx) => {
+                                    const height = point.score;
+                                    const isLatest = idx === data.length - 1;
+                                    return `
+                                        <div class="flex-1 flex flex-col items-center">
+                                            <div class="relative w-full bg-gradient-to-t from-[#56AE67] to-[#6bc481] rounded-t ${isLatest ? 'opacity-100' : 'opacity-60'}" 
+                                                 style="height: ${height}%"
+                                                 title="${point.date}: ${point.score}%">
+                                                ${isLatest ? `<span class="absolute -top-6 left-1/2 transform -translate-x-1/2 text-xs font-bold text-[#56AE67] whitespace-nowrap">${point.score}%</span>` : ''}
+                                            </div>
+                                            <span class="text-xs text-gray-500 dark:text-gray-400 mt-2">${point.date}</span>
+                                        </div>
+                                    `;
+                                }).join('')}
+                            </div>
+                            
+                            <!-- Achievement Badge -->
+                            ${latestScore >= 80 ? `
+                                <div class="mt-4 bg-yellow-100 dark:bg-yellow-900/30 border border-yellow-300 dark:border-yellow-700 rounded-lg p-3 flex items-center">
+                                    <i class="fas fa-star text-yellow-500 mr-3 text-xl"></i>
+                                    <span class="text-sm font-semibold text-gray-900 dark:text-white">Expert Level Achieved! 🎉</span>
+                                </div>
+                            ` : latestScore >= 70 ? `
+                                <div class="mt-4 bg-green-100 dark:bg-green-900/30 border border-green-300 dark:border-green-700 rounded-lg p-3 flex items-center">
+                                    <i class="fas fa-check-circle text-green-500 mr-3 text-xl"></i>
+                                    <span class="text-sm font-semibold text-gray-900 dark:text-white">Advanced Level - Keep going! 💪</span>
+                                </div>
+                            ` : ''}
+                        </div>
+                    `;
+                }).join('')}
+            </div>
+        `;
+
+    } catch (error) {
+        console.error('Error loading skill progress:', error);
+        skillProgressContent.innerHTML = `
+            <div class="text-center py-8">
+                <div class="text-red-500 text-5xl mb-4">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <p class="text-gray-600 dark:text-gray-400">Failed to load skills progress.</p>
+            </div>
+        `;
+    }
+}
