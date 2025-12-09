@@ -1155,6 +1155,9 @@
                         <a className={`nav-item ${page === 'notifications' ? 'active' : ''}`} onClick={() => setPage('notifications')}>
                             <i className="fas fa-bell" style={{ marginRight: '10px' }}></i> Notifications
                         </a>
+                        <a className={`nav-item ${page === 'admin-management' ? 'active' : ''}`} onClick={() => setPage('admin-management')}>
+                            <i className="fas fa-shield-alt" style={{ marginRight: '10px' }}></i> Admin Management
+                        </a>
                         
                         <hr style={{ margin: '20px 0', borderColor: '#4b5563' }} />
                         
@@ -1187,6 +1190,7 @@
                         {page === 'feedback' && <FeedbackManagement />}
                         {page === 'messages' && <MessagesManagement />}
                         {page === 'notifications' && <NotificationsManagement />}
+                        {page === 'admin-management' && <AdminManagement />}
                     </div>
                 </div>
             );
