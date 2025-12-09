@@ -20,11 +20,29 @@
     
     <title>Admin Dashboard - SkillSync</title>
     
-    <!-- Font Awesome - CSS only -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- Pre-compiled Tailwind CSS and React from Vite build -->
-    <link rel="stylesheet" href="/dist/assets/index-ChnSmvp2.css">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/fontawesome.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/solid.min.js"></script>
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- React and ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    
+    <!-- Axios for API calls -->
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    
+    <!-- Notification Manager -->
+    <script src="/js/notifications.js"></script>
+    
+    <!-- Babel for JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </head>
 <body class="bg-gray-50">
     <!-- Loading indicator -->
@@ -37,14 +55,9 @@
     
     <div id="admin-root"></div>
     
-    <!-- Notification Manager -->
-    <script src="/js/notifications.js"></script>
-    
-    <!-- Pre-compiled and minified admin app with React -->
-    <script src="/dist/assets/index-DdePlX9C.js"></script>
-    
-    <!-- Set initial auth state for React app -->
-    <script>
+    <!-- Admin app -->
+    <script type="text/babel">
+        // Set initial auth state for React app
         const authToken = sessionStorage.getItem('authToken') || localStorage.getItem('token');
         const userDataStr = sessionStorage.getItem('userData') || localStorage.getItem('user');
         
@@ -61,6 +74,9 @@
             localStorage.setItem('user', userDataStr);
         }
     </script>
+    
+    <!-- Include the original admin app -->
+    <script type="text/babel" src="/admin/js/app.js"></script>
 </body>
 </html>
     <!-- Include the admin app script (without React Router) -->
