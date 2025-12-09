@@ -20,6 +20,7 @@ const notificationSchema = new mongoose.Schema({
       'feedback_response',
       'retake_approved',
       'retake_rejected',
+      'new_message',
       'system'
     ],
     required: true
