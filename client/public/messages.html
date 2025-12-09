@@ -164,34 +164,16 @@
             
             // Load users
             try {
-                const currentUser = JSON.parse(sessionStorage.getItem('user'));
-                let users = [];
+                select.innerHTML = '<option value="">Loading users...</option>';
                 
-                // Load based on role
-                if (currentUser.role === 'student') {
-                    // Load companies and admin
-                    const companiesRes = await apiCall('/companies');
-                    if (companiesRes.success) {
-                        users = companiesRes.data.map(c => ({
-                            _id: c.user._id,
-                            email: c.user.email,
-                            type: 'Company'
-                        }));
-                    }
-                } else if (currentUser.role === 'company') {
-                    // Load students
-                    const studentsRes = await apiCall('/students');
-                    if (studentsRes.success) {
-                        users = studentsRes.data.map(s => ({
-                            _id: s.user._id,
-                            email: s.user.email,
-                            type: 'Student'
-                        }));
-                    }
+                const response = await apiCall('/messages/available-users');
+                
+                if (response.success && response.data.length > 0) {
+                    select.innerHTML = '<option value="">Select a user...</option>' + 
+                        response.data.map(u => `<option value="${u._id}">${u.displayName} - ${u.email} (${u.type})</option>`).join('');
+                } else {
+                    select.innerHTML = '<option value="">No users available</option>';
                 }
-                
-                select.innerHTML = '<option value="">Select a user...</option>' + 
-                    users.map(u => `<option value="${u._id}">${u.email} (${u.type})</option>`).join('');
                     
             } catch (error) {
                 console.error('Error loading users:', error);

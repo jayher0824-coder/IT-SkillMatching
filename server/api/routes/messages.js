@@ -359,4 +359,105 @@ router.get('/unread-count', protect, async (req, res) => {
   }
 });
 
+// @desc    Get available users for messaging
+// @route   GET /api/messages/available-users
+// @access  Private
+router.get('/available-users', protect, async (req, res) => {
+  try {
+    const currentUser = req.user;
+    let users = [];
+
+    if (currentUser.role === 'student') {
+      // Students can message companies and admins
+      const Company = require('../../database/models/Company');
+      const companies = await Company.find({ verified: true })
+        .populate('user', 'email')
+        .select('companyName user');
+      
+      users = companies
+        .filter(c => c.user && c.user._id.toString() !== currentUser._id.toString())
+        .map(c => ({
+          _id: c.user._id,
+          email: c.user.email,
+          displayName: c.companyName,
+          type: 'Company'
+        }));
+
+      // Add admins
+      const admins = await User.find({ role: 'admin' }).select('email');
+      users.push(...admins.map(a => ({
+        _id: a._id,
+        email: a.email,
+        displayName: a.email,
+        type: 'Admin'
+      })));
+
+    } else if (currentUser.role === 'company') {
+      // Companies can message students and admins
+      const Student = require('../../database/models/Student');
+      const students = await Student.find()
+        .populate('user', 'email')
+        .select('firstName lastName user');
+      
+      users = students
+        .filter(s => s.user && s.user._id.toString() !== currentUser._id.toString())
+        .map(s => ({
+          _id: s.user._id,
+          email: s.user.email,
+          displayName: `${s.firstName} ${s.lastName}`,
+          type: 'Student'
+        }));
+
+      // Add admins
+      const admins = await User.find({ role: 'admin' }).select('email');
+      users.push(...admins.map(a => ({
+        _id: a._id,
+        email: a.email,
+        displayName: a.email,
+        type: 'Admin'
+      })));
+
+    } else if (currentUser.role === 'admin') {
+      // Admins can message everyone
+      const Student = require('../../database/models/Student');
+      const Company = require('../../database/models/Company');
+      
+      const [students, companies] = await Promise.all([
+        Student.find().populate('user', 'email').select('firstName lastName user'),
+        Company.find({ verified: true }).populate('user', 'email').select('companyName user')
+      ]);
+
+      users = [
+        ...students
+          .filter(s => s.user && s.user._id.toString() !== currentUser._id.toString())
+          .map(s => ({
+            _id: s.user._id,
+            email: s.user.email,
+            displayName: `${s.firstName} ${s.lastName}`,
+            type: 'Student'
+          })),
+        ...companies
+          .filter(c => c.user && c.user._id.toString() !== currentUser._id.toString())
+          .map(c => ({
+            _id: c.user._id,
+            email: c.user.email,
+            displayName: c.companyName,
+            type: 'Company'
+          }))
+      ];
+    }
+
+    res.json({
+      success: true,
+      data: users
+    });
+  } catch (error) {
+    console.error('Get available users error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
+  }
+});
+
 module.exports = router;
