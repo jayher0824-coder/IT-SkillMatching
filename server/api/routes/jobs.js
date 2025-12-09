@@ -572,12 +572,20 @@ router.post('/:id/apply', protect, authorize('student'), async (req, res) => {
       });
     }
 
-    const job = await Job.findById(jobId);
+    const job = await Job.findById(jobId).populate('company', 'companyName logo user');
     if (!job) {
       console.error('Job not found:', jobId);
       return res.status(404).json({
         success: false,
         message: 'Job not found',
+      });
+    }
+
+    if (!job.company) {
+      console.error('Job has no company associated:', jobId);
+      return res.status(500).json({
+        success: false,
+        message: 'Job configuration error: No company associated',
       });
     }
 
@@ -668,12 +676,48 @@ router.post('/:id/apply', protect, authorize('student'), async (req, res) => {
 
     await job.save();
 
-    const populatedJob = await Job.findById(jobId).populate('company', 'companyName logo');
-
     console.log('Application submitted successfully:', {
       jobId,
       studentId: student._id,
       matchScore
+    });
+
+    // Create notifications (non-blocking)
+    setImmediate(async () => {
+      try {
+        // Notify student
+        await NotificationService.create({
+          recipient: req.user._id,
+          type: 'application_submitted',
+          title: 'Application Submitted',
+          message: `Your application for ${job.title} has been submitted successfully.`,
+          link: `/student/applications`,
+          data: {
+            jobId: job._id,
+            jobTitle: job.title,
+            matchScore
+          }
+        });
+
+        // Notify company
+        if (job.company && job.company.user) {
+          await NotificationService.create({
+            recipient: job.company.user,
+            type: 'new_application',
+            title: 'New Job Application',
+            message: `${student.firstName} ${student.lastName} applied for ${job.title}`,
+            link: `/company/jobs/${job._id}/applications`,
+            data: {
+              studentId: student._id,
+              jobId: job._id,
+              jobTitle: job.title,
+              matchScore
+            }
+          });
+        }
+      } catch (notifError) {
+        console.error('Error creating application notifications:', notifError);
+      }
     });
 
     res.json({
@@ -681,7 +725,10 @@ router.post('/:id/apply', protect, authorize('student'), async (req, res) => {
       message: 'Application submitted successfully',
       data: {
         jobTitle: job.title,
-        company: populatedJob.company,
+        company: {
+          companyName: job.company.companyName,
+          logo: job.company.logo
+        },
         appliedAt: new Date(),
         matchScore,
       },
