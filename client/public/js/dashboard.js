@@ -190,7 +190,7 @@ async function loadStudentDashboard() {
                                 <div class="flex items-center space-x-4">
                                     ${studentProfile?.avatar?.path ? `
                                         <div class="w-16 h-16 rounded-full overflow-hidden border-2 border-white hidden md:block">
-                                            <img src="/uploads/avatars/${studentProfile.avatar.path.split('/').pop()}" alt="Profile" class="w-full h-full object-cover" onerror="this.style.display='none'">
+                                            <img src="/${studentProfile.avatar.path}" alt="Profile" class="w-full h-full object-cover" onerror="this.style.display='none'">
                                         </div>
                                     ` : ''}
                                     <div>
@@ -5202,7 +5202,7 @@ async function loadStudentProfile() {
                     <div class="relative">
                         <div class="w-32 h-32 rounded-full overflow-hidden bg-white border-4 border-white shadow-lg">
                             ${profile.avatar && profile.avatar.path ? 
-                                `<img src="/uploads/avatars/${profile.avatar.path.split('/').pop()}" alt="Profile Picture" class="w-full h-full object-cover" onerror="this.parentElement.innerHTML='<div class=\"w-full h-full flex items-center justify-center bg-gray-200\"><i class=\"fas fa-user text-gray-400 text-5xl\"></i></div>'">` :
+                                `<img src="/${profile.avatar.path}" alt="Profile Picture" class="w-full h-full object-cover" onerror="this.parentElement.innerHTML='<div class=\"w-full h-full flex items-center justify-center bg-gray-200\"><i class=\"fas fa-user text-gray-400 text-5xl\"></i></div>'">` :
                                 `<div class="w-full h-full flex items-center justify-center bg-gray-200">
                                     <i class="fas fa-user text-gray-400 text-5xl"></i>
                                 </div>`

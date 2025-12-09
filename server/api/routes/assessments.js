@@ -358,9 +358,21 @@ router.post('/:id/submit', protect, authorize('student'), async (req, res) => {
     
     console.log('Assessment result created successfully:', { resultId: result._id });
 
-    // Update student's assessment status
+    // Calculate average assessment score from ALL completed assessments
+    const allResults = await AssessmentResult.find({ 
+      student: student._id,
+      passed: true 
+    });
+    
+    let averagePercentage = percentage; // Default to current if no other results
+    if (allResults.length > 0) {
+      const totalPercentage = allResults.reduce((sum, res) => sum + res.percentage, 0);
+      averagePercentage = Math.round(totalPercentage / allResults.length);
+    }
+
+    // Update student's assessment status with AVERAGE score
     student.assessmentScore = {
-      overall: percentage,
+      overall: averagePercentage,
       breakdown: finalCategoryScores,
     };
 
