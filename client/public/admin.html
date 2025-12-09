@@ -58,88 +58,24 @@
     
     <div id="admin-root"></div>
     
-    <!-- Authentication Guard - Must run before everything else -->
+    <!-- Admin app will handle authentication internally -->
     <script>
-        (function() {
-            // Check if user is authenticated and has admin/company role
-            const authToken = sessionStorage.getItem('authToken') || localStorage.getItem('token');
-            const userDataStr = sessionStorage.getItem('userData') || localStorage.getItem('user');
-            
-            console.log('Admin Dashboard Auth Check:', {
-                hasToken: !!authToken,
-                hasUserData: !!userDataStr
-            });
-            
-            if (!authToken) {
-                console.warn('Unauthorized access attempt: No authentication token found');
-                // Redirect to landing page with admin login modal
-                window.location.href = '/index.html?login=admin';
-                return;
-            }
-            
-            let userData = null;
-            try {
-                userData = userDataStr ? JSON.parse(userDataStr) : null;
-            } catch (e) {
-                console.error('Failed to parse user data:', e);
-                sessionStorage.clear();
-                localStorage.clear();
-                // Redirect to landing page with admin login modal
-                window.location.href = '/index.html?login=admin';
-                return;
-            }
-            
-            if (!userData) {
-                console.warn('Unauthorized access attempt: No user data found');
-                sessionStorage.clear();
-                localStorage.clear();
-                // Redirect to landing page with admin login modal
-                window.location.href = '/index.html?login=admin';
-                return;
-            }
-            
-            // Check if user has admin or company role
-            const allowedRoles = ['admin', 'company'];
-            if (!allowedRoles.includes(userData.role)) {
-                console.warn(`Unauthorized access attempt: User has role "${userData.role}" but needs admin/company`);
-                sessionStorage.clear();
-                localStorage.clear();
-                // Redirect to landing page with admin login modal
-                window.location.href = '/index.html?login=admin';
-                return;
-            }
-            
-            // If all checks pass, verify token with server
-            fetch('/api/auth/verify', {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${authToken}`,
-                    'Content-Type': 'application/json'
-                }
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Token verification failed');
-                }
-                return response.json();
-            })
-            .then(data => {
-                if (!data.success || !data.valid) {
-                    console.warn('Invalid or expired token');
-                    sessionStorage.clear();
-                    localStorage.clear();
-                    // Redirect to landing page with admin login modal
-                    window.location.href = '/index.html?login=admin';
-                }
-            })
-            .catch(error => {
-                console.error('Token verification error:', error);
-                sessionStorage.clear();
-                localStorage.clear();
-                // Redirect to landing page with admin login modal
-                window.location.href = '/index.html?login=admin';
-            });
-        })();
+        // Set initial auth state for React app
+        const authToken = sessionStorage.getItem('authToken') || localStorage.getItem('token');
+        const userDataStr = sessionStorage.getItem('userData') || localStorage.getItem('user');
+        
+        console.log('Admin Dashboard Loading:', {
+            hasToken: !!authToken,
+            hasUserData: !!userDataStr
+        });
+        
+        // Store in localStorage if only in sessionStorage (for React app compatibility)
+        if (authToken && !localStorage.getItem('token')) {
+            localStorage.setItem('token', authToken);
+        }
+        if (userDataStr && !localStorage.getItem('user')) {
+            localStorage.setItem('user', userDataStr);
+        }
     </script>
     
     <!-- Include the admin app script (without React Router) -->
