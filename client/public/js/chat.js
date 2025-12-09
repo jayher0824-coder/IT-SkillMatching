@@ -356,10 +356,38 @@ class ChatManager {
         const messagesContainer = document.getElementById('chat-messages-container');
         if (!messagesContainer) return;
 
-        const currentUser = JSON.parse(sessionStorage.getItem('user'));
+        // Try both 'user' and 'userData' keys for compatibility
+        let currentUser = sessionStorage.getItem('user');
+        if (currentUser) {
+            try {
+                currentUser = JSON.parse(currentUser);
+            } catch (e) {
+                currentUser = null;
+            }
+        }
+        
+        // Fallback to userData if user is not found
+        if (!currentUser) {
+            const userData = sessionStorage.getItem('userData');
+            if (userData) {
+                try {
+                    currentUser = JSON.parse(userData);
+                } catch (e) {
+                    console.error('Failed to parse userData:', e);
+                }
+            }
+        }
+        
         if (!currentUser || !currentUser._id) {
-            console.error('Current user not found in session');
-            messagesContainer.innerHTML = '<div class="chat-empty-state"><p>Error: User session not found. Please refresh the page.</p></div>';
+            console.error('Current user not found in session storage');
+            console.log('Available session keys:', Object.keys(sessionStorage));
+            messagesContainer.innerHTML = `
+                <div class="chat-empty-state">
+                    <i class="fas fa-exclamation-triangle text-6xl mb-4 text-yellow-500"></i>
+                    <h3 class="text-xl font-semibold mb-2">Session Error</h3>
+                    <p>Please <a href="/dashboard.html" class="text-[#56AE67] underline">return to dashboard</a> to refresh your session.</p>
+                </div>
+            `;
             return;
         }
         

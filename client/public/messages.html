@@ -132,11 +132,57 @@
     <script>
         // Initialize chat when page loads
         document.addEventListener('DOMContentLoaded', async () => {
-            // Check authentication
-            const authToken = sessionStorage.getItem('authToken');
+            // Check authentication - support multiple auth methods
+            const authToken = sessionStorage.getItem('authToken') || localStorage.getItem('token');
+            const userData = sessionStorage.getItem('userData') || localStorage.getItem('userData');
+            
             if (!authToken) {
-                window.location.href = '/';
+                console.warn('No auth token found, redirecting to login');
+                // Redirect to appropriate login page based on context
+                if (window.location.pathname.includes('admin')) {
+                    window.location.href = '/admin.html';
+                } else {
+                    window.location.href = '/';
+                }
                 return;
+            }
+            
+            // Ensure user data is available in session storage for chat
+            if (userData) {
+                try {
+                    const user = JSON.parse(userData);
+                    // Store in both storage methods for compatibility
+                    sessionStorage.setItem('user', JSON.stringify(user));
+                    sessionStorage.setItem('userData', JSON.stringify(user));
+                    
+                    // Also ensure authToken is in sessionStorage for API calls
+                    if (!sessionStorage.getItem('authToken')) {
+                        sessionStorage.setItem('authToken', authToken);
+                    }
+                } catch (e) {
+                    console.error('Failed to parse user data:', e);
+                }
+            } else {
+                // If no userData, try to fetch current user from API
+                try {
+                    const response = await fetch('/api/auth/me', {
+                        headers: {
+                            'Authorization': `Bearer ${authToken}`
+                        }
+                    });
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        if (data.success && data.data) {
+                            const user = data.data;
+                            sessionStorage.setItem('user', JSON.stringify(user));
+                            sessionStorage.setItem('userData', JSON.stringify(user));
+                            sessionStorage.setItem('authToken', authToken);
+                        }
+                    }
+                } catch (error) {
+                    console.error('Failed to fetch user data:', error);
+                }
             }
 
             // Add event listeners
