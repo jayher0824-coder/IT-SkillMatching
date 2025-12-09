@@ -140,6 +140,7 @@ app.use('/api/students', require('./api/routes/students'));
 app.use('/api/companies', require('./api/routes/companies'));
 app.use('/api/assessments', require('./api/routes/assessments'));
 app.use('/api/jobs', require('./api/routes/jobs'));
+app.use('/api/applications', require('./api/routes/applications'));
 app.use('/api/feedback', require('./api/routes/feedback'));
 app.use('/api/admin', require('./api/routes/admin'));
 app.use('/api/custom-assessments', require('./api/routes/customAssessments'));
