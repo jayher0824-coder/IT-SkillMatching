@@ -15,6 +15,7 @@ const Company = require('../server/database/models/Company');
 const Job = require('../server/database/models/Job');
 const Student = require('../server/database/models/Student');
 const User = require('../server/database/models/User');
+const CustomAssessment = require('../server/database/models/CustomAssessment');
 
 // Connect to MongoDB
 mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/it-ojt-platform')
@@ -275,6 +276,182 @@ const testJobs = [
     }
 ];
 
+// Custom Assessments for selected jobs
+const testAssessments = [
+    {
+        jobTitle: 'Full Stack Web Developer',
+        companyName: 'TechVision Solutions',
+        title: 'Full Stack Web Development Assessment',
+        description: 'Test your knowledge of full stack development with React and Node.js',
+        duration: 45,
+        passingScore: 70,
+        questions: [
+            {
+                questionText: 'What is the virtual DOM in React?',
+                questionType: 'multiple-choice',
+                options: [
+                    'A copy of the DOM that React keeps in memory',
+                    'The actual DOM in the browser',
+                    'A CSS feature for styling',
+                    'A Node.js module'
+                ],
+                correctAnswer: 'A copy of the DOM that React keeps in memory',
+                points: 5,
+                category: 'technical'
+            },
+            {
+                questionText: 'In Node.js, what does req.body contain?',
+                questionType: 'multiple-choice',
+                options: [
+                    'Request headers',
+                    'The request body data sent by the client',
+                    'The response data',
+                    'Configuration settings'
+                ],
+                correctAnswer: 'The request body data sent by the client',
+                points: 5,
+                category: 'technical'
+            },
+            {
+                questionText: 'What is the correct way to connect to MongoDB in Node.js?',
+                questionType: 'short-answer',
+                correctAnswer: 'mongoose.connect()',
+                points: 10,
+                category: 'technical'
+            }
+        ]
+    },
+    {
+        jobTitle: 'Data Analyst',
+        companyName: 'DataDrive Analytics',
+        title: 'Data Analysis & SQL Skills Assessment',
+        description: 'Evaluate your SQL and data analysis capabilities',
+        duration: 60,
+        passingScore: 65,
+        questions: [
+            {
+                questionText: 'Which SQL statement is used to retrieve data from a database?',
+                questionType: 'multiple-choice',
+                options: [
+                    'GET',
+                    'SELECT',
+                    'RETRIEVE',
+                    'FIND'
+                ],
+                correctAnswer: 'SELECT',
+                points: 5,
+                category: 'technical'
+            },
+            {
+                questionText: 'What does JOINin SQL do?',
+                questionType: 'multiple-choice',
+                options: [
+                    'Combines rows from two or more tables',
+                    'Deletes data from a table',
+                    'Creates a new database',
+                    'Exports data to CSV'
+                ],
+                correctAnswer: 'Combines rows from two or more tables',
+                points: 5,
+                category: 'technical'
+            },
+            {
+                questionText: 'Explain what GROUP BY clause does in SQL',
+                questionType: 'short-answer',
+                correctAnswer: 'GROUP BY groups rows with same values',
+                points: 10,
+                category: 'technical'
+            }
+        ]
+    },
+    {
+        jobTitle: 'DevOps Engineer',
+        companyName: 'CloudNet Infrastructure',
+        title: 'DevOps & Cloud Infrastructure Assessment',
+        description: 'Test your Docker, Kubernetes, and AWS knowledge',
+        duration: 50,
+        passingScore: 70,
+        questions: [
+            {
+                questionText: 'What is Docker?',
+                questionType: 'multiple-choice',
+                options: [
+                    'A container platform for applications',
+                    'A programming language',
+                    'A database system',
+                    'A cloud provider'
+                ],
+                correctAnswer: 'A container platform for applications',
+                points: 5,
+                category: 'technical'
+            },
+            {
+                questionText: 'What does Kubernetes do?',
+                questionType: 'multiple-choice',
+                options: [
+                    'Manages containerized applications',
+                    'Compiles code',
+                    'Designs databases',
+                    'Manages DNS'
+                ],
+                correctAnswer: 'Manages containerized applications',
+                points: 5,
+                category: 'technical'
+            },
+            {
+                questionText: 'What is a CI/CD pipeline?',
+                questionType: 'short-answer',
+                correctAnswer: 'Continuous Integration/Continuous Deployment automated process',
+                points: 10,
+                category: 'technical'
+            }
+        ]
+    },
+    {
+        jobTitle: 'Database Administrator',
+        companyName: 'DatabasePro Systems',
+        title: 'Database Administration & SQL Optimization',
+        description: 'Advanced SQL and database management assessment',
+        duration: 55,
+        passingScore: 72,
+        questions: [
+            {
+                questionText: 'What is database indexing used for?',
+                questionType: 'multiple-choice',
+                options: [
+                    'To speed up data retrieval',
+                    'To delete records',
+                    'To backup data',
+                    'To encrypt data'
+                ],
+                correctAnswer: 'To speed up data retrieval',
+                points: 5,
+                category: 'technical'
+            },
+            {
+                questionText: 'What is normalization in database design?',
+                questionType: 'multiple-choice',
+                options: [
+                    'Process of organizing data to reduce redundancy',
+                    'Encrypting database',
+                    'Backing up database',
+                    'Compressing database'
+                ],
+                correctAnswer: 'Process of organizing data to reduce redundancy',
+                points: 5,
+                category: 'technical'
+            },
+            {
+                questionText: 'Explain the difference between INNER JOIN and LEFT JOIN',
+                questionType: 'short-answer',
+                correctAnswer: 'INNER returns matching rows, LEFT returns all left table rows',
+                points: 10,
+                category: 'technical'
+            }
+        ]
+    }
+];
+
 async function seedData() {
     try {
         console.log('🌱 Starting to seed test data...\n');
@@ -322,8 +499,9 @@ async function seedData() {
 
         console.log(`\n✓ Created ${createdCompanies.length} companies\n`);
 
-        // Create jobs
+        // Create jobs and attach custom assessments
         let jobCount = 0;
+        const createdJobs = [];
         for (const jobData of testJobs) {
             try {
                 const company = createdCompanies.find(c => c.companyName === jobData.companyName);
@@ -348,6 +526,7 @@ async function seedData() {
                     createdAt: new Date()
                 });
                 await job.save();
+                createdJobs.push(job);
                 jobCount++;
                 console.log(`✓ Created job: ${jobData.title} at ${jobData.companyName}`);
             } catch (err) {
@@ -356,6 +535,44 @@ async function seedData() {
         }
 
         console.log(`\n✓ Created ${jobCount} job postings\n`);
+
+        // Create custom assessments and attach to jobs
+        let assessmentCount = 0;
+        for (const assessmentData of testAssessments) {
+            try {
+                const job = createdJobs.find(j => j.title === assessmentData.jobTitle);
+                const company = createdCompanies.find(c => c.companyName === assessmentData.companyName);
+                
+                if (!job || !company) {
+                    console.warn(`⚠ Job or company not found for assessment: ${assessmentData.title}`);
+                    continue;
+                }
+
+                const assessment = new CustomAssessment({
+                    company: company.user,
+                    job: job._id,
+                    title: assessmentData.title,
+                    description: assessmentData.description,
+                    duration: assessmentData.duration,
+                    passingScore: assessmentData.passingScore,
+                    questions: assessmentData.questions,
+                    createdAt: new Date()
+                });
+                await assessment.save();
+
+                // Attach assessment to job
+                job.customAssessment = assessment._id;
+                job.requireCustomAssessment = true;
+                await job.save();
+
+                assessmentCount++;
+                console.log(`✓ Created assessment: "${assessmentData.title}" for "${job.title}"`);
+            } catch (err) {
+                console.error(`✗ Error creating assessment ${assessmentData.title}:`, err.message);
+            }
+        }
+
+        console.log(`\n✓ Created ${assessmentCount} custom assessments\n`);
 
         console.log('=========================================');
         console.log('✨ Test Data Seeding Complete!');
@@ -370,6 +587,12 @@ async function seedData() {
         console.log('1. Login as a student with test skills');
         console.log('2. Go to Dashboard and check "Recommended For You"');
         console.log('3. The system will match your skills to these job postings');
+        console.log('4. Some jobs have custom assessments (Q&A) attached');
+        console.log('\n📋 Jobs with Custom Assessments:');
+        console.log('   - Full Stack Web Developer (Frontend/Backend/DB Q&A)');
+        console.log('   - Data Analyst (SQL & Data Analysis Q&A)');
+        console.log('   - DevOps Engineer (Docker/Kubernetes/AWS Q&A)');
+        console.log('   - Database Administrator (SQL Optimization Q&A)');
         console.log('\nNote: Make sure your student account has assessment scores');
         console.log('for the matching algorithm to work properly.\n');
 
