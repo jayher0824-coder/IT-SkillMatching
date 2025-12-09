@@ -2733,13 +2733,17 @@ async function withdrawApplication(applicationId) {
     }
 
     try {
-        await apiCall(`/applications/${applicationId}/withdraw`, {
-            method: 'DELETE'
+        const response = await apiCall(`/applications/${applicationId}/withdraw`, {
+            method: 'POST'
         });
 
-        showToast('Application withdrawn successfully', 'success');
-        // Refresh applications list
-        showAllApplications();
+        if (response.success) {
+            showToast('Application withdrawn successfully', 'success');
+            // Refresh applications list
+            showAllApplications();
+        } else {
+            showToast(response.message || 'Failed to withdraw application', 'error');
+        }
 
     } catch (error) {
         console.error('Error withdrawing application:', error);

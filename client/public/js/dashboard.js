@@ -186,9 +186,9 @@ async function loadStudentDashboard() {
                     <div id="dashboard-section" class="section p-4 md:p-8">
                         <!-- Dashboard Header -->
                         <div class="bg-[#56AE67] rounded-lg shadow p-4 md:p-6 mb-4 md:mb-8" style="background-color: #56AE67 !important;">
-                            <div class="flex items-center justify-between">
-                                <div class="flex items-center space-x-4">
-                                    <div class="w-16 h-16 rounded-full overflow-hidden border-2 border-white hidden md:block bg-white">
+                            <div class="flex items-center justify-between gap-4">
+                                <div class="flex items-center space-x-4 min-w-0">
+                                    <div class="w-16 h-16 rounded-full overflow-hidden border-2 border-white hidden md:block bg-white flex-shrink-0">
                                         ${studentProfile?.avatar?.path ? 
                                             `<img src="/${studentProfile.avatar.path}" alt="Profile" class="w-full h-full object-cover" onerror="this.onerror=null; this.style.display='none'; this.parentElement.innerHTML='<div class=\\'w-full h-full flex items-center justify-center bg-gradient-to-br from-[#56AE67] to-[#3d8b4f]\\'><span class=\\'text-white text-xl font-bold\\'>${studentProfile.firstName?.charAt(0) || 'U'}${studentProfile.lastName?.charAt(0) || ''}</span></div>';">` :
                                             `<div class="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#56AE67] to-[#3d8b4f]">
@@ -196,13 +196,13 @@ async function loadStudentDashboard() {
                                             </div>`
                                         }
                                     </div>
-                                    <div>
+                                    <div class="min-w-0">
                                         <h2 class="text-2xl md:text-3xl font-bold text-white" style="color: #ffffff !important;">Dashboard</h2>
                                         <p class="text-white mt-1 md:mt-2 text-sm md:text-base" style="color: #ffffff !important;">Welcome back${studentProfile?.firstName ? ', ' + studentProfile.firstName : ''}! Here's your OJT journey overview.</p>
                                     </div>
                                 </div>
                                 <!-- Notification Bell (Desktop) -->
-                                <div id="student-notification-bell-container" class="hidden md:block"></div>
+                                <div id="student-notification-bell-container" class="hidden md:flex flex-shrink-0"></div>
                             </div>
                         </div>
 
@@ -2842,14 +2842,27 @@ function showAllJobs() {
     // Load all jobs
     apiCall('/jobs')
         .then(response => {
-            const jobs = response.data || [];
+            console.log('Jobs response:', response);
+            const jobs = response.data || response.success ? response.data : [];
+            console.log('Total jobs fetched:', jobs.length);
+            
+            if (!Array.isArray(jobs)) {
+                console.error('Jobs is not an array:', jobs);
+                modalContent.innerHTML = `
+                    <div class="text-center py-8">
+                        <p class="text-red-500">Error: Invalid response format</p>
+                    </div>
+                `;
+                return;
+            }
             
             // Filter only active jobs with positions available
-            const validJobs = jobs.filter(job => 
-                job.isActive && 
-                job.positionsAvailable > 0 &&
-                job.company
-            );
+            const validJobs = jobs.filter(job => {
+                console.log(`Job: ${job.title}, status: ${job.status}, numberOfPositions: ${job.numberOfPositions}, company: ${job.company ? 'yes' : 'no'}`);
+                return job.status === 'active' && job.numberOfPositions > 0 && job.company;
+            });
+            
+            console.log('Valid jobs after filtering:', validJobs.length);
 
             if (validJobs.length === 0) {
                 modalContent.innerHTML = `
@@ -2885,7 +2898,7 @@ function showAllJobs() {
                                     ${job.location?.remote ? `<span class="bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-200 px-2 py-1 rounded">Remote</span>` : ''}
                                 </div>
                                 <div class="mt-2 text-xs text-gray-500 dark:text-gray-400">
-                                    <span>${job.positionsAvailable} position${job.positionsAvailable !== 1 ? 's' : ''} available</span>
+                                    <span>${job.numberOfPositions} position${job.numberOfPositions !== 1 ? 's' : ''} available</span>
                                 </div>
                             </div>
                         `).join('')}
@@ -4055,16 +4068,16 @@ function createSearchStudentsModal() {
     modal.className = 'fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4';
     
     modal.innerHTML = `
-        <div class="bg-white dark:bg-gray-800 rounded-lg w-full max-w-6xl max-h-[90vh] overflow-hidden flex flex-col">
-            <div class="flex justify-between items-center p-6 border-b border-gray-200 dark:border-gray-600 flex-shrink-0">
+        <div class="bg-white dark:bg-gray-800 rounded-lg w-full max-w-6xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl">
+            <div class="flex justify-between items-center p-6 border-b border-gray-200 dark:border-gray-600 flex-shrink-0 bg-gradient-to-r from-gray-50 dark:from-gray-700 to-white dark:to-gray-800">
                 <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Search Students</h2>
-                <button onclick="closeSearchStudentsModal()" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full p-2 transition"
-                    title="Close">
+                <button onclick="closeSearchStudentsModal()" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-full p-2 transition ml-4 flex-shrink-0"
+                    title="Close (Esc)">
                     <i class="fas fa-times text-xl"></i>
                 </button>
             </div>
             
-            <div class="flex-1 overflow-y-auto">
+            <div class="flex-1 overflow-y-auto" style="scrollbar-width: thin; scrollbar-color: #cbd5e1 transparent;">
                 <div class="p-6">
                     <!-- Search Filters -->
                     <div class="mb-6 space-y-4">
@@ -4132,7 +4145,7 @@ function createSearchStudentsModal() {
                                 </div>
                             </div>
                             
-                            <div id="students-list" class="space-y-4">
+                            <div id="students-list" class="space-y-4" style="max-height: 500px; overflow-y-auto;">
                                 <!-- Students will be loaded here -->
                             </div>
                         </div>
@@ -4142,28 +4155,26 @@ function createSearchStudentsModal() {
         </div>
         
         <style>
-            /* Custom scrollbar styling */
+            /* Custom scrollbar styling for all scrollable areas */
+            #search-students-modal::-webkit-scrollbar,
             #students-list::-webkit-scrollbar {
                 width: 8px;
             }
             
+            #search-students-modal::-webkit-scrollbar-track,
             #students-list::-webkit-scrollbar-track {
                 background: transparent;
             }
             
+            #search-students-modal::-webkit-scrollbar-thumb,
             #students-list::-webkit-scrollbar-thumb {
                 background: #cbd5e1;
                 border-radius: 4px;
             }
             
+            #search-students-modal::-webkit-scrollbar-thumb:hover,
             #students-list::-webkit-scrollbar-thumb:hover {
                 background: #94a3b8;
-            }
-            
-            /* Firefox scrollbar */
-            #students-list {
-                scrollbar-color: #cbd5e1 transparent;
-                scrollbar-width: thin;
             }
         </style>
     `;
