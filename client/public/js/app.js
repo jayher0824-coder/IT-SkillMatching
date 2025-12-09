@@ -2754,6 +2754,45 @@ window.loadAssessmentSection = window.loadAssessmentSection || function () {
 };
 window.currentPage = currentPage;
 
+// Dark Mode Toggle Function
+function toggleDarkMode() {
+    const html = document.documentElement;
+    const isDark = html.classList.toggle('dark');
+    
+    // Save preference to localStorage
+    localStorage.setItem('darkMode', isDark ? 'true' : 'false');
+    
+    // Update toggle button icon
+    const toggleBtn = document.getElementById('dark-mode-toggle');
+    if (toggleBtn) {
+        const moonIcon = toggleBtn.querySelector('.fa-moon');
+        const sunIcon = toggleBtn.querySelector('.fa-sun');
+        if (moonIcon && sunIcon) {
+            if (isDark) {
+                moonIcon.classList.add('hidden');
+                moonIcon.classList.remove('dark:hidden');
+                sunIcon.classList.remove('hidden');
+                sunIcon.classList.add('dark:inline');
+            } else {
+                moonIcon.classList.remove('hidden');
+                moonIcon.classList.add('dark:hidden');
+                sunIcon.classList.add('hidden');
+                sunIcon.classList.remove('dark:inline');
+            }
+        }
+    }
+    
+    console.log('Dark mode:', isDark ? 'enabled' : 'disabled');
+}
+
+// Initialize dark mode preference on page load
+document.addEventListener('DOMContentLoaded', function() {
+    const savedDarkMode = localStorage.getItem('darkMode') === 'true';
+    if (savedDarkMode) {
+        document.documentElement.classList.add('dark');
+    }
+});
+
 
 
 

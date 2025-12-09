@@ -701,7 +701,12 @@
                         SkillSync
                     </a>
                 </div>
-                <div id="nav-menu" class="flex space-x-4">
+                <div id="nav-menu" class="flex items-center space-x-4">
+                    <!-- Dark Mode Toggle -->
+                    <button id="dark-mode-toggle" onclick="toggleDarkMode()" class="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition" title="Toggle dark mode">
+                        <i class="fas fa-moon dark:hidden"></i>
+                        <i class="fas fa-sun hidden dark:inline"></i>
+                    </button>
                     <!-- Navigation items will be populated by JavaScript -->
                 </div>
             </div>
@@ -850,15 +855,15 @@
                 <h2 class="text-5xl font-bold mb-4">Sync Your Skills to Your Dream Career</h2>
                 <p class="text-xl mb-8">AI-powered career placement connecting CCS IT students with opportunities</p>
                 <div class="flex justify-center space-x-4">
-                    <button onclick="showLoginModal('student')" class="bg-white text-[#56AE67] px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition">
+                    <button onclick="showLoginModal('student')" class="bg-white text-[#56AE67] px-8 py-3 rounded-lg font-semibold hover:bg-gray-50 transition" style="background-color: white; color: #56AE67;" onmouseover="this.style.backgroundColor='#f3f4f6'" onmouseout="this.style.backgroundColor='white'">
                         <i class="fas fa-user-graduate mr-2"></i>
                         I'm a Student
                     </button>
-                    <button onclick="showLoginModal('company')" class="bg-white border-2 border-[#56AE67] text-[#56AE67] px-8 py-3 rounded-lg font-semibold hover:bg-[#56AE67] hover:text-white hover:border-[#56AE67] transition-all duration-300">
+                    <button onclick="showLoginModal('company')" class="bg-white border-2 border-[#56AE67] text-[#56AE67] px-8 py-3 rounded-lg font-semibold transition-all duration-300" style="background-color: white; color: #56AE67; border-color: #56AE67;" onmouseover="this.style.backgroundColor='#56AE67'; this.style.color='white'" onmouseout="this.style.backgroundColor='white'; this.style.color='#56AE67'">
                         <i class="fas fa-building mr-2"></i>
                         I'm a Company
                     </button>
-                    <button onclick="showLoginModal('admin')" class="bg-white border-2 border-gray-400 text-gray-600 px-8 py-3 rounded-lg font-semibold hover:bg-gray-600 hover:text-white hover:border-gray-600 transition-all duration-300" title="Admin access only">
+                    <button onclick="showLoginModal('admin')" class="bg-white border-2 border-gray-400 text-gray-600 px-8 py-3 rounded-lg font-semibold transition-all duration-300" style="background-color: white; color: #4b5563; border-color: #9ca3af;" onmouseover="this.style.backgroundColor='#4b5563'; this.style.color='white'; this.style.borderColor='#4b5563'" onmouseout="this.style.backgroundColor='white'; this.style.color='#4b5563'; this.style.borderColor='#9ca3af'" title="Admin access only">
                         <i class="fas fa-lock mr-2"></i>
                         Admin Login
                     </button>

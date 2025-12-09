@@ -4543,6 +4543,14 @@ function displayAllApplications(applications) {
                             class="px-3 py-1 text-sm bg-[#56AE67] text-white rounded hover:bg-[#3d8b4f]">
                             <i class="fas fa-eye mr-1"></i>View All
                         </button>
+                        <button onclick="contactApplicant('${application.applicant._id}', '${application.applicant.email}', 'email')" 
+                            class="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700" title="Send email">
+                            <i class="fas fa-envelope mr-1"></i>Email
+                        </button>
+                        <button onclick="startConversation('${application.applicant._id}')" 
+                            class="px-3 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700" title="Send message">
+                            <i class="fas fa-comment mr-1"></i>Message
+                        </button>
                         <select onchange="updateApplicationStatus('${application.job._id}', '${application._id}', this.value)" 
                             class="px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded dark:bg-gray-700 dark:text-white">
                             <option value="pending" ${application.status === 'pending' ? 'selected' : ''}>Pending</option>
@@ -6541,5 +6549,38 @@ async function loadSkillProgress() {
                 <p class="text-gray-600 dark:text-gray-400">Failed to load skills progress.</p>
             </div>
         `;
+    }
+}
+
+// Contact applicant via email
+function contactApplicant(applicantId, email, type) {
+    if (type === 'email') {
+        // Open email client
+        window.location.href = `mailto:${email}?subject=Application Status`;
+    }
+}
+
+// Start conversation with applicant
+async function startConversation(applicantId) {
+    try {
+        // Close applications modal
+        const modal = document.getElementById('all-applications-modal');
+        if (modal) {
+            modal.classList.add('hidden');
+        }
+        
+        // Navigate to messages page and start conversation
+        if (typeof showPage === 'function') {
+            showPage('messages');
+        }
+        
+        // Store applicant ID to auto-select in messages
+        sessionStorage.setItem('pendingConversationUserId', applicantId);
+        
+        // Redirect to messages page
+        window.location.href = '/messages.html';
+    } catch (error) {
+        console.error('Error starting conversation:', error);
+        showToast('Error starting conversation', 'error');
     }
 }
