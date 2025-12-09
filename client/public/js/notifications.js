@@ -197,3 +197,172 @@ class NotificationManager {
 
 // Create global instance
 window.notificationManager = new NotificationManager();
+
+// Load and initialize notification bell component
+function loadNotificationBell(containerId) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    // Load the component HTML
+    fetch('/components/notification-bell.html')
+        .then(response => response.text())
+        .then(html => {
+            container.innerHTML = html;
+            initializeNotificationBell();
+        })
+        .catch(error => console.error('Error loading notification bell:', error));
+}
+
+// Initialize notification bell functionality
+function initializeNotificationBell() {
+    const notificationButton = document.getElementById('notification-button');
+    const notificationPanel = document.getElementById('notification-panel');
+    const notificationsList = document.getElementById('notifications-list');
+    const notificationsEmpty = document.getElementById('notifications-empty');
+    const notificationBadge = document.getElementById('notification-badge');
+    const markAllReadBtn = document.getElementById('mark-all-read-btn');
+    const clearReadBtn = document.getElementById('clear-read-btn');
+
+    if (!notificationButton) return;
+
+    // Toggle dropdown on bell click
+    notificationButton.addEventListener('click', (e) => {
+        e.stopPropagation();
+        notificationPanel?.classList.toggle('hidden');
+    });
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.notification-container')) {
+            notificationPanel?.classList.add('hidden');
+        }
+    });
+
+    // Mark all as read
+    if (markAllReadBtn) {
+        markAllReadBtn.addEventListener('click', async () => {
+            await window.notificationManager.markAllAsRead();
+        });
+    }
+
+    // Clear read notifications
+    if (clearReadBtn) {
+        clearReadBtn.addEventListener('click', async () => {
+            // Delete all read notifications
+            const readNotifications = window.notificationManager.notifications.filter(n => n.read);
+            for (const notif of readNotifications) {
+                await window.notificationManager.deleteNotification(notif._id);
+            }
+        });
+    }
+
+    // Subscribe to notification updates
+    window.notificationManager.subscribe((data) => {
+        updateNotificationBell(data);
+    });
+
+    // Start polling for notifications
+    window.notificationManager.startPolling(10000);
+
+    // Initial fetch
+    window.notificationManager.fetchNotifications();
+}
+
+// Update notification bell UI
+function updateNotificationBell(data) {
+    const notificationsList = document.getElementById('notifications-list');
+    const notificationsEmpty = document.getElementById('notifications-empty');
+    const notificationBadge = document.getElementById('notification-badge');
+
+    if (!notificationsList) return;
+
+    // Update badge
+    if (notificationBadge) {
+        if (data.unreadCount > 0) {
+            notificationBadge.textContent = data.unreadCount;
+            notificationBadge.classList.remove('hidden');
+        } else {
+            notificationBadge.classList.add('hidden');
+        }
+    }
+
+    // Clear previous notifications
+    notificationsList.innerHTML = '';
+
+    if (!data.notifications || data.notifications.length === 0) {
+        if (notificationsEmpty) {
+            notificationsEmpty.classList.remove('hidden');
+        }
+        return;
+    }
+
+    if (notificationsEmpty) {
+        notificationsEmpty.classList.add('hidden');
+    }
+
+    // Render notifications
+    data.notifications.forEach(notification => {
+        const notifEl = createNotificationElement(notification);
+        notificationsList.appendChild(notifEl);
+    });
+}
+
+// Create notification element
+function createNotificationElement(notification) {
+    const div = document.createElement('div');
+    const unreadClass = !notification.read ? 'notification-item unread' : 'notification-item';
+    div.className = `${unreadClass} p-4 cursor-pointer relative`;
+    div.dataset.notificationId = notification._id;
+
+    const icon = window.notificationManager.getNotificationIcon(notification.type);
+    const color = window.notificationManager.getNotificationColor(notification.type);
+    const timeAgo = window.notificationManager.timeAgo(notification.createdAt);
+
+    div.innerHTML = `
+        <div class="flex items-start justify-between">
+            <div class="flex items-start space-x-3 flex-1">
+                <i class="fas ${icon} ${color} mt-1 flex-shrink-0 text-lg"></i>
+                <div class="flex-1">
+                    <p class="text-sm font-medium text-gray-900 dark:text-white">
+                        ${notification.title}
+                        ${!notification.read ? '<span class="ml-2 inline-block w-2 h-2 bg-blue-600 rounded-full"></span>' : ''}
+                    </p>
+                    <p class="text-xs text-gray-600 dark:text-gray-400 mt-1">${notification.message}</p>
+                    <p class="text-xs text-gray-500 dark:text-gray-500 mt-2">${timeAgo}</p>
+                </div>
+            </div>
+            <button 
+                class="text-gray-400 dark:text-gray-600 hover:text-red-600 dark:hover:text-red-400 flex-shrink-0 ml-2"
+                type="button"
+                aria-label="Delete notification"
+            >
+                <i class="fas fa-times text-sm"></i>
+            </button>
+        </div>
+    `;
+
+    // Mark as read on click
+    div.addEventListener('click', async (e) => {
+        if (!e.target.closest('button')) {
+            await window.notificationManager.markAsRead(notification._id);
+        }
+    });
+
+    // Delete button handler
+    const deleteBtn = div.querySelector('button');
+    if (deleteBtn) {
+        deleteBtn.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            await window.notificationManager.deleteNotification(notification._id);
+        });
+    }
+
+    return div;
+}
+
+// Delete single notification
+async function deleteNotification(notificationId) {
+    if (window.notificationManager) {
+        await window.notificationManager.deleteNotification(notificationId);
+    }
+}
