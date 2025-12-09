@@ -2956,7 +2956,7 @@ function displayJobApplications(applications) {
                 <div class="flex justify-between items-start mb-3">
                     <div class="flex-1">
                         <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-                            ${app.student?.firstName || 'Unknown'} ${app.student?.lastName || 'Student'}
+                            ${app.student?.firstName || 'Student'} ${app.student?.lastName || 'User'}
                         </h3>
                         <p class="text-sm text-gray-500 dark:text-gray-400">
                             Applied: ${new Date(app.appliedAt).toLocaleDateString()}
@@ -6197,7 +6197,7 @@ async function loadCareerPaths() {
                         <i class="fas fa-route"></i>
                     </div>
                     <p class="text-gray-600 dark:text-gray-400">Complete your assessment to get personalized career path recommendations.</p>
-                    <button onclick="switchToSection('assessment')" class="mt-4 bg-[#56AE67] text-white px-6 py-2 rounded-lg hover:bg-[#3d8b4f] transition font-bold border-2 border-green-800 text-lg">
+                    <button onclick="switchToSection('assessment')" style="background-color: #56AE67; border-color: #2d5a35; border-width: 2px;" class="mt-4 text-white px-6 py-2 rounded-lg hover:opacity-90 transition font-bold text-lg">
                         Take Assessment
                     </button>
                 </div>
