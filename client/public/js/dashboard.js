@@ -150,7 +150,7 @@ async function loadStudentDashboard() {
                             <button id="nav-skill-progress" onclick="switchToSection('skill-progress')" class="nav-item w-full text-left px-3 md:px-4 py-2 md:py-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition flex items-center text-sm md:text-base">
                                 <i class="fas fa-chart-line mr-2 md:mr-3"></i><span class="truncate">Skills Progress</span>
                             </button>
-                            <button id="nav-messages" onclick="window.location.href='/messages.html'" class="nav-item w-full text-left px-3 md:px-4 py-2 md:py-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition flex items-center text-sm md:text-base">
+                            <button id="nav-messages" class="nav-item w-full text-left px-3 md:px-4 py-2 md:py-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition flex items-center text-sm md:text-base">
                                 <i class="fas fa-comments mr-2 md:mr-3"></i><span class="truncate">Messages</span>
                             </button>
                         </div>
@@ -604,6 +604,21 @@ async function loadStudentDashboard() {
             loadCareerPaths();
             loadSkillProgress();
             
+            // Attach messages navigation listeners
+            const navMessagesBtn = document.getElementById('nav-messages');
+            if (navMessagesBtn) {
+                navMessagesBtn.addEventListener('click', () => {
+                    window.location.href = '/messages.html';
+                });
+            }
+            
+            const quickActionMessagesBtn = document.getElementById('quick-action-messages');
+            if (quickActionMessagesBtn) {
+                quickActionMessagesBtn.addEventListener('click', () => {
+                    window.location.href = '/messages.html';
+                });
+            }
+            
             // Load notification bell component
             loadNotificationBell('student-notification-bell-container');
         }, 1000);
@@ -725,7 +740,7 @@ async function loadCompanyDashboard() {
                             <!-- Notification Bell -->
                             <div id="company-notification-bell-container"></div>
                             
-                            <button onclick="showCompanyProfile()" class="bg-gray-700 text-white px-4 py-2 rounded-lg hover:bg-gray-800 dark:bg-gray-600 dark:hover:bg-gray-500 transition font-medium">
+                            <button id="company-edit-profile-btn" class="bg-gray-700 text-white px-4 py-2 rounded-lg hover:bg-gray-800 dark:bg-gray-600 dark:hover:bg-gray-500 transition font-medium">
                                 <i class="fas fa-building mr-2"></i>Edit Profile
                             </button>
                             ${createPrimaryButton('Post Job', 'showCreateJob()', 'fas fa-plus', 'px-4 py-2 rounded-lg')}
@@ -892,19 +907,19 @@ async function loadCompanyDashboard() {
                         <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
                             <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Quick Actions</h3>
                             <div class="space-y-3">
-                                <button onclick="window.location.href='/messages.html'" class="w-full text-left p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition">
+                                <button id="quick-action-messages" class="w-full text-left p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition">
                                     <i class="fas fa-comments text-blue-600 dark:text-blue-400 mr-3"></i>
                                     <span class="text-sm text-gray-900 dark:text-white">Messages</span>
                                 </button>
-                                <button onclick="searchStudents()" class="w-full text-left p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition">
+                                <button id="quick-action-search" class="w-full text-left p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition">
                                     <i class="fas fa-search text-[#56AE67] dark:text-[#6bc481] mr-3"></i>
                                     <span class="text-sm text-gray-900 dark:text-white">Search Students</span>
                                 </button>
-                                <button onclick="showCreateJob()" class="w-full text-left p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition">
+                                <button id="quick-action-post-job" class="w-full text-left p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition">
                                     <i class="fas fa-plus text-green-600 dark:text-green-400 mr-3"></i>
                                     <span class="text-sm text-gray-900 dark:text-white">Post New Job</span>
                                 </button>
-                                <button onclick="viewAllApplications()" class="w-full text-left p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition">
+                                <button id="quick-action-applications" class="w-full text-left p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition">
                                     <i class="fas fa-file-alt text-purple-600 dark:text-purple-400 mr-3"></i>
                                     <span class="text-sm text-gray-900 dark:text-white">View All Applications</span>
                                 </button>
@@ -915,9 +930,37 @@ async function loadCompanyDashboard() {
             </div>
         `;
         
-        // Load notification bell component
+        // Load notification bell component and attach event listeners
         setTimeout(() => {
             loadNotificationBell('company-notification-bell-container');
+            
+            // Attach event listeners for company dashboard
+            const editProfileBtn = document.getElementById('company-edit-profile-btn');
+            if (editProfileBtn) {
+                editProfileBtn.addEventListener('click', showCompanyProfile);
+            }
+            
+            const quickActionMessages = document.getElementById('quick-action-messages');
+            if (quickActionMessages) {
+                quickActionMessages.addEventListener('click', () => {
+                    window.location.href = '/messages.html';
+                });
+            }
+            
+            const quickActionSearch = document.getElementById('quick-action-search');
+            if (quickActionSearch) {
+                quickActionSearch.addEventListener('click', searchStudents);
+            }
+            
+            const quickActionPostJob = document.getElementById('quick-action-post-job');
+            if (quickActionPostJob) {
+                quickActionPostJob.addEventListener('click', showCreateJob);
+            }
+            
+            const quickActionApplications = document.getElementById('quick-action-applications');
+            if (quickActionApplications) {
+                quickActionApplications.addEventListener('click', viewAllApplications);
+            }
         }, 500);
         
     } catch (error) {
