@@ -3065,7 +3065,7 @@ function filterApplications(status) {
                 btn.style.backgroundColor = '#8b5cf6';
             }
         }
-        
+
     });
     
     // Set active button - full opacity and ring
@@ -5196,7 +5196,7 @@ async function loadStudentProfile() {
         
         profileContent.innerHTML = `
             <!-- Profile Header with Avatar -->
-            <div class="bg-gradient-to-r from-[#56AE67] to-[#3d8b4f] rounded-lg p-6 mb-6 text-white shadow-xl">
+            <div class="bg-[#56AE67] rounded-lg p-8 mb-6 text-white shadow-xl" style="background-color: #56AE67 !important;">
                 <div class="flex items-center space-x-6">
                     <div class="relative">
                         <div class="w-32 h-32 rounded-full overflow-hidden bg-white border-4 border-white shadow-lg">
@@ -5212,9 +5212,9 @@ async function loadStudentProfile() {
                         </button>
                     </div>
                     <div class="flex-1">
-                        <h2 class="text-3xl font-bold mb-2 text-white drop-shadow-lg">${profile.firstName || ''} ${profile.lastName || ''}</h2>
-                        <p class="text-white text-base mb-2 drop-shadow"><i class="fas fa-id-card mr-2"></i>${profile.studentId || 'Not assigned'}</p>
-                        <p class="text-white text-base drop-shadow"><i class="fas fa-envelope mr-2"></i>${profile.user?.email || 'Not available'}</p>
+                        <h2 class="text-3xl font-bold mb-2 text-white" style="color: #ffffff !important;">${profile.firstName || ''} ${profile.lastName || ''}</h2>
+                        <p class="text-white text-base mb-2" style="color: #ffffff !important;"><i class="fas fa-id-card mr-2"></i>${profile.studentId || 'Not assigned'}</p>
+                        <p class="text-white text-base" style="color: #ffffff !important;"><i class="fas fa-envelope mr-2"></i>${profile.user?.email || 'Not available'}</p>
                     </div>
                 </div>
             </div>
