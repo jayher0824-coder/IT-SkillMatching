@@ -137,10 +137,19 @@ class ChatManager {
                 
             const response = await apiCall(url);
             if (response.success) {
+                // Filter out messages with null/undefined sender
+                const validMessages = response.data.filter(msg => {
+                    if (!msg.sender || !msg.sender._id) {
+                        console.warn('Skipping message with missing sender:', msg._id);
+                        return false;
+                    }
+                    return true;
+                });
+                
                 if (before) {
-                    this.messages = [...response.data, ...this.messages];
+                    this.messages = [...validMessages, ...this.messages];
                 } else {
-                    this.messages = response.data;
+                    this.messages = validMessages;
                 }
                 this.updateMessagesView();
                 if (!before) {
@@ -187,6 +196,13 @@ class ChatManager {
             console.log('✓ Message sent, response:', response);
             
             if (response.success) {
+                // Validate that sender is populated
+                if (!response.data.sender || !response.data.sender._id) {
+                    console.error('❌ Received message without populated sender:', response.data);
+                    alert('Error: Message was sent but sender information is missing. Please refresh the page.');
+                    return;
+                }
+                
                 this.messages.push(response.data);
                 this.updateMessagesView();
                 this.scrollToBottom();
@@ -343,6 +359,12 @@ class ChatManager {
         const currentUser = JSON.parse(sessionStorage.getItem('user'));
         
         messagesContainer.innerHTML = this.messages.map(msg => {
+            // Add defensive check for null sender
+            if (!msg.sender || !msg.sender._id) {
+                console.warn('Message with missing sender:', msg);
+                return ''; // Skip messages with missing sender
+            }
+            
             const isOwn = msg.sender._id === currentUser._id;
             const time = this.formatTime(msg.createdAt);
             
@@ -454,6 +476,12 @@ class ChatManager {
     }
 
     escapeHtml(text) {
+        // Use the global sanitize function if available, otherwise fallback
+        if (typeof window.escapeHTML === 'function') {
+            return window.escapeHTML(text).replace(/\n/g, '<br>');
+        }
+        
+        // Fallback implementation
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML.replace(/\n/g, '<br>');

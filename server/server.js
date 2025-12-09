@@ -3,6 +3,9 @@ const passport = require('passport');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const path = require('path');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
+const mongoSanitize = require('express-mongo-sanitize');
 
 // Load .env file if it exists (for local development)
 const envPath = path.join(__dirname, '..', '.env');
@@ -29,6 +32,9 @@ if (missingVars.length > 0) {
 
 const app = express();
 
+// Trust proxy for accurate IP addresses behind Render's load balancer
+app.set('trust proxy', 1);
+
 // Security and CORS configuration
 const corsOptions = {
   origin: process.env.CORS_ORIGIN || process.env.CLIENT_URL || 'http://localhost:3000',
@@ -36,18 +42,53 @@ const corsOptions = {
   optionsSuccessStatus: 200
 };
 
+// Helmet for security headers with CSP
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "https://cdnjs.cloudflare.com", "https://cdn.jsdelivr.net"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://cdnjs.cloudflare.com", "https://fonts.googleapis.com"],
+      imgSrc: ["'self'", "data:", "https:", "blob:"],
+      fontSrc: ["'self'", "https://cdnjs.cloudflare.com", "https://fonts.gstatic.com"],
+      connectSrc: ["'self'"],
+      frameSrc: ["'self'"],
+      objectSrc: ["'none'"],
+      upgradeInsecureRequests: process.env.NODE_ENV === 'production' ? [] : null
+    }
+  },
+  crossOriginEmbedderPolicy: false,
+  crossOriginResourcePolicy: { policy: "cross-origin" }
+}));
+
+// Rate limiting for all requests
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // Limit each IP to 100 requests per windowMs
+  message: 'Too many requests from this IP, please try again later.',
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+app.use('/api/', limiter);
+
 // Middleware
 app.use(cors(corsOptions));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Security headers
+// Data sanitization against NoSQL injection
+app.use(mongoSanitize());
+
+// Prevent parameter pollution
 app.use((req, res, next) => {
-  res.setHeader('X-Content-Type-Options', 'nosniff');
-  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
-  res.setHeader('X-XSS-Protection', '1; mode=block');
-  if (process.env.NODE_ENV === 'production') {
-    res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+  // Simple parameter pollution prevention
+  if (req.query) {
+    Object.keys(req.query).forEach(key => {
+      if (Array.isArray(req.query[key])) {
+        req.query[key] = req.query[key][req.query[key].length - 1];
+      }
+    });
   }
   next();
 });

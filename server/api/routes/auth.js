@@ -5,8 +5,28 @@ const User = require('../../database/models/User');
 const Student = require('../../database/models/Student');
 const Company = require('../../database/models/Company');
 const passport = require('passport');
+const rateLimit = require('express-rate-limit');
 
 const router = express.Router();
+
+// Rate limiter for authentication endpoints
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // Limit each IP to 5 login/register attempts per windowMs
+  message: 'Too many authentication attempts, please try again after 15 minutes',
+  standardHeaders: true,
+  legacyHeaders: false,
+  skipSuccessfulRequests: true // Don't count successful requests
+});
+
+// Rate limiter for password-related endpoints
+const passwordLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 3, // Limit each IP to 3 password attempts per hour
+  message: 'Too many password attempts, please try again after an hour',
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 
 // Generate JWT Token
 const generateToken = (id) => {
@@ -15,7 +35,7 @@ const generateToken = (id) => {
   });
 };
 
-router.post('/register', [
+router.post('/register', authLimiter, [
   body('email').isEmail().withMessage('Please provide a valid email'),
   body('password')
     .isLength({ min: 6 }).withMessage('Password must be at least 6 characters')
@@ -183,7 +203,7 @@ router.post('/register', [
 // @desc    Login user
 // @route   POST /api/auth/login
 // @access  Public
-router.post('/login', [
+router.post('/login', authLimiter, [
   body('email').isEmail().withMessage('Please provide a valid email'),
   body('password').exists().withMessage('Password is required'),
 ], async (req, res) => {
