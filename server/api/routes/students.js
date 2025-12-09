@@ -18,7 +18,7 @@ const router = express.Router();
 // Configure multer for file uploads
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-const dest = 'uploads/resumes/';
+const dest = path.join(__dirname, '..', '..', '..', 'client', 'assets', 'uploads', 'resumes');
     ensureDir(dest);
     cb(null, dest);
   },
@@ -174,7 +174,7 @@ router.put('/profile', protect, authorize('student'), async (req, res) => {
 // Configure multer for avatar uploads
 const avatarStorage = multer.diskStorage({
   destination: function (req, file, cb) {
-const dest = 'uploads/avatars/';
+const dest = path.join(__dirname, '..', '..', '..', 'client', 'assets', 'uploads', 'avatars');
     ensureDir(dest);
     cb(null, dest);
   },
@@ -204,9 +204,13 @@ router.post('/upload-avatar', protect, authorize('student'), uploadAvatar.single
     if (!student) {
       return res.status(404).json({ success: false, message: 'Student profile not found' });
     }
+    
+    // Extract relative path from uploads directory
+    const relativePath = req.file.path.split('uploads')[1].replace(/\\/g, '/');
+    
     student.avatar = {
       filename: req.file.originalname,
-      path: req.file.path,
+      path: 'uploads' + relativePath,
       uploadedAt: new Date(),
     };
     await student.save();

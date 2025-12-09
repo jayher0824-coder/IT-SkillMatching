@@ -5940,11 +5940,11 @@ window.showAvatarUpload = function() {
             </div>
             
             <div class="flex justify-end space-x-3">
-                <button type="button" onclick="closeModal()" class="px-6 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition">
+                <button type="button" onclick="closeModal()" class="px-6 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition text-gray-700 dark:text-gray-300 font-semibold">
                     Cancel
                 </button>
                 <button type="submit" id="upload-avatar-btn" disabled
-                    class="px-6 py-2 bg-[#56AE67] text-white rounded-lg hover:bg-[#3d8b4f] transition font-semibold disabled:bg-gray-300 disabled:cursor-not-allowed">
+                    class="px-6 py-2 bg-[#56AE67] text-white rounded-lg hover:bg-[#3d8b4f] transition font-semibold disabled:bg-gray-400 dark:disabled:bg-gray-600 disabled:cursor-not-allowed">
                     <i class="fas fa-check mr-2"></i>Upload
                 </button>
             </div>
