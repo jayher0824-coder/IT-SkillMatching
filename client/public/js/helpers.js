@@ -254,6 +254,16 @@ async function loadNotificationBell(containerId) {
         const html = await response.text();
         container.innerHTML = html;
         
+        // Initialize the notification bell after loading
+        setTimeout(() => {
+            if (typeof window.initializeNotificationBell === 'function') {
+                window.initializeNotificationBell();
+            }
+            if (typeof window.fetchAndUpdateNotifications === 'function') {
+                window.fetchAndUpdateNotifications();
+            }
+        }, 100);
+        
         // Execute any scripts in the loaded HTML
         const scripts = container.querySelectorAll('script');
         scripts.forEach(script => {
