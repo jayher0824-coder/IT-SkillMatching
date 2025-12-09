@@ -753,7 +753,7 @@ router.post('/create-question', protect, authorize('admin', 'company'), async (r
       type,
       question,
       description,
-      category,
+      difficulty,
       options = [],
       programmingLanguage = null,
       codeTemplate = null,
@@ -762,10 +762,10 @@ router.post('/create-question', protect, authorize('admin', 'company'), async (r
     } = req.body;
 
     // Validate required fields
-    if (!question || !type || !category) {
+    if (!question || !type || !difficulty) {
       return res.status(400).json({
         success: false,
-        message: 'Missing required fields: question, type, category'
+        message: 'Missing required fields: question, type, difficulty'
       });
     }
 
@@ -775,6 +775,15 @@ router.post('/create-question', protect, authorize('admin', 'company'), async (r
       return res.status(400).json({
         success: false,
         message: 'Invalid question type'
+      });
+    }
+
+    // Validate difficulty
+    const validDifficulties = ['beginner', 'junior', 'intermediate', 'advanced'];
+    if (!validDifficulties.includes(difficulty)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid difficulty level'
       });
     }
 
@@ -799,7 +808,7 @@ router.post('/create-question', protect, authorize('admin', 'company'), async (r
       type,
       question,
       description: description || '',
-      category,
+      difficulty,
       options: type === 'coding' ? [] : options,
       programmingLanguage: type === 'coding' ? programmingLanguage : null,
       codeTemplate: type === 'coding' ? codeTemplate : null,
@@ -811,14 +820,14 @@ router.post('/create-question', protect, authorize('admin', 'company'), async (r
     // For now, return the question structure
     res.status(201).json({
       success: true,
-      message: 'Question created successfully',
+      message: 'Challenge created successfully',
       question: newQuestion
     });
   } catch (error) {
     console.error('Error creating question:', error);
     res.status(500).json({
       success: false,
-      message: 'Failed to create question',
+      message: 'Failed to create challenge',
       error: error.message
     });
   }

@@ -115,16 +115,17 @@ b291dc7 - feat: Add code debugging and testing in assessments [MAIN]
 ✓ View hidden test results after submission
 ```
 
-### For Teachers 👨‍🏫
+### For Companies ✏️
 ```
-✓ Create coding questions with one click
-✓ Define unlimited test cases
+✓ Create coding challenges for job postings
+✓ Define test cases to validate skills
+✓ Choose from 10 programming languages
 ✓ Mix visible and hidden test cases
 ✓ Provide optional starter/template code
-✓ Set execution timeout (5-300 seconds)
-✓ Categorize questions
-✓ Test case descriptions for clarity
-✓ Automatic validation of question setup
+✓ Set execution timeout
+✓ Review student code submissions
+✓ Assess programming skills objectively
+✓ Go beyond Q&A assessments
 ```
 
 ### For System 🔧

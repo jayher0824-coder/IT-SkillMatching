@@ -4,8 +4,8 @@
         <!-- Header -->
         <div class="sticky top-0 bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6 border-b border-blue-800 flex justify-between items-center">
             <div>
-                <h2 class="text-2xl font-bold mb-1">Create Coding Question</h2>
-                <p class="text-blue-100">Set up a programming challenge with test cases</p>
+                <h2 class="text-2xl font-bold mb-1">Create Coding Challenge</h2>
+                <p class="text-blue-100">Set up a programming challenge with test cases for your job assessment</p>
             </div>
             <button onclick="closeCodingQuestionModal()" class="text-2xl hover:bg-blue-800 w-10 h-10 rounded-full flex items-center justify-center">
                 ×
@@ -17,13 +17,13 @@
             <!-- Basic Question Info -->
             <div class="bg-gray-50 dark:bg-gray-800 p-6 rounded-lg border-2 border-gray-200 dark:border-gray-700">
                 <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                    <i class="fas fa-book mr-2 text-blue-600"></i>Question Details
+                    <i class="fas fa-code mr-2 text-blue-600"></i>Challenge Details
                 </h3>
                 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Question Title *</label>
-                        <input type="text" id="coding-question-title" placeholder="e.g., FizzBuzz Challenge" class="w-full px-4 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:border-blue-500 dark:bg-gray-700 dark:text-white">
+                        <label class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Challenge Title *</label>
+                        <input type="text" id="coding-question-title" placeholder="e.g., FizzBuzz Algorithm Challenge" class="w-full px-4 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:border-blue-500 dark:bg-gray-700 dark:text-white">
                     </div>
 
                     <div>
@@ -46,15 +46,15 @@
 
                 <div class="mt-4">
                     <label class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Problem Description *</label>
-                    <textarea id="coding-question-desc" placeholder="Describe what the student needs to solve..." rows="4" class="w-full px-4 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:border-blue-500 dark:bg-gray-700 dark:text-white resize-none"></textarea>
+                    <textarea id="coding-question-desc" placeholder="Describe the coding challenge that candidates need to solve..." rows="4" class="w-full px-4 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:border-blue-500 dark:bg-gray-700 dark:text-white resize-none"></textarea>
                 </div>
 
                 <div class="mt-4">
                     <label class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Code Template (Starter Code)</label>
-                    <textarea id="coding-question-template" placeholder="Optional: Provide starter code for students..." rows="5" class="w-full px-4 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:border-blue-500 dark:bg-gray-700 dark:text-white font-mono text-sm resize-none"></textarea>
+                    <textarea id="coding-question-template" placeholder="Optional: Provide starter code for candidates..." rows="5" class="w-full px-4 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:border-blue-500 dark:bg-gray-700 dark:text-white font-mono text-sm resize-none"></textarea>
                     <small class="text-gray-600 dark:text-gray-400 mt-1 block">
                         <i class="fas fa-info-circle mr-1"></i>
-                        Leave empty if students should write from scratch
+                        Leave empty if candidates should write from scratch
                     </small>
                 </div>
 
@@ -81,24 +81,22 @@
 
                 <p class="text-xs text-gray-600 dark:text-gray-400 mt-4">
                     <i class="fas fa-lightbulb mr-1"></i>
-                    <strong>Tip:</strong> At least one visible test case is recommended to guide students. Hidden test cases are revealed only after submission.
+                    <strong>Tip:</strong> At least one visible test case is recommended to guide candidates. Hidden test cases are revealed only after submission to prevent gaming the system.
                 </p>
             </div>
 
-            <!-- Category Selection -->
+            <!-- Difficulty Level -->
             <div class="bg-gray-50 dark:bg-gray-800 p-6 rounded-lg border-2 border-gray-200 dark:border-gray-700">
                 <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                    <i class="fas fa-tag mr-2 text-purple-600"></i>Category *
+                    <i class="fas fa-chart-line mr-2 text-purple-600"></i>Challenge Difficulty *
                 </h3>
                 
-                <select id="coding-question-category" class="w-full px-4 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:border-blue-500 dark:bg-gray-700 dark:text-white">
-                    <option value="">Select a Category</option>
-                    <option value="Python">Python</option>
-                    <option value="JavaScript">JavaScript</option>
-                    <option value="Java">Java</option>
-                    <option value="C++">C++</option>
-                    <option value="Algorithm">Algorithm</option>
-                    <option value="DataStructure">Data Structure</option>
+                <select id="coding-question-difficulty" class="w-full px-4 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:border-blue-500 dark:bg-gray-700 dark:text-white">
+                    <option value="">Select Difficulty Level</option>
+                    <option value="beginner">Beginner (Entry-level)</option>
+                    <option value="junior">Junior (Junior Developer)</option>
+                    <option value="intermediate">Intermediate (Mid-level)</option>
+                    <option value="advanced">Advanced (Senior Developer)</option>
                 </select>
             </div>
         </div>
@@ -109,7 +107,7 @@
                 Cancel
             </button>
             <button onclick="saveCodingQuestion()" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition duration-200">
-                <i class="fas fa-save mr-2"></i>Save Question
+                <i class="fas fa-save mr-2"></i>Save Challenge
             </button>
         </div>
     </div>
@@ -188,9 +186,9 @@
         const title = document.getElementById('coding-question-title').value.trim();
         const language = document.getElementById('coding-question-lang').value;
         const description = document.getElementById('coding-question-desc').value.trim();
-        const category = document.getElementById('coding-question-category').value;
+        const difficulty = document.getElementById('coding-question-difficulty').value;
 
-        if (!title || !language || !description || !category) {
+        if (!title || !language || !description || !difficulty) {
             alert('Please fill in all required fields');
             return;
         }
@@ -223,7 +221,7 @@
             question: title,
             description: description,
             programmingLanguage: language,
-            category: category,
+            difficulty: difficulty,
             codeTemplate: document.getElementById('coding-question-template').value.trim() || null,
             timeLimit: parseInt(document.getElementById('coding-question-timelimit').value) || 60,
             testCases: testCases,
@@ -245,7 +243,7 @@
             }
 
             const result = await response.json();
-            showToast('Coding question created successfully!', 'success');
+            showToast('Coding challenge created successfully!', 'success');
             closeCodingQuestionModal();
             
             // Refresh question list if available
@@ -254,7 +252,7 @@
             }
         } catch (error) {
             console.error('Error saving question:', error);
-            showToast('Failed to create question: ' + error.message, 'error');
+            showToast('Failed to create challenge: ' + error.message, 'error');
         }
     }
 

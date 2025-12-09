@@ -1,21 +1,27 @@
 # Code Testing Implementation Guide
 
-## Quick Start for Teachers
+## Quick Start for Companies
 
-### Step 1: Access Assessment Creation
-1. Log in as Admin/Company user
-2. Navigate to Assessment Builder
-3. Create new assessment or edit existing
+### Step 1: Create Job Posting
+1. Log in as Company user
+2. Navigate to "Create Job" or "Manage Jobs"
+3. Fill in job details (title, description, requirements, etc.)
+4. Save job posting
 
-### Step 2: Add Coding Question
-1. In question list, click "Add Coding Question" button
+### Step 2: Add Coding Assessment to Job
+1. In Job Details, click "Add Assessment" or "Create Assessment"
+2. Choose "Assessment Type" → Select "Coding Challenge"
+3. Fill in assessment details
+
+### Step 3: Add Coding Questions
+1. Click "Add Coding Question"
 2. Fill in question details:
    - Question Title
    - Programming Language
    - Problem Description
    - Category
 
-### Step 3: Create Test Cases
+### Step 4: Create Test Cases
 1. Click "Add Test Case" button
 2. For each test case, enter:
    - **Input**: What the program receives as input
@@ -23,35 +29,42 @@
    - **Description**: Brief explanation (e.g., "Basic test case")
    - **Visibility**: Check if hidden (revealed after submission)
 
-### Step 4: Optional - Add Code Template
+### Step 5: Optional - Add Code Template
 1. In "Code Template" field, add starter code
 2. Students will see this code pre-filled in the editor
 3. Leave empty if students should write from scratch
 
-### Step 5: Save Question
+### Step 6: Save Assessment
 1. Set execution timeout (default: 60 seconds)
-2. Click "Save Question"
-3. Question is added to assessment
+2. Click "Save Assessment"
+3. Assessment is linked to job posting
+4. Students will take this assessment when applying
 
 ---
 
 ## Quick Start for Students
 
-### Step 1: Start Assessment
-1. Open assessment from dashboard
-2. Navigate to coding question
+### Step 1: View Job Posting
+1. Search for job on job board
+2. View job details
+3. See "Assessment Required" indicator if job has coding challenge
 
-### Step 2: View Problem
+### Step 2: Start Assessment
+1. Click "Apply to Job" or "Take Assessment"
+2. Read assessment instructions
+3. Start answering questions
+
+### Step 3: View Coding Question
 - Read problem description
 - Review visible test cases
 - View code template if provided
 
-### Step 3: Write Code
+### Step 4: Write Code
 1. Select programming language (if not pre-selected)
 2. Write code in the editor
 3. Code is automatically saved as you navigate
 
-### Step 4: Test Your Code
+### Step 5: Test Your Code
 1. Click "Run Code" button
 2. View test results:
    - ✓ Green = Test passed
@@ -59,10 +72,10 @@
 3. Review actual vs expected output
 4. Modify code if needed
 
-### Step 5: Submit Answer
+### Step 6: Submit Answer
 1. Click "Submit" button
-2. Code is submitted with assessment
-3. View detailed results after assessment completion
+2. Code is submitted with job application
+3. Company reviews your code submission
 
 ---
 

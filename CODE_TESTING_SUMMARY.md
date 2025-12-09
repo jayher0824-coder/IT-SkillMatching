@@ -82,14 +82,15 @@
 - Code template support
 - Submit code as assessment answer
 
-✅ **Teacher Features**
-- Create coding questions
-- Define test cases (input/output)
-- Mark test cases as visible/hidden
+✅ **Company Features**
+- Create coding challenges for job postings
+- Define multiple test cases (visible/hidden)
 - Provide optional code templates
 - Set execution timeouts
 - Categorize questions
 - Test case descriptions
+- Review student code submissions
+- Export/analyze results
 
 ✅ **Security Features**
 - Sandboxed code execution

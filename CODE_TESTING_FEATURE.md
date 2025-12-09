@@ -2,7 +2,14 @@
 
 ## Overview
 
-The platform now supports **interactive code testing** in assessments, allowing students to write and execute actual code with automatic test case validation. This feature enables teachers to assess programming language skills through practical coding challenges.
+The platform now supports **interactive code testing** in assessments, allowing students to write and execute actual code with automatic test case validation. This feature enables **companies** to assess programming language skills through practical coding challenges in their job postings, going beyond Q&A assessments.
+
+## Supported Use Cases
+
+1. **Job Posting Requirements** - Companies add coding challenges to their job application assessment
+2. **Skill Verification** - Test actual programming skills with real code execution
+3. **Technical Interviews** - Remote coding assessment as part of hiring process
+4. **Internship/OJT Programs** - Evaluate practical programming capability
 
 ## Features Implemented
 
