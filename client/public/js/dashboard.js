@@ -5199,19 +5199,17 @@ async function loadStudentProfile() {
             <!-- Profile Header with Avatar -->
             <div class="bg-[#56AE67] rounded-lg p-8 mb-6 text-white shadow-xl" style="background-color: #56AE67 !important;">
                 <div class="flex items-center space-x-6">
-                    <div class="relative">
-                        <div class="w-32 h-32 rounded-full overflow-hidden bg-white border-4 border-white shadow-lg">
-                            ${profile.avatar && profile.avatar.path ? 
-                                `<img src="/${profile.avatar.path}" alt="Profile Picture" class="w-full h-full object-cover" onerror="this.parentElement.innerHTML='<div class=\"w-full h-full flex items-center justify-center bg-gray-200\"><i class=\"fas fa-user text-gray-400 text-5xl\"></i></div>'">` :
-                                `<div class="w-full h-full flex items-center justify-center bg-gray-200">
-                                    <i class="fas fa-user text-gray-400 text-5xl"></i>
-                                </div>`
-                            }
-                        </div>
-                        <button onclick="showAvatarUpload()" class="absolute bottom-0 right-0 bg-white text-[#56AE67] rounded-full p-3 shadow-lg hover:bg-gray-100 transition">
-                            <i class="fas fa-camera text-lg"></i>
-                        </button>
+                    <div class="w-32 h-32 rounded-full overflow-hidden bg-white border-4 border-white shadow-lg flex-shrink-0">
+                        ${profile.avatar && profile.avatar.path ? 
+                            `<img src="/${profile.avatar.path}" alt="Profile Picture" class="w-full h-full object-cover" onerror="this.parentElement.innerHTML='<div class=\"w-full h-full flex items-center justify-center bg-gray-200\"><i class=\"fas fa-user text-gray-400 text-5xl\"></i></div>'">` :
+                            `<div class="w-full h-full flex items-center justify-center bg-gray-200">
+                                <i class="fas fa-user text-gray-400 text-5xl"></i>
+                            </div>`
+                        }
                     </div>
+                    <button onclick="showAvatarUpload()" class="bg-white text-[#56AE67] rounded-full p-3 shadow-lg hover:bg-gray-100 transition flex-shrink-0">
+                        <i class="fas fa-camera text-lg"></i>
+                    </button>
                     <div class="flex-1">
                         <h2 class="text-3xl font-bold mb-2 text-white" style="color: #ffffff !important;">${profile.firstName || ''} ${profile.lastName || ''}</h2>
                         <p class="text-white text-base mb-2" style="color: #ffffff !important;"><i class="fas fa-id-card mr-2"></i>${profile.studentId || 'Not assigned'}</p>
