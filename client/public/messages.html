@@ -241,9 +241,10 @@
                     }
                     
                     // Redirect based on user role
-                    if (userRole === 'company' || userRole === 'admin') {
+                    if (userRole === 'admin') {
                         window.location.href = '/admin.html';
                     } else {
+                        // Both student and company users go to dashboard.html
                         window.location.href = '/dashboard.html';
                     }
                 });

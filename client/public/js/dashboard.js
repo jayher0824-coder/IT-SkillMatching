@@ -4055,86 +4055,117 @@ function createSearchStudentsModal() {
     modal.className = 'fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4';
     
     modal.innerHTML = `
-        <div class="bg-white dark:bg-gray-800 rounded-lg w-full max-w-6xl max-h-[90vh] overflow-hidden">
-            <div class="flex justify-between items-center p-6 border-b border-gray-200 dark:border-gray-600">
+        <div class="bg-white dark:bg-gray-800 rounded-lg w-full max-w-6xl max-h-[90vh] overflow-hidden flex flex-col">
+            <div class="flex justify-between items-center p-6 border-b border-gray-200 dark:border-gray-600 flex-shrink-0">
                 <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Search Students</h2>
-                <button onclick="closeSearchStudentsModal()" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                <button onclick="closeSearchStudentsModal()" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full p-2 transition"
+                    title="Close">
                     <i class="fas fa-times text-xl"></i>
                 </button>
             </div>
             
-            <div class="p-6">
-                <!-- Search Filters -->
-                <div class="mb-6 space-y-4">
-                    <div class="grid md:grid-cols-3 gap-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                Search by Name/Email
-                            </label>
-                            <input type="text" id="student-search-input" placeholder="Search students..." 
-                                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:border-[#56AE67] dark:bg-gray-700 dark:text-white">
-                        </div>
-                        
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                Skills
-                            </label>
-                            <input type="text" id="skills-filter" placeholder="e.g., JavaScript, React" 
-                                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:border-[#56AE67] dark:bg-gray-700 dark:text-white">
-                        </div>
-                        
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                Course/Program
-                            </label>
-                            <select id="course-filter" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:border-[#56AE67] dark:bg-gray-700 dark:text-white">
-                                <option value="">All Courses</option>
-                                <option value="Computer Science">Computer Science</option>
-                                <option value="Information Technology">Information Technology</option>
-                                <option value="Software Engineering">Software Engineering</option>
-                                <option value="Computer Engineering">Computer Engineering</option>
-                                <option value="Data Science">Data Science</option>
-                                <option value="Cybersecurity">Cybersecurity</option>
-                                <option value="Web Development">Web Development</option>
-                                <option value="Mobile Development">Mobile Development</option>
-                            </select>
-                        </div>
-                    </div>
-                    
-                    <div class="flex flex-wrap gap-2">
-                        <button onclick="applyStudentFilters()" 
-                            class="px-4 py-2 text-white rounded-lg hover:bg-[#3d8b4f] transition"
-                            style="background-color: #56AE67; color: white;">
-                            <i class="fas fa-search mr-2"></i>Search
-                        </button>
-                        <button onclick="clearStudentFilters()" class="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600">
-                            <i class="fas fa-times mr-2"></i>Clear
-                        </button>
-                    </div>
-                </div>
-                
-                <!-- Results -->
-                <div class="border-t border-gray-200 dark:border-gray-600 pt-4">
-                    <div id="students-loading" class="text-center py-8">
-                        <div class="loading inline-block mr-2"></div>
-                        <span>Loading students...</span>
-                    </div>
-                    
-                    <div id="students-results" class="hidden">
-                        <div class="flex justify-between items-center mb-4">
-                            <div id="students-count" class="text-sm text-gray-600 dark:text-gray-400"></div>
-                            <div class="flex space-x-2">
-                                <button onclick="exportStudentsList()" class="px-3 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700">
-                                    <i class="fas fa-download mr-1"></i>Export
-                                </button>
+            <div class="flex-1 overflow-y-auto">
+                <div class="p-6">
+                    <!-- Search Filters -->
+                    <div class="mb-6 space-y-4">
+                        <div class="grid md:grid-cols-3 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    Search by Name/Email
+                                </label>
+                                <input type="text" id="student-search-input" placeholder="Search students..." 
+                                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:border-[#56AE67] dark:bg-gray-700 dark:text-white">
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    Skills
+                                </label>
+                                <input type="text" id="skills-filter" placeholder="e.g., JavaScript, React" 
+                                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:border-[#56AE67] dark:bg-gray-700 dark:text-white">
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    Course/Program
+                                </label>
+                                <select id="course-filter" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:border-[#56AE67] dark:bg-gray-700 dark:text-white">
+                                    <option value="">All Courses</option>
+                                    <option value="Computer Science">Computer Science</option>
+                                    <option value="Information Technology">Information Technology</option>
+                                    <option value="Software Engineering">Software Engineering</option>
+                                    <option value="Computer Engineering">Computer Engineering</option>
+                                    <option value="Data Science">Data Science</option>
+                                    <option value="Cybersecurity">Cybersecurity</option>
+                                    <option value="Web Development">Web Development</option>
+                                    <option value="Mobile Development">Mobile Development</option>
+                                </select>
                             </div>
                         </div>
                         
-                        <div id="students-list" class="space-y-4 max-h-[400px] overflow-y-auto"></div>
+                        <div class="flex flex-wrap gap-2">
+                            <button onclick="applyStudentFilters()" 
+                                class="px-4 py-2 text-white rounded-lg hover:bg-[#3d8b4f] transition"
+                                style="background-color: #56AE67; color: white;">
+                                <i class="fas fa-search mr-2"></i>Search
+                            </button>
+                            <button onclick="clearStudentFilters()" class="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600">
+                                <i class="fas fa-times mr-2"></i>Clear
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Results -->
+                    <div class="border-t border-gray-200 dark:border-gray-600 pt-4">
+                        <div id="students-loading" class="text-center py-8">
+                            <div class="loading inline-block mr-2"></div>
+                            <span>Loading students...</span>
+                        </div>
+                        
+                        <div id="students-results" class="hidden">
+                            <div class="flex justify-between items-center mb-4 sticky top-0 bg-white dark:bg-gray-800 z-10 pb-2">
+                                <div id="students-count" class="text-sm text-gray-600 dark:text-gray-400"></div>
+                                <div class="flex space-x-2">
+                                    <button onclick="exportStudentsList()" class="px-3 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700">
+                                        <i class="fas fa-download mr-1"></i>Export
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div id="students-list" class="space-y-4">
+                                <!-- Students will be loaded here -->
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
+        
+        <style>
+            /* Custom scrollbar styling */
+            #students-list::-webkit-scrollbar {
+                width: 8px;
+            }
+            
+            #students-list::-webkit-scrollbar-track {
+                background: transparent;
+            }
+            
+            #students-list::-webkit-scrollbar-thumb {
+                background: #cbd5e1;
+                border-radius: 4px;
+            }
+            
+            #students-list::-webkit-scrollbar-thumb:hover {
+                background: #94a3b8;
+            }
+            
+            /* Firefox scrollbar */
+            #students-list {
+                scrollbar-color: #cbd5e1 transparent;
+                scrollbar-width: thin;
+            }
+        </style>
     `;
     
     return modal;
