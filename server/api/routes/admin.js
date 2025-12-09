@@ -920,4 +920,222 @@ router.post('/send-password-email', protect, authorize('admin'), async (req, res
   }
 });
 
+// @desc    Get all pending password reset requests
+// @route   GET /api/admin/password-reset-requests
+// @access  Private (Admin only)
+router.get('/password-reset-requests', protect, authorize('admin'), async (req, res) => {
+  try {
+    const users = await User.find({
+      'passwordChangeRequests': { $exists: true, $not: { $size: 0 } }
+    }).select('firstName lastName email role phoneNumber passwordChangeRequests');
+
+    const requests = [];
+    users.forEach(user => {
+      if (user.passwordChangeRequests && user.passwordChangeRequests.length > 0) {
+        user.passwordChangeRequests.forEach((request, index) => {
+          requests.push({
+            id: `${user._id}-${index}`,
+            userId: user._id,
+            userName: `${user.firstName} ${user.lastName}`,
+            userEmail: user.email,
+            role: user.role,
+            phoneNumber: user.phoneNumber,
+            reason: request.reason,
+            phoneNumber: request.phoneNumber,
+            requestDate: request.requestDate,
+            status: request.status,
+            verified: request.verified,
+            index: index
+          });
+        });
+      }
+    });
+
+    // Sort by request date (newest first)
+    requests.sort((a, b) => new Date(b.requestDate) - new Date(a.requestDate));
+
+    res.json({
+      success: true,
+      requests,
+      total: requests.length
+    });
+  } catch (error) {
+    console.error('Error fetching password reset requests:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error while fetching requests'
+    });
+  }
+});
+
+// @desc    Approve and process password reset request
+// @route   POST /api/admin/password-reset-requests/:userId/:index/approve
+// @access  Private (Admin only)
+router.post('/password-reset-requests/:userId/:index/approve', protect, authorize('admin'), async (req, res) => {
+  try {
+    const { userId, index } = req.params;
+    const { newPassword } = req.body;
+
+    if (!newPassword) {
+      return res.status(400).json({
+        success: false,
+        message: 'New password is required'
+      });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: 'Password must be at least 6 characters long'
+      });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    if (!user.passwordChangeRequests || !user.passwordChangeRequests[index]) {
+      return res.status(404).json({
+        success: false,
+        message: 'Password reset request not found'
+      });
+    }
+
+    // Update password
+    user.password = newPassword;
+    
+    // Mark request as approved
+    user.passwordChangeRequests[index].status = 'approved';
+    user.passwordChangeRequests[index].approvedDate = new Date();
+    user.passwordChangeRequests[index].approvedBy = req.user._id;
+
+    await user.save();
+
+    // Send email with new password
+    const emailService = require('../../services/emailService');
+    const template = {
+      subject: '🔐 Your Password Has Been Reset - IT OJT Platform',
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background: linear-gradient(135deg, #56AE67 0%, #3d8b4f 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+            .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
+            .password-box { background: white; border: 2px solid #56AE67; padding: 20px; margin: 20px 0; border-radius: 8px; }
+            .password-label { font-size: 12px; color: #666; text-transform: uppercase; letter-spacing: 1px; }
+            .password { font-size: 24px; font-weight: bold; color: #56AE67; letter-spacing: 2px; font-family: monospace; }
+            .warning { background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0; }
+            .footer { text-align: center; margin-top: 30px; color: #666; font-size: 12px; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>🔐 Password Reset Approved</h1>
+            </div>
+            <div class="content">
+              <p>Hi ${user.firstName},</p>
+              <p>Your password reset request has been approved by the admin. Your new temporary password is below:</p>
+              
+              <div class="password-box">
+                <p class="password-label">Your New Password:</p>
+                <div class="password">${newPassword}</div>
+              </div>
+              
+              <div class="warning">
+                <strong>⚠️ Important:</strong>
+                <ul style="margin: 10px 0;">
+                  <li><strong>Keep this password safe</strong> - Do not share it with anyone</li>
+                  <li><strong>Change your password</strong> after your first login for security</li>
+                  <li>You can now log in with this new password</li>
+                </ul>
+              </div>
+
+              <p style="margin-top: 20px;">
+                <a href="https://it-ojt-platform.onrender.com" style="display: inline-block; background-color: #56AE67; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">Login to Platform</a>
+              </p>
+            </div>
+            <div class="footer">
+              <p>© 2025 IT OJT Platform. All rights reserved.</p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `
+    };
+
+    const emailResult = await emailService.sendEmail(user.email, template);
+
+    if (emailResult.success) {
+      res.json({
+        success: true,
+        message: 'Password reset approved and email sent successfully'
+      });
+    } else {
+      res.status(500).json({
+        success: false,
+        message: 'Password updated but failed to send email',
+        error: emailResult.error
+      });
+    }
+  } catch (error) {
+    console.error('Error approving password reset:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error while processing request'
+    });
+  }
+});
+
+// @desc    Reject password reset request
+// @route   POST /api/admin/password-reset-requests/:userId/:index/reject
+// @access  Private (Admin only)
+router.post('/password-reset-requests/:userId/:index/reject', protect, authorize('admin'), async (req, res) => {
+  try {
+    const { userId, index } = req.params;
+    const { reason } = req.body;
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    if (!user.passwordChangeRequests || !user.passwordChangeRequests[index]) {
+      return res.status(404).json({
+        success: false,
+        message: 'Password reset request not found'
+      });
+    }
+
+    // Mark request as rejected
+    user.passwordChangeRequests[index].status = 'rejected';
+    user.passwordChangeRequests[index].rejectionReason = reason;
+    user.passwordChangeRequests[index].rejectedDate = new Date();
+    user.passwordChangeRequests[index].rejectedBy = req.user._id;
+
+    await user.save();
+
+    res.json({
+      success: true,
+      message: 'Password reset request rejected'
+    });
+  } catch (error) {
+    console.error('Error rejecting password reset:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error while rejecting request'
+    });
+  }
+});
+
 module.exports = router;
