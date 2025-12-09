@@ -185,17 +185,17 @@ async function loadStudentDashboard() {
                     <!-- Dashboard Section -->
                     <div id="dashboard-section" class="section p-4 md:p-8">
                         <!-- Dashboard Header -->
-                        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 md:p-6 mb-4 md:mb-8">
+                        <div class="bg-[#56AE67] rounded-lg shadow p-4 md:p-6 mb-4 md:mb-8" style="background-color: #56AE67 !important;">
                             <div class="flex items-center justify-between">
                                 <div class="flex items-center space-x-4">
                                     ${studentProfile?.avatar?.path ? `
-                                        <div class="w-16 h-16 rounded-full overflow-hidden border-2 border-[#56AE67] hidden md:block">
+                                        <div class="w-16 h-16 rounded-full overflow-hidden border-2 border-white hidden md:block">
                                             <img src="/uploads/avatars/${studentProfile.avatar.path.split('/').pop()}" alt="Profile" class="w-full h-full object-cover" onerror="this.style.display='none'">
                                         </div>
                                     ` : ''}
                                     <div>
-                                        <h2 class="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">Dashboard</h2>
-                                        <p class="text-gray-600 dark:text-gray-300 mt-1 md:mt-2 text-sm md:text-base">Welcome back${studentProfile?.firstName ? ', ' + studentProfile.firstName : ''}! Here's your OJT journey overview.</p>
+                                        <h2 class="text-2xl md:text-3xl font-bold text-white" style="color: #ffffff !important;">Dashboard</h2>
+                                        <p class="text-white mt-1 md:mt-2 text-sm md:text-base" style="color: #ffffff !important;">Welcome back${studentProfile?.firstName ? ', ' + studentProfile.firstName : ''}! Here's your OJT journey overview.</p>
                                     </div>
                                 </div>
                                 <!-- Notification Bell (Desktop) -->
@@ -790,11 +790,11 @@ async function loadCompanyDashboard() {
         dashboardContainer.innerHTML = `
             <div class="max-w-7xl mx-auto">
                 <!-- Dashboard Header -->
-                <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mb-8">
+                <div class="bg-[#56AE67] rounded-lg shadow p-6 mb-8" style="background-color: #56AE67 !important;">
                     <div class="flex items-center justify-between">
                         <div>
-                            <h2 class="text-3xl font-bold text-gray-900 dark:text-white">Company Dashboard</h2>
-                            <p class="text-gray-600 dark:text-gray-300 mt-2">Manage your job postings and find the right talent.</p>
+                            <h2 class="text-3xl font-bold text-white" style="color: #ffffff !important;">Company Dashboard</h2>
+                            <p class="text-white mt-2" style="color: #ffffff !important;">Manage your job postings and find the right talent.</p>
                         </div>
                         <div class="flex items-center space-x-4">
                             <!-- Notification Bell -->
