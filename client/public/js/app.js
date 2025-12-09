@@ -2406,7 +2406,7 @@ async function showAllJobs() {
                     <i class="fas fa-exclamation-circle text-red-500 text-6xl mb-4"></i>
                     <p class="text-gray-700 dark:text-gray-300 text-lg mb-2">Failed to load jobs</p>
                     <p class="text-gray-500 dark:text-gray-400 text-sm">${error.message}</p>
-                    <button onclick="showAllJobs()" class="mt-4 bg-[#56AE67] text-white px-6 py-2 rounded-lg hover:bg-[#3d8b4f] transition">
+                    <button onclick="showAllJobs()" class="mt-4 bg-[#56AE67] text-white px-6 py-2 rounded-lg hover:bg-[#3d8b4f] transition font-bold text-lg">
                         <i class="fas fa-redo mr-2"></i>Try Again
                     </button>
                 </div>

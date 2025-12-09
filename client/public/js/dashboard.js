@@ -5187,7 +5187,7 @@ async function loadStudentProfile() {
                         <i class="fas fa-user-circle"></i>
                     </div>
                     <p class="text-gray-600 dark:text-gray-400">No profile information yet.</p>
-                    <button onclick="showStudentProfileModal()" class="mt-4 bg-[#56AE67] text-white px-6 py-2 rounded-lg hover:bg-[#3d8b4f] transition">
+                    <button onclick="showStudentProfileModal()" class="mt-4 bg-[#56AE67] text-white px-6 py-2 rounded-lg hover:bg-[#3d8b4f] transition font-bold text-lg">
                         Create Profile
                     </button>
                 </div>
@@ -6196,7 +6196,7 @@ async function loadCareerPaths() {
                         <i class="fas fa-route"></i>
                     </div>
                     <p class="text-gray-600 dark:text-gray-400">Complete your assessment to get personalized career path recommendations.</p>
-                    <button onclick="switchToSection('assessment')" class="mt-4 bg-[#56AE67] text-white px-6 py-2 rounded-lg hover:bg-[#3d8b4f] transition font-semibold border-2 border-green-800">
+                    <button onclick="switchToSection('assessment')" class="mt-4 bg-[#56AE67] text-white px-6 py-2 rounded-lg hover:bg-[#3d8b4f] transition font-bold border-2 border-green-800 text-lg">
                         Take Assessment
                     </button>
                 </div>
@@ -6393,7 +6393,7 @@ async function loadSkillProgress() {
                     </div>
                     <p class="text-gray-600 dark:text-gray-400">No assessment history to track progress.</p>
                     <p class="text-sm text-gray-500 dark:text-gray-500 mt-2">Take multiple assessments to see your skill progression over time.</p>
-                    <button onclick="switchToSection('assessment')" class="mt-4 bg-[#56AE67] text-white px-6 py-2 rounded-lg hover:bg-[#3d8b4f] transition font-semibold border-2 border-green-800">
+                    <button onclick="switchToSection('assessment')" class="mt-4 bg-[#56AE67] text-white px-6 py-2 rounded-lg hover:bg-[#3d8b4f] transition font-bold text-lg border-2 border-green-800">
                         Take Assessment
                     </button>
                 </div>
