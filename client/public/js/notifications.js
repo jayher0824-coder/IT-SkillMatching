@@ -201,16 +201,38 @@ window.notificationManager = new NotificationManager();
 // Load and initialize notification bell component
 function loadNotificationBell(containerId) {
     const container = document.getElementById(containerId);
-    if (!container) return;
+    if (!container) {
+        console.warn(`Container with ID "${containerId}" not found`);
+        return;
+    }
+
+    console.log(`Loading notification bell for container: ${containerId}`);
 
     // Load the component HTML
     fetch('/components/notification-bell.html')
-        .then(response => response.text())
+        .then(response => {
+            if (!response.ok) throw new Error(`Failed to load notification-bell.html: ${response.status}`);
+            return response.text();
+        })
         .then(html => {
             container.innerHTML = html;
+            console.log(`Notification bell HTML loaded into ${containerId}`);
             initializeNotificationBell();
         })
-        .catch(error => console.error('Error loading notification bell:', error));
+        .catch(error => {
+            console.error('Error loading notification bell:', error);
+            // Fallback: create a simple bell button
+            container.innerHTML = `
+                <button id="notification-button" class="relative p-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white focus:outline-none transition-colors duration-200" aria-label="Notifications" type="button">
+                    <i class="fas fa-bell text-lg md:text-xl"></i>
+                    <span id="notification-badge" class="hidden absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-red-600 rounded-full">0</span>
+                </button>
+                <div id="notification-panel" class="hidden absolute right-0 mt-2 w-80 md:w-96 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 z-50" style="max-height: 600px; overflow-y: auto;">
+                    <div class="p-8 text-center"><p class="text-gray-600 dark:text-gray-400">Failed to load notifications</p></div>
+                </div>
+            `;
+            initializeNotificationBell();
+        });
 }
 
 // Initialize notification bell functionality
@@ -223,49 +245,73 @@ function initializeNotificationBell() {
     const markAllReadBtn = document.getElementById('mark-all-read-btn');
     const clearReadBtn = document.getElementById('clear-read-btn');
 
-    if (!notificationButton) return;
+    if (!notificationButton) {
+        console.warn('Notification button element not found');
+        return;
+    }
+
+    console.log('Initializing notification bell with elements:', {
+        button: !!notificationButton,
+        panel: !!notificationPanel,
+        list: !!notificationsList,
+        empty: !!notificationsEmpty,
+        badge: !!notificationBadge,
+        markAllReadBtn: !!markAllReadBtn,
+        clearReadBtn: !!clearReadBtn
+    });
 
     // Toggle dropdown on bell click
     notificationButton.addEventListener('click', (e) => {
         e.stopPropagation();
-        notificationPanel?.classList.toggle('hidden');
+        if (notificationPanel) {
+            notificationPanel.classList.toggle('hidden');
+            console.log('Panel toggled, now hidden:', notificationPanel.classList.contains('hidden'));
+        }
     });
 
     // Close dropdown when clicking outside
     document.addEventListener('click', (e) => {
-        if (!e.target.closest('.notification-container')) {
-            notificationPanel?.classList.add('hidden');
+        if (notificationPanel && !e.target.closest('.notification-container') && !e.target.closest('#notification-button')) {
+            notificationPanel.classList.add('hidden');
         }
     });
 
     // Mark all as read
     if (markAllReadBtn) {
         markAllReadBtn.addEventListener('click', async () => {
-            await window.notificationManager.markAllAsRead();
+            if (window.notificationManager) {
+                await window.notificationManager.markAllAsRead();
+            }
         });
     }
 
     // Clear read notifications
     if (clearReadBtn) {
         clearReadBtn.addEventListener('click', async () => {
-            // Delete all read notifications
-            const readNotifications = window.notificationManager.notifications.filter(n => n.read);
-            for (const notif of readNotifications) {
-                await window.notificationManager.deleteNotification(notif._id);
+            if (window.notificationManager) {
+                // Delete all read notifications
+                const readNotifications = window.notificationManager.notifications.filter(n => n.read);
+                for (const notif of readNotifications) {
+                    await window.notificationManager.deleteNotification(notif._id);
+                }
             }
         });
     }
 
     // Subscribe to notification updates
-    window.notificationManager.subscribe((data) => {
-        updateNotificationBell(data);
-    });
+    if (window.notificationManager) {
+        window.notificationManager.subscribe((data) => {
+            updateNotificationBell(data);
+        });
 
-    // Start polling for notifications
-    window.notificationManager.startPolling(10000);
+        // Start polling for notifications
+        window.notificationManager.startPolling(10000);
 
-    // Initial fetch
-    window.notificationManager.fetchNotifications();
+        // Initial fetch
+        window.notificationManager.fetchNotifications();
+    } else {
+        console.warn('NotificationManager not found on window');
+    }
 }
 
 // Update notification bell UI
@@ -274,12 +320,20 @@ function updateNotificationBell(data) {
     const notificationsEmpty = document.getElementById('notifications-empty');
     const notificationBadge = document.getElementById('notification-badge');
 
-    if (!notificationsList) return;
+    if (!notificationsList) {
+        console.warn('Notifications list element not found');
+        return;
+    }
+
+    console.log('Updating notification bell with data:', {
+        notificationsCount: data.notifications?.length || 0,
+        unreadCount: data.unreadCount || 0
+    });
 
     // Update badge
     if (notificationBadge) {
         if (data.unreadCount > 0) {
-            notificationBadge.textContent = data.unreadCount;
+            notificationBadge.textContent = Math.min(data.unreadCount, 99) + (data.unreadCount > 99 ? '+' : '');
             notificationBadge.classList.remove('hidden');
         } else {
             notificationBadge.classList.add('hidden');
