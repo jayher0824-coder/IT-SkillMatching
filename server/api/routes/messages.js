@@ -549,14 +549,19 @@ router.post('/', protect, async (req, res) => {
 
     // Send notification to recipient
     try {
-      await NotificationService.createNotification({
-        userId: recipientId,
-        type: 'message',
-        title: `New message from ${req.user.firstName} ${req.user.lastName}`,
-        message: message.substring(0, 100),
-        relatedId: conversation._id,
-        relatedModel: 'Conversation'
+      await NotificationService.create({
+        recipient: recipientId,
+        type: 'new_message',
+        title: `New message from ${req.user.firstName || req.user.email}`,
+        message: `${message.substring(0, 100)}${message.length > 100 ? '...' : ''}`,
+        link: `/messages.html?conversation=${conversation._id}`,
+        data: {
+          conversationId: conversation._id,
+          senderName: req.user.firstName || req.user.email,
+          preview: message.substring(0, 50)
+        }
       });
+      console.log('Message notification sent to:', recipientId);
     } catch (notifError) {
       console.error('Error sending notification:', notifError);
     }
