@@ -357,21 +357,29 @@ class ChatManager {
         if (!messagesContainer) return;
 
         const currentUser = JSON.parse(sessionStorage.getItem('user'));
+        if (!currentUser || !currentUser._id) {
+            console.error('Current user not found in session');
+            messagesContainer.innerHTML = '<div class="chat-empty-state"><p>Error: User session not found. Please refresh the page.</p></div>';
+            return;
+        }
         
-        messagesContainer.innerHTML = this.messages.map(msg => {
-            // Add defensive check for null sender
-            if (!msg.sender || !msg.sender._id) {
-                console.warn('Message with missing sender:', msg);
-                return ''; // Skip messages with missing sender
+        // Filter out invalid messages first
+        const validMessages = this.messages.filter(msg => {
+            if (!msg || !msg.sender || !msg.sender._id) {
+                console.warn('Filtering out message with missing sender:', msg?._id);
+                return false;
             }
-            
+            return true;
+        });
+        
+        messagesContainer.innerHTML = validMessages.map(msg => {
             const isOwn = msg.sender._id === currentUser._id;
             const time = this.formatTime(msg.createdAt);
             
             return `
                 <div class="chat-message ${isOwn ? 'own' : ''}">
                     <div class="chat-message-avatar">
-                        ${this.getInitials(msg.sender.email)}
+                        ${this.getInitials(msg.sender.email || 'Unknown')}
                     </div>
                     <div>
                         <div class="chat-message-content">
