@@ -5160,25 +5160,25 @@ async function loadStudentProfile() {
 
             <div class="grid md:grid-cols-2 gap-6">
                 <!-- Personal Information -->
-                <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-6">
+                <div class="bg-white dark:bg-gray-700 rounded-lg p-6 shadow">
                     <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
                         <i class="fas fa-user mr-2 text-[#56AE67]"></i>
                         Personal Information
                     </h3>
                     <div class="space-y-3">
                         <div>
-                            <p class="text-sm text-gray-500 dark:text-gray-400">Date of Birth</p>
+                            <p class="text-sm text-gray-600 dark:text-gray-300">Date of Birth</p>
                             <p class="text-gray-900 dark:text-white font-medium">${profile.dateOfBirth ? new Date(profile.dateOfBirth).toLocaleDateString() : 'Not provided'}</p>
                         </div>
                         <div>
-                            <p class="text-sm text-gray-500 dark:text-gray-400">Phone</p>
+                            <p class="text-sm text-gray-600 dark:text-gray-300">Phone</p>
                             <p class="text-gray-900 dark:text-white font-medium">${profile.phone || 'Not provided'}</p>
                         </div>
                     </div>
                 </div>
                 
                 <!-- Address -->
-                <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-6">
+                <div class="bg-white dark:bg-gray-700 rounded-lg p-6 shadow">
                     <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
                         <i class="fas fa-map-marker-alt mr-2 text-[#56AE67]"></i>
                         Address
@@ -5192,12 +5192,12 @@ async function loadStudentProfile() {
                                     ${profile.address.country || ''}
                                 </p>
                             </div>
-                        ` : '<p class="text-gray-500 dark:text-gray-400">No address information</p>'}
+                        ` : '<p class="text-gray-600 dark:text-gray-300">No address information</p>'}
                     </div>
                 </div>
                 
                 <!-- Education -->
-                <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-6">
+                <div class="bg-white dark:bg-gray-700 rounded-lg p-6 shadow">
                     <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
                         <i class="fas fa-graduation-cap mr-2 text-[#56AE67]"></i>
                         Education
@@ -5205,29 +5205,29 @@ async function loadStudentProfile() {
                     <div class="space-y-3">
                         ${profile.education && (profile.education.school || profile.education.degree) ? `
                             <div>
-                                <p class="text-sm text-gray-500 dark:text-gray-400">School</p>
+                                <p class="text-sm text-gray-600 dark:text-gray-300">School</p>
                                 <p class="text-gray-900 dark:text-white font-medium">${profile.education.school || 'Not provided'}</p>
                             </div>
                             <div>
-                                <p class="text-sm text-gray-500 dark:text-gray-400">Degree</p>
+                                <p class="text-sm text-gray-600 dark:text-gray-300">Degree</p>
                                 <p class="text-gray-900 dark:text-white font-medium">${profile.education.degree || 'Not provided'}</p>
                             </div>
                             <div>
-                                <p class="text-sm text-gray-500 dark:text-gray-400">Field of Study</p>
+                                <p class="text-sm text-gray-600 dark:text-gray-300">Field of Study</p>
                                 <p class="text-gray-900 dark:text-white font-medium">${profile.education.fieldOfStudy || 'Not provided'}</p>
                             </div>
                             ${profile.education.graduationYear ? `
                                 <div>
-                                    <p class="text-sm text-gray-500 dark:text-gray-400">Graduation Year</p>
+                                    <p class="text-sm text-gray-600 dark:text-gray-300">Graduation Year</p>
                                     <p class="text-gray-900 dark:text-white font-medium">${profile.education.graduationYear}</p>
                                 </div>
                             ` : ''}
-                        ` : '<p class="text-gray-500 dark:text-gray-400">No education information</p>'}
+                        ` : '<p class="text-gray-600 dark:text-gray-300">No education information</p>'}
                     </div>
                 </div>
                 
                 <!-- Portfolio & Links -->
-                <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-6">
+                <div class="bg-white dark:bg-gray-700 rounded-lg p-6 shadow">
                     <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
                         <i class="fas fa-link mr-2 text-[#56AE67]"></i>
                         Portfolio & Links
@@ -5264,7 +5264,7 @@ async function loadStudentProfile() {
                 
                 <!-- Skills -->
                 ${profile.skills && profile.skills.length > 0 ? `
-                    <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-6 md:col-span-2">
+                    <div class="bg-white dark:bg-gray-700 rounded-lg p-6 md:col-span-2 shadow">
                         <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
                             <i class="fas fa-code mr-2 text-[#56AE67]"></i>
                             Verified Skills
@@ -5274,7 +5274,7 @@ async function loadStudentProfile() {
                                 // Format skill name for display
                                 const displayName = skill.name.charAt(0).toUpperCase() + skill.name.slice(1);
                                 return `
-                                <div class="bg-white dark:bg-gray-600 p-4 rounded-lg">
+                                <div class="bg-gray-50 dark:bg-gray-600 p-4 rounded-lg shadow-sm">
                                     <div class="flex justify-between items-center mb-2">
                                         <span class="text-gray-900 dark:text-white font-medium">${displayName}</span>
                                         <span class="text-sm ${
@@ -5299,14 +5299,14 @@ async function loadStudentProfile() {
                 
                 <!-- Job Preferences -->
                 ${profile.preferences ? `
-                    <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-6 md:col-span-2">
+                    <div class="bg-white dark:bg-gray-700 rounded-lg p-6 md:col-span-2 shadow">
                         <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
                             <i class="fas fa-briefcase mr-2 text-[#56AE67]"></i>
                             Job Preferences
                         </h3>
                         <div class="grid md:grid-cols-3 gap-4">
                             <div>
-                                <p class="text-sm text-gray-500 dark:text-gray-400 mb-2">Job Types</p>
+                                <p class="text-sm text-gray-600 dark:text-gray-300 mb-2">Job Types</p>
                                 <div class="flex flex-wrap gap-2">
                                     ${profile.preferences.jobTypes && profile.preferences.jobTypes.length > 0 
                                         ? profile.preferences.jobTypes.map(type => `
@@ -5319,7 +5319,7 @@ async function loadStudentProfile() {
                                 </div>
                             </div>
                             <div>
-                                <p class="text-sm text-gray-500 dark:text-gray-400 mb-2">Preferred Locations</p>
+                                <p class="text-sm text-gray-600 dark:text-gray-300 mb-2">Preferred Locations</p>
                                 <div class="flex flex-wrap gap-2">
                                     ${profile.preferences.locations && profile.preferences.locations.length > 0 
                                         ? profile.preferences.locations.map(loc => `
@@ -5332,7 +5332,7 @@ async function loadStudentProfile() {
                                 </div>
                             </div>
                             <div>
-                                <p class="text-sm text-gray-500 dark:text-gray-400 mb-2">Remote Work</p>
+                                <p class="text-sm text-gray-600 dark:text-gray-300 mb-2">Remote Work</p>
                                 <span class="text-gray-900 dark:text-white font-medium">
                                     ${profile.preferences.remote ? 'Open to remote work' : 'Prefers on-site'}
                                 </span>
@@ -5386,7 +5386,7 @@ async function loadAssessmentHistory() {
         }
         
         historyContent.innerHTML = results.map(result => `
-            <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 mb-4">
+            <div class="bg-white dark:bg-gray-700 rounded-lg p-4 mb-4 shadow">
                 <div class="flex justify-between items-start mb-2">
                     <div class="flex-1">
                         <h4 class="font-semibold text-gray-900 dark:text-white">${result.assessment?.title || 'Assessment'}</h4>
