@@ -60,7 +60,14 @@ app.use(helmet({
       styleSrc: ["'self'", "'unsafe-inline'", "https://cdnjs.cloudflare.com", "https://fonts.googleapis.com"],
       imgSrc: ["'self'", "data:", "https:", "blob:"],
       fontSrc: ["'self'", "https://cdnjs.cloudflare.com", "https://fonts.gstatic.com"],
-      connectSrc: ["'self'"],
+      connectSrc: [
+        "'self'",
+        "https://cdn.jsdelivr.net",
+        "https://unpkg.com",
+        "https://cdnjs.cloudflare.com",
+        "https://fonts.googleapis.com",
+        "https://fonts.gstatic.com"
+      ],
       frameSrc: ["'self'"],
       objectSrc: ["'none'"],
       upgradeInsecureRequests: process.env.NODE_ENV === 'production' ? [] : null
