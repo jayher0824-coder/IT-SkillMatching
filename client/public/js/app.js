@@ -293,6 +293,12 @@ function showDashboard() {
         console.log('Loading company dashboard');
         showPage('company-dashboard');
         loadCompanyDashboard();
+    } else if (currentUser.role === 'admin') {
+        console.log('Admin user detected, redirecting to admin dashboard');
+        // Store admin token and user data before redirecting
+        sessionStorage.setItem('authToken', authToken);
+        sessionStorage.setItem('userData', JSON.stringify(currentUser));
+        window.location.href = '/admin.html';
     } else {
         console.warn('Unknown user role:', currentUser.role);
     }
@@ -304,10 +310,16 @@ function showLoginModal(role) {
     const modalTitle = document.getElementById('modal-title');
     const modalContent = document.getElementById('modal-content');
 
-    modalTitle.textContent = role === 'student' ? 'Student Login' : 'Company Login';
+    // Set title based on role
+    let titleText = 'Login';
+    if (role === 'student') titleText = 'Student Login';
+    else if (role === 'company') titleText = 'Company Login';
+    else if (role === 'admin') titleText = 'Admin Login';
+    
+    modalTitle.textContent = titleText;
 
-    // Show tabs for both students and companies
-    const tabsHTML = `
+    // Show tabs only for students and companies (not for admin)
+    const tabsHTML = role === 'admin' ? '' : `
         <div id="login-tabs" class="flex mb-6 bg-gray-100 dark:bg-gray-700 p-1 rounded-lg">
             <button id="login-tab" onclick="switchTab('login', '${role}')" 
                 class="flex-1 py-3 px-4 rounded-lg font-semibold shadow-md transition duration-300 transform hover:scale-105" 
@@ -321,30 +333,33 @@ function showLoginModal(role) {
         </div>
     `;
 
+    // Google OAuth only for students
+    const googleOAuthHTML = role === 'student' ? `
+        <div class="mt-6 relative">
+            <div class="absolute inset-0 flex items-center">
+                <div class="w-full border-t border-gray-300 dark:border-gray-600"></div>
+            </div>
+            <div class="relative flex justify-center text-sm">
+                <span class="px-4 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400">Or continue with</span>
+            </div>
+        </div>
+        <button onclick="window.location.href = '/api/auth/google'" 
+            class="mt-4 w-full bg-white dark:bg-gray-700 text-gray-700 dark:text-white py-3 px-4 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 flex items-center justify-center border-2 border-gray-300 dark:border-gray-600 transition duration-300 transform hover:scale-[1.02] font-semibold shadow-md">
+            <svg class="w-5 h-5 mr-3" viewBox="0 0 48 48">
+                <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+                <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+                <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+                <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+                <path fill="none" d="M0 0h48v48H0z"/>
+            </svg>
+            Continue with Google
+        </button>
+    ` : '';
+
     modalContent.innerHTML = `
         ${tabsHTML}
         <div id="auth-form-container"></div>
-        ${role === 'student' ? `
-            <div class="mt-6 relative">
-                <div class="absolute inset-0 flex items-center">
-                    <div class="w-full border-t border-gray-300 dark:border-gray-600"></div>
-                </div>
-                <div class="relative flex justify-center text-sm">
-                    <span class="px-4 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400">Or continue with</span>
-                </div>
-            </div>
-            <button onclick="window.location.href = '/api/auth/google'" 
-                class="mt-4 w-full bg-white dark:bg-gray-700 text-gray-700 dark:text-white py-3 px-4 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 flex items-center justify-center border-2 border-gray-300 dark:border-gray-600 transition duration-300 transform hover:scale-[1.02] font-semibold shadow-md">
-                <svg class="w-5 h-5 mr-3" viewBox="0 0 48 48">
-                    <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
-                    <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
-                    <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
-                    <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
-                    <path fill="none" d="M0 0h48v48H0z"/>
-                </svg>
-                Continue with Google
-            </button>
-        ` : ''}
+        ${googleOAuthHTML}
         <div id="auth-message" class="mt-4 text-center"></div>
     `;
 
