@@ -95,6 +95,10 @@ app.use((req, res, next) => {
 });
 
 app.use(express.static(path.join(__dirname, '..', 'client', 'public')));
+app.use('/dist', express.static(path.join(__dirname, '..', 'client', 'public', 'dist'), {
+  maxAge: '1d',
+  etag: false
+}));
 app.use('/uploads', express.static(path.join(__dirname, '..', 'client', 'assets', 'uploads')));
 app.use(passport.initialize());
 require('./auth/middleware/passport.js')(passport);
@@ -160,11 +164,19 @@ app.use((err, req, res, next) => {
 
 // Admin dashboard route
 app.get('/admin/*', (req, res) => {
+  // Don't serve admin.html for dist files
+  if (req.path.startsWith('/admin/dist')) {
+    return res.status(404).send('Not Found');
+  }
   res.sendFile(path.join(__dirname, '..', 'client', 'public', 'admin.html'));
 });
 
 // Serve static files and handle SPA routing
 app.get('*', (req, res) => {
+  // Don't serve index.html for dist files (they're already served as static)
+  if (req.path.startsWith('/dist')) {
+    return res.status(404).send('Not Found');
+  }
   res.sendFile(path.join(__dirname, '..', 'client', 'public', 'index.html'));
 });
 
