@@ -595,7 +595,7 @@
             const [filter, setFilter] = useState('all');
             
             useEffect(() => {
-                axios.get(`${API_BASE}/feedback`)
+                axios.get(`${API_BASE}/feedback/admin/all`)
                     .then(res => {
                         const allFeedbacks = res.data.data || [];
                         setFeedbacks(allFeedbacks);
@@ -610,7 +610,7 @@
             if (loading) return <div className="loading"><i className="fas fa-spinner fa-spin"></i> Loading feedback...</div>;
             
             const filtered = filter === 'all' ? feedbacks : feedbacks.filter(f => {
-                const userRole = f.student?.role || f.user?.role || f.from?.role;
+                const userRole = f.user?.role;
                 return userRole === filter;
             });
             
@@ -628,8 +628,8 @@
                             style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid #d1d5db' }}
                         >
                             <option value="all">All Feedback ({feedbacks.length})</option>
-                            <option value="student">From Students ({feedbacks.filter(f => f.student?.role === 'student' || f.user?.role === 'student').length})</option>
-                            <option value="company">From Companies ({feedbacks.filter(f => f.student?.role === 'company' || f.user?.role === 'company').length})</option>
+                            <option value="student">From Students ({feedbacks.filter(f => f.user?.role === 'student').length})</option>
+                            <option value="company">From Companies ({feedbacks.filter(f => f.user?.role === 'company').length})</option>
                         </select>
                     </div>
                     
@@ -645,9 +645,64 @@
                                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
                                             <div>
                                                 <strong style={{ color: '#1f2937', fontSize: '16px' }}>
-                                                    {feedback.student?.firstName || feedback.user?.firstName || 'Unknown'} {feedback.student?.lastName || feedback.user?.lastName || ''}
+                                                    {feedback.user?.firstName || 'Unknown'} {feedback.user?.lastName || ''}
                                                 </strong>
                                                 <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '4px' }}>
+                                                    {feedback.user?.email}
+                                                </div>
+                                                <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '4px' }}>
+                                                    {new Date(feedback.createdAt).toLocaleDateString()}
+                                                </div>
+                                            </div>
+                                            <span style={{ 
+                                                padding: '4px 8px', 
+                                                borderRadius: '4px',
+                                                fontSize: '11px',
+                                                fontWeight: '600',
+                                                backgroundColor: feedback.user?.role === 'student' ? '#d1fae5' : '#bfdbfe',
+                                                color: feedback.user?.role === 'student' ? '#065f46' : '#1e40af'
+                                            }}>
+                                                {feedback.user?.role}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div style={{ fontSize: '14px', fontWeight: '600', color: '#1f2937', marginBottom: '8px' }}>
+                                        {feedback.subject}
+                                    </div>
+                                    <div style={{ fontSize: '14px', color: '#4b5563', lineHeight: '1.6', marginBottom: '12px' }}>
+                                        {feedback.message}
+                                    </div>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px' }}>
+                                        <span style={{ 
+                                            padding: '4px 8px',
+                                            borderRadius: '4px',
+                                            backgroundColor: feedback.priority === 'high' || feedback.priority === 'urgent' ? '#fee2e2' : '#fef3c7',
+                                            color: feedback.priority === 'high' || feedback.priority === 'urgent' ? '#991b1b' : '#78350f'
+                                        }}>
+                                            {feedback.priority} priority
+                                        </span>
+                                        <span style={{
+                                            padding: '4px 8px',
+                                            borderRadius: '4px',
+                                            backgroundColor: feedback.status === 'open' ? '#bfdbfe' : '#d1fae5',
+                                            color: feedback.status === 'open' ? '#1e40af' : '#065f46'
+                                        }}>
+                                            {feedback.status}
+                                        </span>
+                                    </div>
+                                    {feedback.adminResponse && (
+                                        <div style={{ marginTop: '12px', padding: '12px', backgroundColor: '#f3f4f6', borderRadius: '4px', fontSize: '13px', color: '#374151' }}>
+                                            <strong>Admin Response:</strong>
+                                            <p style={{ margin: '4px 0 0 0' }}>{feedback.adminResponse}</p>
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            );
+        }
                                                     {new Date(feedback.createdAt).toLocaleDateString()}
                                                 </div>
                                             </div>

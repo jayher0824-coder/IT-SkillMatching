@@ -1,5 +1,5 @@
 const express = require('express');
-const { protect } = require('../../auth/middleware/auth');
+const { protect, authorize } = require('../../auth/middleware/auth');
 const Feedback = require('../../database/models/Feedback');
 const EmailReport = require('../../database/models/EmailReport');
 
@@ -42,6 +42,30 @@ router.get('/', protect, async (req, res) => {
   try {
     const feedback = await Feedback.find({ user: req.user._id })
       .populate('respondedBy', 'email')
+      .sort({ createdAt: -1 });
+
+    res.json({
+      success: true,
+      count: feedback.length,
+      data: feedback,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error',
+    });
+  }
+});
+
+// @desc    Get all feedback for admin
+// @route   GET /api/feedback/admin/all
+// @access  Private (Admin only)
+router.get('/admin/all', protect, authorize('admin'), async (req, res) => {
+  try {
+    const feedback = await Feedback.find()
+      .populate('user', 'firstName lastName email role')
+      .populate('respondedBy', 'firstName lastName email')
       .sort({ createdAt: -1 });
 
     res.json({
