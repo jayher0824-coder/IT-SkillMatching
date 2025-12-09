@@ -47,27 +47,12 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: [
-        "'self'", 
-        "'unsafe-inline'", 
-        "'unsafe-eval'", // Required for Babel transformation in admin dashboard
-        "https://cdnjs.cloudflare.com", 
-        "https://cdn.jsdelivr.net",
-        "https://unpkg.com",
-        "https://cdn.tailwindcss.com"
-      ],
-      scriptSrcAttr: ["'unsafe-inline'"], // Allow inline event handlers
-      styleSrc: ["'self'", "'unsafe-inline'", "https://cdnjs.cloudflare.com", "https://fonts.googleapis.com"],
+      scriptSrc: ["'self'", "'unsafe-inline'"],
+      scriptSrcAttr: ["'unsafe-inline'"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://cdnjs.cloudflare.com"],
       imgSrc: ["'self'", "data:", "https:", "blob:"],
-      fontSrc: ["'self'", "https://cdnjs.cloudflare.com", "https://fonts.gstatic.com"],
-      connectSrc: [
-        "'self'",
-        "https://cdn.jsdelivr.net",
-        "https://unpkg.com",
-        "https://cdnjs.cloudflare.com",
-        "https://fonts.googleapis.com",
-        "https://fonts.gstatic.com"
-      ],
+      fontSrc: ["'self'", "https://cdnjs.cloudflare.com", "data:"],
+      connectSrc: ["'self'"],
       frameSrc: ["'self'"],
       objectSrc: ["'none'"],
       upgradeInsecureRequests: process.env.NODE_ENV === 'production' ? [] : null

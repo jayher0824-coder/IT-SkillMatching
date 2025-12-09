@@ -11,10 +11,8 @@
     <meta name="robots" content="noindex, nofollow">
     <meta name="googlebot" content="noindex, nofollow">
     
-    <!-- Security Headers - Production safe (no unsafe-eval, no CDN Tailwind) -->
+    <!-- Security Headers -->
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self' https://cdnjs.cloudflare.com data:; img-src 'self' data: https:; connect-src 'self';">
-    
     <!-- Prevent Caching of Admin Pages -->
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
@@ -43,7 +41,7 @@
     <script src="/js/notifications.js"></script>
     
     <!-- Pre-compiled and minified admin app with React -->
-    <script type="module" src="/dist/assets/index-DdePlX9C.js"></script>
+    <script src="/dist/assets/index-DdePlX9C.js"></script>
     
     <!-- Set initial auth state for React app -->
     <script>
