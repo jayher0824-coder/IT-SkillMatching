@@ -2201,8 +2201,17 @@ async function showAllJobs() {
         const response = await apiCall(endpoint);
         const data = response.data || [];
         
-        // Extract jobs from response (job-matches returns different structure)
-        const jobsWithMatches = isStudent && data.length > 0 && data[0].job ? data : data.map(j => ({job: j, matchScore: 0}));
+        console.log('Jobs data received:', { isStudent, endpoint, dataLength: data.length, firstItem: data[0] });
+        
+        // Extract jobs from response (job-matches returns {job, matchScore, ...}, jobs API returns job objects directly)
+        let jobsWithMatches;
+        if (isStudent) {
+            // Student API returns array of {job, matchScore, matchedSkills, ...}
+            jobsWithMatches = data;
+        } else {
+            // Jobs API returns array of job objects directly
+            jobsWithMatches = data.map(j => ({job: j, matchScore: 0}));
+        }
 
         // Create modal if it doesn't exist
         let modal = document.getElementById('all-jobs-modal');
