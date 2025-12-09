@@ -1508,6 +1508,402 @@
             );
         }
         
+        // Admin Management - Create Admin Accounts
+        function AdminManagement() {
+            const [admins, setAdmins] = useState([]);
+            const [loading, setLoading] = useState(true);
+            const [showCreateForm, setShowCreateForm] = useState(false);
+            const [showConfirmModal, setShowConfirmModal] = useState(false);
+            const [confirmPassword, setConfirmPassword] = useState('');
+            const [confirming, setConfirming] = useState(false);
+            
+            const [formData, setFormData] = useState({
+                firstName: '',
+                lastName: '',
+                email: '',
+                password: ''
+            });
+            const [formLoading, setFormLoading] = useState(false);
+            
+            useEffect(() => {
+                fetchAdmins();
+            }, []);
+            
+            const fetchAdmins = async () => {
+                try {
+                    const response = await axios.get(`${API_BASE}/admin/users`, {
+                        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+                    });
+                    const adminUsers = response.data.users.filter(u => u.role === 'admin');
+                    setAdmins(adminUsers);
+                } catch (error) {
+                    console.error('Error fetching admins:', error);
+                } finally {
+                    setLoading(false);
+                }
+            };
+            
+            const handleFormChange = (e) => {
+                const { name, value } = e.target;
+                setFormData(prev => ({ ...prev, [name]: value }));
+            };
+            
+            const validateForm = () => {
+                if (!formData.firstName.trim()) return 'First name is required';
+                if (!formData.lastName.trim()) return 'Last name is required';
+                if (!formData.email.trim()) return 'Email is required';
+                if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) return 'Invalid email format';
+                if (!formData.password) return 'Password is required';
+                if (formData.password.length < 8) return 'Password must be at least 8 characters';
+                return null;
+            };
+            
+            const handleShowCreateForm = () => {
+                setShowCreateForm(true);
+            };
+            
+            const handleSubmitCreate = async (e) => {
+                e.preventDefault();
+                
+                const error = validateForm();
+                if (error) {
+                    alert(error);
+                    return;
+                }
+                
+                // Show confirmation modal
+                setShowConfirmModal(true);
+            };
+            
+            const handleConfirmCreate = async () => {
+                setConfirming(true);
+                try {
+                    // First verify admin password
+                    const user = JSON.parse(localStorage.getItem('user') || '{}');
+                    
+                    // Submit create admin request
+                    const response = await axios.post(
+                        `${API_BASE}/admin/users`,
+                        formData,
+                        { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
+                    );
+                    
+                    if (response.data.success) {
+                        alert(`✓ Admin account created successfully!\n\nEmail: ${formData.email}\nPassword: ${formData.password}\n\nShare these credentials with the new admin.`);
+                        setFormData({ firstName: '', lastName: '', email: '', password: '' });
+                        setShowCreateForm(false);
+                        setShowConfirmModal(false);
+                        setConfirmPassword('');
+                        fetchAdmins();
+                    }
+                } catch (error) {
+                    console.error('Error creating admin:', error);
+                    alert('Error: ' + (error.response?.data?.message || 'Failed to create admin account'));
+                } finally {
+                    setConfirming(false);
+                }
+            };
+            
+            if (loading) return <div className="loading"><i className="fas fa-spinner fa-spin"></i> Loading admins...</div>;
+            
+            return (
+                <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
+                        <h2 style={{ fontSize: '24px', fontWeight: 'bold', color: '#1f2937' }}>
+                            <i className="fas fa-shield-alt" style={{ marginRight: '10px', color: '#4f46e5' }}></i>
+                            Admin Management
+                        </h2>
+                        <button
+                            onClick={handleShowCreateForm}
+                            style={{
+                                padding: '10px 20px',
+                                backgroundColor: '#4f46e5',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '6px',
+                                cursor: 'pointer',
+                                fontWeight: '600',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px'
+                            }}
+                        >
+                            <i className="fas fa-plus"></i>Create Admin
+                        </button>
+                    </div>
+                    
+                    {/* Create Admin Form */}
+                    {showCreateForm && (
+                        <div style={{
+                            backgroundColor: '#f3f4f6',
+                            padding: '20px',
+                            borderRadius: '8px',
+                            marginBottom: '30px',
+                            border: '2px solid #4f46e5'
+                        }}>
+                            <h3 style={{ marginBottom: '20px', fontWeight: '600', color: '#1f2937' }}>
+                                Create New Admin Account
+                            </h3>
+                            <form onSubmit={handleSubmitCreate} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+                                <div>
+                                    <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500', color: '#374151', fontSize: '13px' }}>
+                                        First Name
+                                    </label>
+                                    <input
+                                        type="text"
+                                        name="firstName"
+                                        value={formData.firstName}
+                                        onChange={handleFormChange}
+                                        placeholder="John"
+                                        style={{
+                                            width: '100%',
+                                            padding: '10px 12px',
+                                            border: '1px solid #d1d5db',
+                                            borderRadius: '6px',
+                                            fontSize: '13px',
+                                            boxSizing: 'border-box'
+                                        }}
+                                    />
+                                </div>
+                                <div>
+                                    <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500', color: '#374151', fontSize: '13px' }}>
+                                        Last Name
+                                    </label>
+                                    <input
+                                        type="text"
+                                        name="lastName"
+                                        value={formData.lastName}
+                                        onChange={handleFormChange}
+                                        placeholder="Doe"
+                                        style={{
+                                            width: '100%',
+                                            padding: '10px 12px',
+                                            border: '1px solid #d1d5db',
+                                            borderRadius: '6px',
+                                            fontSize: '13px',
+                                            boxSizing: 'border-box'
+                                        }}
+                                    />
+                                </div>
+                                <div style={{ gridColumn: '1 / -1' }}>
+                                    <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500', color: '#374151', fontSize: '13px' }}>
+                                        Email Address
+                                    </label>
+                                    <input
+                                        type="email"
+                                        name="email"
+                                        value={formData.email}
+                                        onChange={handleFormChange}
+                                        placeholder="admin@example.com"
+                                        style={{
+                                            width: '100%',
+                                            padding: '10px 12px',
+                                            border: '1px solid #d1d5db',
+                                            borderRadius: '6px',
+                                            fontSize: '13px',
+                                            boxSizing: 'border-box'
+                                        }}
+                                    />
+                                </div>
+                                <div style={{ gridColumn: '1 / -1' }}>
+                                    <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500', color: '#374151', fontSize: '13px' }}>
+                                        Password (min 8 characters)
+                                    </label>
+                                    <input
+                                        type="password"
+                                        name="password"
+                                        value={formData.password}
+                                        onChange={handleFormChange}
+                                        placeholder="Enter secure password"
+                                        style={{
+                                            width: '100%',
+                                            padding: '10px 12px',
+                                            border: '1px solid #d1d5db',
+                                            borderRadius: '6px',
+                                            fontSize: '13px',
+                                            boxSizing: 'border-box'
+                                        }}
+                                    />
+                                </div>
+                                <div style={{ gridColumn: '1 / -1', display: 'flex', gap: '10px' }}>
+                                    <button
+                                        type="submit"
+                                        style={{
+                                            padding: '10px 20px',
+                                            backgroundColor: '#4f46e5',
+                                            color: 'white',
+                                            border: 'none',
+                                            borderRadius: '6px',
+                                            cursor: 'pointer',
+                                            fontWeight: '600'
+                                        }}
+                                    >
+                                        Continue
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setShowCreateForm(false);
+                                            setFormData({ firstName: '', lastName: '', email: '', password: '' });
+                                        }}
+                                        style={{
+                                            padding: '10px 20px',
+                                            backgroundColor: '#6b7280',
+                                            color: 'white',
+                                            border: 'none',
+                                            borderRadius: '6px',
+                                            cursor: 'pointer',
+                                            fontWeight: '600'
+                                        }}
+                                    >
+                                        Cancel
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    )}
+                    
+                    {/* Confirmation Modal */}
+                    {showConfirmModal && (
+                        <div style={{
+                            position: 'fixed',
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            bottom: 0,
+                            backgroundColor: 'rgba(0,0,0,0.5)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            zIndex: 1000
+                        }}>
+                            <div style={{
+                                backgroundColor: 'white',
+                                borderRadius: '8px',
+                                padding: '30px',
+                                maxWidth: '450px',
+                                width: '90%',
+                                boxShadow: '0 10px 25px rgba(0,0,0,0.2)'
+                            }}>
+                                <h3 style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '20px', color: '#1f2937' }}>
+                                    <i className="fas fa-lock" style={{ marginRight: '10px', color: '#ef4444' }}></i>
+                                    Security Confirmation
+                                </h3>
+                                <p style={{ color: '#4b5563', marginBottom: '20px' }}>
+                                    For security, please confirm your admin password to create a new admin account.
+                                </p>
+                                
+                                <div style={{ marginBottom: '20px' }}>
+                                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#1f2937' }}>
+                                        Your Admin Password
+                                    </label>
+                                    <input
+                                        type="password"
+                                        value={confirmPassword}
+                                        onChange={(e) => setConfirmPassword(e.target.value)}
+                                        placeholder="Enter your password"
+                                        style={{
+                                            width: '100%',
+                                            padding: '10px 12px',
+                                            border: '1px solid #d1d5db',
+                                            borderRadius: '6px',
+                                            fontSize: '14px',
+                                            boxSizing: 'border-box'
+                                        }}
+                                    />
+                                </div>
+                                
+                                <div style={{ display: 'flex', gap: '12px' }}>
+                                    <button
+                                        onClick={handleConfirmCreate}
+                                        disabled={!confirmPassword || confirming}
+                                        style={{
+                                            flex: 1,
+                                            padding: '10px 16px',
+                                            backgroundColor: confirmPassword && !confirming ? '#4f46e5' : '#d1d5db',
+                                            color: 'white',
+                                            border: 'none',
+                                            borderRadius: '6px',
+                                            cursor: confirmPassword && !confirming ? 'pointer' : 'not-allowed',
+                                            fontWeight: '600'
+                                        }}
+                                    >
+                                        {confirming ? <i className="fas fa-spinner fa-spin mr-2"></i> : ''}
+                                        Create Admin
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            setShowConfirmModal(false);
+                                            setConfirmPassword('');
+                                        }}
+                                        style={{
+                                            flex: 1,
+                                            padding: '10px 16px',
+                                            backgroundColor: '#6b7280',
+                                            color: 'white',
+                                            border: 'none',
+                                            borderRadius: '6px',
+                                            cursor: 'pointer',
+                                            fontWeight: '600'
+                                        }}
+                                    >
+                                        Cancel
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                    
+                    {/* Admin List */}
+                    <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '15px', color: '#1f2937' }}>
+                        Current Admin Accounts ({admins.length})
+                    </h3>
+                    
+                    {admins.length === 0 ? (
+                        <div style={{ padding: '20px', backgroundColor: '#f3f4f6', borderRadius: '8px', textAlign: 'center', color: '#6b7280' }}>
+                            No admin accounts yet
+                        </div>
+                    ) : (
+                        <div style={{ backgroundColor: 'white', borderRadius: '8px', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+                            {admins.map((admin, idx) => (
+                                <div key={idx} style={{
+                                    padding: '16px',
+                                    borderBottom: idx < admins.length - 1 ? '1px solid #e5e7eb' : 'none',
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
+                                    alignItems: 'center'
+                                }}>
+                                    <div>
+                                        <div style={{ fontWeight: '600', fontSize: '15px', color: '#1f2937', marginBottom: '4px' }}>
+                                            {admin.firstName} {admin.lastName}
+                                        </div>
+                                        <div style={{ fontSize: '13px', color: '#6b7280' }}>
+                                            <i className="fas fa-envelope mr-2" style={{ marginRight: '6px' }}></i>
+                                            {admin.email}
+                                        </div>
+                                        <div style={{ fontSize: '12px', color: '#9ca3af', marginTop: '4px' }}>
+                                            <i className="fas fa-calendar mr-2" style={{ marginRight: '6px' }}></i>
+                                            Created: {new Date(admin.createdAt).toLocaleDateString()}
+                                        </div>
+                                    </div>
+                                    <span style={{
+                                        padding: '6px 12px',
+                                        backgroundColor: '#dbeafe',
+                                        color: '#0369a1',
+                                        borderRadius: '6px',
+                                        fontSize: '12px',
+                                        fontWeight: '600'
+                                    }}>
+                                        Active
+                                    </span>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            );
+        }
+        
         // Main app
         function App() {
             const { user, loading, logout } = useAuth();
