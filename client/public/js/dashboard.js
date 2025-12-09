@@ -270,7 +270,7 @@ async function loadStudentDashboard() {
                             <div class="p-6">
                                 ${validJobs.length > 0 ?
                                     validJobs.slice(0, 3).map(job => `
-                                        <div class="border-b border-gray-100 dark:border-gray-600 pb-4 mb-4 last:border-b-0 last:pb-0 last:mb-0">
+                                        <div class="border-2 border-gray-200 dark:border-gray-700 rounded-lg p-4 mb-4 hover:border-[#56AE67] dark:hover:border-[#6bc481] cursor-pointer transition" onclick="viewJob('${job._id}')">
                                             <div class="flex items-start justify-between">
                                                 <div class="flex-1">
                                                     <h4 class="font-semibold text-gray-900 dark:text-white">${job.title}</h4>
@@ -280,7 +280,7 @@ async function loadStudentDashboard() {
                                                         ${job.location.remote ? '<span class="text-xs px-2 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-200 rounded">Remote</span>' : ''}
                                                     </div>
                                                 </div>
-                                                <button onclick="viewJob('${job._id}')" class="text-[#56AE67] hover:text-[#2d6b3c] text-sm">
+                                                <button onclick="event.stopPropagation(); viewJob('${job._id}')" class="text-[#56AE67] hover:text-[#2d6b3c] text-sm">
                                                     View Details
                                                 </button>
                                             </div>
@@ -870,7 +870,7 @@ async function loadCompanyDashboard() {
                             <div class="divide-y divide-gray-100 dark:divide-gray-600">
                                 ${jobs.length > 0 ?
                                     jobs.slice(0, 5).map(job => `
-                                        <div class="p-6 border-2 border-gray-200 dark:border-gray-700 rounded-lg hover:border-[#56AE67] dark:hover:border-[#6bc481] cursor-pointer transition" onclick="viewJobApplications('${job._id}')">
+                                        <div class="p-6">
                                             <div class="flex items-start justify-between">
                                                 <div class="flex-1">
                                                     <div class="flex items-center space-x-2 mb-2">
