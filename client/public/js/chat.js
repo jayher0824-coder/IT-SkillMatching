@@ -53,8 +53,9 @@ class ChatManager {
     }
 
     async selectConversation(conversationId) {
+        console.log('=== SELECT CONVERSATION START ===');
         console.log('Selecting conversation:', conversationId);
-        console.log('Available conversations:', this.conversations.map(c => c._id));
+        console.log('Available conversations:', this.conversations.map(c => ({ id: c._id, email: c.otherParticipant?.email })));
         
         this.currentConversation = this.conversations.find(c => c._id === conversationId);
         
@@ -73,6 +74,9 @@ class ChatManager {
 
         console.log('Current conversation set:', this.currentConversation);
 
+        // Show mobile chat view on mobile devices
+        this.showMobileChat();
+
         // Load messages
         await this.loadMessages(conversationId);
         
@@ -89,6 +93,8 @@ class ChatManager {
         document.querySelectorAll('.chat-list-item').forEach(item => {
             item.classList.toggle('active', item.dataset.conversationId === conversationId);
         });
+        
+        console.log('=== SELECT CONVERSATION END ===');
     }
 
     async loadMessages(conversationId, before = null) {

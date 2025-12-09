@@ -26,7 +26,7 @@ class NotificationManager {
     // Fetch notifications from server
     async fetchNotifications() {
         try {
-            const token = localStorage.getItem('token');
+            const token = sessionStorage.getItem('authToken');
             if (!token) return;
 
             const response = await fetch('/api/notifications', {
@@ -51,7 +51,7 @@ class NotificationManager {
     // Mark notification as read
     async markAsRead(notificationId) {
         try {
-            const token = localStorage.getItem('token');
+            const token = sessionStorage.getItem('authToken');
             const response = await fetch(`/api/notifications/${notificationId}/read`, {
                 method: 'PUT',
                 headers: {
@@ -73,7 +73,7 @@ class NotificationManager {
     // Mark all as read
     async markAllAsRead() {
         try {
-            const token = localStorage.getItem('token');
+            const token = sessionStorage.getItem('authToken');
             const response = await fetch('/api/notifications/read-all', {
                 method: 'PUT',
                 headers: {
@@ -95,7 +95,7 @@ class NotificationManager {
     // Delete notification
     async deleteNotification(notificationId) {
         try {
-            const token = localStorage.getItem('token');
+            const token = sessionStorage.getItem('authToken');
             const response = await fetch(`/api/notifications/${notificationId}`, {
                 method: 'DELETE',
                 headers: {
@@ -146,6 +146,7 @@ class NotificationManager {
             'job_posted': 'fa-briefcase',
             'feedback_received': 'fa-comment',
             'feedback_response': 'fa-comment-dots',
+            'new_message': 'fa-envelope',
             'retake_approved': 'fa-redo',
             'retake_rejected': 'fa-ban',
             'system': 'fa-info-circle'
