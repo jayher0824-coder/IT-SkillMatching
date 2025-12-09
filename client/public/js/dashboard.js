@@ -800,9 +800,7 @@ async function loadCompanyDashboard() {
                             <!-- Notification Bell -->
                             <div id="company-notification-bell-container"></div>
                             
-                            <button id="company-edit-profile-btn" class="bg-gray-700 text-white px-4 py-2 rounded-lg hover:bg-gray-800 dark:bg-gray-600 dark:hover:bg-gray-500 transition font-medium">
-                                <i class="fas fa-building mr-2"></i>Edit Profile
-                            </button>
+                            ${createPrimaryButton('Edit Profile', 'showCompanyProfile()', 'fas fa-building', 'px-4 py-2 rounded-lg')}
                             ${createPrimaryButton('Post Job', 'showCreateJob()', 'fas fa-plus', 'px-4 py-2 rounded-lg')}
                         </div>
                     </div>
@@ -995,11 +993,6 @@ async function loadCompanyDashboard() {
             loadNotificationBell('company-notification-bell-container');
             
             // Attach event listeners for company dashboard
-            const editProfileBtn = document.getElementById('company-edit-profile-btn');
-            if (editProfileBtn) {
-                editProfileBtn.addEventListener('click', showCompanyProfile);
-            }
-            
             const quickActionMessages = document.getElementById('quick-action-messages');
             if (quickActionMessages) {
                 quickActionMessages.addEventListener('click', () => {
