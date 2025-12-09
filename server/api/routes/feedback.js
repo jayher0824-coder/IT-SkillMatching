@@ -124,4 +124,95 @@ router.post('/email-report', protect, async (req, res) => {
   }
 });
 
+// @desc    Reply to feedback
+// @route   POST /api/feedback/:id/reply
+// @access  Private (Admin only)
+router.post('/:id/reply', protect, authorize('admin'), async (req, res) => {
+  try {
+    const { reply } = req.body;
+
+    if (!reply || reply.trim().length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Reply message is required'
+      });
+    }
+
+    const feedback = await Feedback.findByIdAndUpdate(
+      req.params.id,
+      {
+        adminResponse: reply,
+        respondedBy: req.user._id,
+        status: 'resolved',
+        respondedAt: new Date()
+      },
+      { new: true }
+    ).populate('user', 'firstName lastName email').populate('respondedBy', 'firstName lastName email');
+
+    if (!feedback) {
+      return res.status(404).json({
+        success: false,
+        message: 'Feedback not found'
+      });
+    }
+
+    // Create notification for user about admin reply
+    const NotificationService = require('../../services/notificationService');
+    await NotificationService.createNotification({
+      user: feedback.user._id,
+      title: 'Feedback Reply',
+      message: `Admin replied to your feedback: "${feedback.subject}"`,
+      type: 'feedback_reply',
+      link: '/dashboard?tab=feedback',
+      relatedId: feedback._id,
+      relatedModel: 'Feedback'
+    });
+
+    res.json({
+      success: true,
+      message: 'Reply sent successfully. User will be notified.',
+      data: feedback
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error',
+    });
+  }
+});
+
+// @desc    Update feedback status
+// @route   PUT /api/feedback/:id/status
+// @access  Private (Admin only)
+router.put('/:id/status', protect, authorize('admin'), async (req, res) => {
+  try {
+    const { status } = req.body;
+
+    const feedback = await Feedback.findByIdAndUpdate(
+      req.params.id,
+      { status },
+      { new: true }
+    );
+
+    if (!feedback) {
+      return res.status(404).json({
+        success: false,
+        message: 'Feedback not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      data: feedback
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error',
+    });
+  }
+});
+
 module.exports = router;

@@ -1015,76 +1015,15 @@ router.post('/password-reset-requests/:userId/:index/approve', protect, authoriz
 
     await user.save();
 
-    // Send email with new password
-    const emailService = require('../../services/emailService');
-    const template = {
-      subject: '🔐 Your Password Has Been Reset - IT OJT Platform',
-      html: `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <style>
-            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-            .header { background: linear-gradient(135deg, #56AE67 0%, #3d8b4f 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
-            .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
-            .password-box { background: white; border: 2px solid #56AE67; padding: 20px; margin: 20px 0; border-radius: 8px; }
-            .password-label { font-size: 12px; color: #666; text-transform: uppercase; letter-spacing: 1px; }
-            .password { font-size: 24px; font-weight: bold; color: #56AE67; letter-spacing: 2px; font-family: monospace; }
-            .warning { background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0; }
-            .footer { text-align: center; margin-top: 30px; color: #666; font-size: 12px; }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <div class="header">
-              <h1>🔐 Password Reset Approved</h1>
-            </div>
-            <div class="content">
-              <p>Hi ${user.firstName},</p>
-              <p>Your password reset request has been approved by the admin. Your new temporary password is below:</p>
-              
-              <div class="password-box">
-                <p class="password-label">Your New Password:</p>
-                <div class="password">${newPassword}</div>
-              </div>
-              
-              <div class="warning">
-                <strong>⚠️ Important:</strong>
-                <ul style="margin: 10px 0;">
-                  <li><strong>Keep this password safe</strong> - Do not share it with anyone</li>
-                  <li><strong>Change your password</strong> after your first login for security</li>
-                  <li>You can now log in with this new password</li>
-                </ul>
-              </div>
+    // Send email with new password - DISABLED (Gmail stability issues)
+    // const emailService = require('../../services/emailService');
+    // const template = { ... };
+    // await emailService.sendEmail(user.email, template);
 
-              <p style="margin-top: 20px;">
-                <a href="https://it-ojt-platform.onrender.com" style="display: inline-block; background-color: #56AE67; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">Login to Platform</a>
-              </p>
-            </div>
-            <div class="footer">
-              <p>© 2025 IT OJT Platform. All rights reserved.</p>
-            </div>
-          </div>
-        </body>
-        </html>
-      `
-    };
-
-    const emailResult = await emailService.sendEmail(user.email, template);
-
-    if (emailResult.success) {
-      res.json({
-        success: true,
-        message: 'Password reset approved and email sent successfully'
-      });
-    } else {
-      res.status(500).json({
-        success: false,
-        message: 'Password updated but failed to send email',
-        error: emailResult.error
-      });
-    }
+    res.json({
+      success: true,
+      message: 'Password has been reset successfully. The user will be notified via the dashboard.'
+    });
   } catch (error) {
     console.error('Error approving password reset:', error);
     res.status(500).json({
