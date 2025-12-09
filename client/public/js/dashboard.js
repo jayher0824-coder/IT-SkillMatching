@@ -188,11 +188,14 @@ async function loadStudentDashboard() {
                         <div class="bg-[#56AE67] rounded-lg shadow p-4 md:p-6 mb-4 md:mb-8" style="background-color: #56AE67 !important;">
                             <div class="flex items-center justify-between">
                                 <div class="flex items-center space-x-4">
-                                    ${studentProfile?.avatar?.path ? `
-                                        <div class="w-16 h-16 rounded-full overflow-hidden border-2 border-white hidden md:block">
-                                            <img src="/${studentProfile.avatar.path}" alt="Profile" class="w-full h-full object-cover" onerror="this.style.display='none'">
-                                        </div>
-                                    ` : ''}
+                                    <div class="w-16 h-16 rounded-full overflow-hidden border-2 border-white hidden md:block bg-white">
+                                        ${studentProfile?.avatar?.path ? 
+                                            `<img src="/${studentProfile.avatar.path}" alt="Profile" class="w-full h-full object-cover" onerror="this.onerror=null; this.style.display='none'; this.parentElement.innerHTML='<div class=\\'w-full h-full flex items-center justify-center bg-gradient-to-br from-[#56AE67] to-[#3d8b4f]\\'><span class=\\'text-white text-xl font-bold\\'>${studentProfile.firstName?.charAt(0) || 'U'}${studentProfile.lastName?.charAt(0) || ''}</span></div>';">` :
+                                            `<div class="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#56AE67] to-[#3d8b4f]">
+                                                <span class="text-white text-xl font-bold">${studentProfile.firstName?.charAt(0) || 'U'}${studentProfile.lastName?.charAt(0) || ''}</span>
+                                            </div>`
+                                        }
+                                    </div>
                                     <div>
                                         <h2 class="text-2xl md:text-3xl font-bold text-white" style="color: #ffffff !important;">Dashboard</h2>
                                         <p class="text-white mt-1 md:mt-2 text-sm md:text-base" style="color: #ffffff !important;">Welcome back${studentProfile?.firstName ? ', ' + studentProfile.firstName : ''}! Here's your OJT journey overview.</p>
@@ -5201,9 +5204,9 @@ async function loadStudentProfile() {
                 <div class="flex items-center space-x-6">
                     <div class="w-32 h-32 rounded-full overflow-hidden bg-white border-4 border-white shadow-lg flex-shrink-0">
                         ${profile.avatar && profile.avatar.path ? 
-                            `<img src="/${profile.avatar.path}" alt="Profile Picture" class="w-full h-full object-cover" onerror="this.parentElement.innerHTML='<div class=\"w-full h-full flex items-center justify-center bg-gray-200\"><i class=\"fas fa-user text-gray-400 text-5xl\"></i></div>'">` :
-                            `<div class="w-full h-full flex items-center justify-center bg-gray-200">
-                                <i class="fas fa-user text-gray-400 text-5xl"></i>
+                            `<img src="/${profile.avatar.path}" alt="Profile Picture" class="w-full h-full object-cover" onerror="this.onerror=null; this.style.display='none'; this.parentElement.innerHTML='<div class=\\'w-full h-full flex items-center justify-center bg-gradient-to-br from-[#56AE67] to-[#3d8b4f]\\'><span class=\\'text-white text-4xl font-bold\\'>${profile.firstName?.charAt(0) || 'U'}${profile.lastName?.charAt(0) || ''}</span></div>';">` :
+                            `<div class="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#56AE67] to-[#3d8b4f]">
+                                <span class="text-white text-4xl font-bold">${profile.firstName?.charAt(0) || 'U'}${profile.lastName?.charAt(0) || ''}</span>
                             </div>`
                         }
                     </div>
