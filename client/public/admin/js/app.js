@@ -2161,25 +2161,30 @@ try {
   
   ReactDOM.render(React.createElement(AppWrapper), document.getElementById('admin-root'));
   
-  // Remove loading indicator after a short delay to ensure React has mounted
-  setTimeout(() => {
+  // Hide loading indicator using CSS instead of removing from DOM
+  // This prevents React DOM errors
+  requestAnimationFrame(() => {
     const loadingIndicator = document.getElementById('loading-indicator');
-    if (loadingIndicator && loadingIndicator.parentNode) {
-      loadingIndicator.parentNode.removeChild(loadingIndicator);
+    if (loadingIndicator) {
+      loadingIndicator.style.opacity = '0';
+      loadingIndicator.style.transition = 'opacity 0.3s';
+      setTimeout(() => {
+        loadingIndicator.style.display = 'none';
+      }, 300);
     }
-  }, 100);
+  });
   
   console.log('Admin app loaded successfully');
 } catch (error) {
   console.error('Error loading admin app:', error);
   
-  // Remove loading indicator
-  setTimeout(() => {
+  // Hide loading indicator
+  requestAnimationFrame(() => {
     const loadingIndicator = document.getElementById('loading-indicator');
-    if (loadingIndicator && loadingIndicator.parentNode) {
-      loadingIndicator.parentNode.removeChild(loadingIndicator);
+    if (loadingIndicator) {
+      loadingIndicator.style.display = 'none';
     }
-  }, 100);
+  });
   
   document.getElementById('admin-root').innerHTML = `
     <div style="padding: 20px; color: red; font-family: Arial, sans-serif;">

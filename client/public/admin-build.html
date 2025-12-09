@@ -11,9 +11,9 @@
     <meta name="robots" content="noindex, nofollow">
     <meta name="googlebot" content="noindex, nofollow">
     
-    <!-- Security Headers - Production safe (no unsafe-eval, no CDN Tailwind) -->
+    <!-- Security Headers -->
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self' https://cdnjs.cloudflare.com data:; img-src 'self' data: https:; connect-src 'self';">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; font-src 'self' https://cdnjs.cloudflare.com data:; img-src 'self' data: https:; connect-src 'self';">
     
     <!-- Prevent Caching of Admin Pages -->
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
@@ -22,11 +22,8 @@
     
     <title>Admin Dashboard - SkillSync</title>
     
-    <!-- Font Awesome - CSS only -->
+    <!-- Font Awesome - CSS only (no in-browser loading) -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <!-- Pre-compiled Tailwind CSS and React from Vite build -->
-    <link rel="stylesheet" href="/dist/assets/index-ChnSmvp2.css">
 </head>
 <body class="bg-gray-50">
     <!-- Loading indicator -->
@@ -39,11 +36,11 @@
     
     <div id="admin-root"></div>
     
+    <!-- Vite build output - precompiled React + Tailwind -->
+    <script type="module" src="/dist/main.js"></script>
+    
     <!-- Notification Manager -->
     <script src="/js/notifications.js"></script>
-    
-    <!-- Pre-compiled and minified admin app with React -->
-    <script type="module" src="/dist/assets/index-DdePlX9C.js"></script>
     
     <!-- Set initial auth state for React app -->
     <script>
@@ -55,17 +52,27 @@
             hasUserData: !!userDataStr
         });
         
-        // Store in localStorage if only in sessionStorage
+        // Store in localStorage if only in sessionStorage (for React app compatibility)
         if (authToken && !localStorage.getItem('token')) {
             localStorage.setItem('token', authToken);
         }
         if (userDataStr && !localStorage.getItem('user')) {
             localStorage.setItem('user', userDataStr);
         }
+        
+        // Hide loading indicator when React app is ready
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                const loadingIndicator = document.getElementById('loading-indicator');
+                if (loadingIndicator) {
+                    loadingIndicator.style.opacity = '0';
+                    loadingIndicator.style.transition = 'opacity 0.3s';
+                    setTimeout(() => {
+                        loadingIndicator.style.display = 'none';
+                    }, 300);
+                }
+            }, 500);
+        });
     </script>
-</body>
-</html>
-    <!-- Include the admin app script (without React Router) -->
-    <script type="text/babel" src="/admin/js/app.js"></script>
 </body>
 </html>

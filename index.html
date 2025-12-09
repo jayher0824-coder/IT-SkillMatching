@@ -11,7 +11,7 @@
     <meta name="robots" content="noindex, nofollow">
     <meta name="googlebot" content="noindex, nofollow">
     
-    <!-- Security Headers - Production safe (no unsafe-eval, no CDN Tailwind) -->
+    <!-- Security Headers -->
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self' https://cdnjs.cloudflare.com data:; img-src 'self' data: https:; connect-src 'self';">
     
@@ -25,8 +25,12 @@
     <!-- Font Awesome - CSS only -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <!-- Pre-compiled Tailwind CSS and React from Vite build -->
-    <link rel="stylesheet" href="/dist/assets/index-ChnSmvp2.css">
+    <!-- Vite client -->
+    <script type="module">
+        import RefreshRuntime from 'http://127.0.0.1:5173/@react-refresh'
+        window.$RefreshReg$ = () => {}
+        window.$RefreshSig$ = () => (x) => x
+    </script>
 </head>
 <body class="bg-gray-50">
     <!-- Loading indicator -->
@@ -40,12 +44,12 @@
     <div id="admin-root"></div>
     
     <!-- Notification Manager -->
-    <script src="/js/notifications.js"></script>
+    <script type="module" src="./client/public/js/notifications.js"></script>
     
-    <!-- Pre-compiled and minified admin app with React -->
-    <script type="module" src="/dist/assets/index-DdePlX9C.js"></script>
+    <!-- Vite entry point -->
+    <script type="module" src="./client/public/admin/main.jsx"></script>
     
-    <!-- Set initial auth state for React app -->
+    <!-- Set initial auth state -->
     <script>
         const authToken = sessionStorage.getItem('authToken') || localStorage.getItem('token');
         const userDataStr = sessionStorage.getItem('userData') || localStorage.getItem('user');
@@ -55,7 +59,6 @@
             hasUserData: !!userDataStr
         });
         
-        // Store in localStorage if only in sessionStorage
         if (authToken && !localStorage.getItem('token')) {
             localStorage.setItem('token', authToken);
         }
@@ -63,9 +66,5 @@
             localStorage.setItem('user', userDataStr);
         }
     </script>
-</body>
-</html>
-    <!-- Include the admin app script (without React Router) -->
-    <script type="text/babel" src="/admin/js/app.js"></script>
 </body>
 </html>
