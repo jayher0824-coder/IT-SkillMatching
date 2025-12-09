@@ -248,29 +248,31 @@ async function loadNotificationBell(containerId) {
             return;
         }
 
+        console.log('Loading notification bell for container:', containerId);
+        
         const response = await fetch('/components/notification-bell.html');
         if (!response.ok) throw new Error('Failed to load notification bell');
         
         const html = await response.text();
         container.innerHTML = html;
+        console.log('Notification bell HTML loaded successfully');
+        
+        // Make sure container is visible
+        container.style.display = 'flex';
         
         // Initialize the notification bell after loading
         setTimeout(() => {
+            console.log('Initializing notification bell...');
             if (typeof window.initializeNotificationBell === 'function') {
                 window.initializeNotificationBell();
+                console.log('Notification bell initialized');
             }
             if (typeof window.fetchAndUpdateNotifications === 'function') {
                 window.fetchAndUpdateNotifications();
+                console.log('Notifications fetched');
             }
         }, 100);
         
-        // Execute any scripts in the loaded HTML
-        const scripts = container.querySelectorAll('script');
-        scripts.forEach(script => {
-            const newScript = document.createElement('script');
-            newScript.textContent = script.textContent;
-            document.body.appendChild(newScript);
-        });
     } catch (error) {
         console.error('Error loading notification bell:', error);
     }
