@@ -1,23 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="utf-8" />
-    <link rel="icon" type="image/svg+xml" href="/images/logo.svg">
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#000000" />
-    <meta name="description" content="SkillSync Admin Dashboard" />
-    
-    <!-- Prevent Search Engine Indexing -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="robots" content="noindex, nofollow">
-    <meta name="googlebot" content="noindex, nofollow">
-    
-    <!-- Security Headers -->
-    <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <!-- Prevent Caching of Admin Pages -->
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-    <meta http-equiv="Pragma" content="no-cache">
-    <meta http-equiv="Expires" content="0">
-    
     <title>Admin Dashboard - SkillSync</title>
     
     <!-- Tailwind CSS -->
@@ -25,8 +11,6 @@
     
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/fontawesome.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/solid.min.js"></script>
     
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -35,51 +19,335 @@
     <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     
-    <!-- Axios for API calls -->
+    <!-- Axios -->
     <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
     
-    <!-- Notification Manager -->
-    <script src="/js/notifications.js"></script>
-    
-    <!-- Babel for JSX -->
+    <!-- Babel -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <style>
+        body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+        }
+        .admin-container {
+            min-height: 100vh;
+            background-color: #f9fafb;
+        }
+        .admin-sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 260px;
+            height: 100vh;
+            background-color: #1f2937;
+            color: white;
+            padding: 20px;
+            overflow-y: auto;
+        }
+        .admin-main {
+            margin-left: 260px;
+            padding: 30px;
+        }
+        .nav-item {
+            display: block;
+            padding: 12px 16px;
+            color: #d1d5db;
+            text-decoration: none;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .nav-item:hover, .nav-item.active {
+            background-color: #374151;
+            color: white;
+        }
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .stat-value {
+            font-size: 32px;
+            font-weight: bold;
+            color: #1f2937;
+        }
+        .stat-label {
+            font-size: 14px;
+            color: #6b7280;
+            margin-top: 5px;
+        }
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 400px;
+            color: #6b7280;
+        }
+        .error {
+            background-color: #fee2e2;
+            border: 1px solid #fca5a5;
+            color: #991b1b;
+            padding: 16px;
+            border-radius: 6px;
+        }
+    </style>
 </head>
-<body class="bg-gray-50">
-    <!-- Loading indicator -->
-    <div id="loading-indicator" class="fixed inset-0 bg-white flex items-center justify-center z-50">
-        <div class="text-center">
-            <i class="fas fa-spinner fa-spin text-6xl text-indigo-600 mb-4"></i>
-            <p class="text-gray-600 text-lg">Loading Admin Dashboard...</p>
-        </div>
-    </div>
+<body>
+    <div id="root"></div>
     
-    <div id="admin-root"></div>
-    
-    <!-- Admin app -->
     <script type="text/babel">
-        // Set initial auth state for React app
-        const authToken = sessionStorage.getItem('authToken') || localStorage.getItem('token');
-        const userDataStr = sessionStorage.getItem('userData') || localStorage.getItem('user');
+        const { useState, useEffect } = React;
+        const API_BASE = '/api';
         
-        console.log('Admin Dashboard Loading:', {
-            hasToken: !!authToken,
-            hasUserData: !!userDataStr
-        });
+        // Simple auth hook
+        function useAuth() {
+            const [user, setUser] = useState(null);
+            const [loading, setLoading] = useState(true);
+            
+            useEffect(() => {
+                const token = localStorage.getItem('token');
+                if (token) {
+                    axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+                    axios.get(`${API_BASE}/auth/me`)
+                        .then(res => {
+                            if (res.data.data?.role === 'admin') {
+                                setUser(res.data.data);
+                            } else {
+                                logout();
+                            }
+                        })
+                        .catch(() => logout())
+                        .finally(() => setLoading(false));
+                } else {
+                    setLoading(false);
+                }
+            }, []);
+            
+            const logout = () => {
+                localStorage.removeItem('token');
+                setUser(null);
+            };
+            
+            return { user, loading, logout };
+        }
         
-        // Store in localStorage if only in sessionStorage
-        if (authToken && !localStorage.getItem('token')) {
-            localStorage.setItem('token', authToken);
+        // Login component
+        function LoginPage() {
+            const [email, setEmail] = useState('');
+            const [password, setPassword] = useState('');
+            const [error, setError] = useState('');
+            const [loading, setLoading] = useState(false);
+            
+            const handleSubmit = async (e) => {
+                e.preventDefault();
+                setLoading(true);
+                setError('');
+                try {
+                    const res = await axios.post(`${API_BASE}/auth/login`, { email, password });
+                    if (res.data.user?.role === 'admin') {
+                        localStorage.setItem('token', res.data.token);
+                        window.location.reload();
+                    } else {
+                        setError('Admin access required');
+                    }
+                } catch (err) {
+                    setError(err.response?.data?.message || 'Login failed');
+                } finally {
+                    setLoading(false);
+                }
+            };
+            
+            return (
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', backgroundColor: '#f9fafb' }}>
+                    <div style={{ width: '100%', maxWidth: '400px', padding: '20px' }}>
+                        <h1 style={{ textAlign: 'center', marginBottom: '30px', color: '#1f2937', fontSize: '24px', fontWeight: 'bold' }}>
+                            Admin Login
+                        </h1>
+                        {error && <div className="error">{error}</div>}
+                        <form onSubmit={handleSubmit} style={{ marginTop: '20px' }}>
+                            <div style={{ marginBottom: '16px' }}>
+                                <label style={{ display: 'block', marginBottom: '8px', color: '#374151', fontSize: '14px', fontWeight: '500' }}>
+                                    Email
+                                </label>
+                                <input
+                                    type="email"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    required
+                                    style={{
+                                        width: '100%',
+                                        padding: '10px',
+                                        border: '1px solid #d1d5db',
+                                        borderRadius: '6px',
+                                        boxSizing: 'border-box'
+                                    }}
+                                />
+                            </div>
+                            <div style={{ marginBottom: '20px' }}>
+                                <label style={{ display: 'block', marginBottom: '8px', color: '#374151', fontSize: '14px', fontWeight: '500' }}>
+                                    Password
+                                </label>
+                                <input
+                                    type="password"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    required
+                                    style={{
+                                        width: '100%',
+                                        padding: '10px',
+                                        border: '1px solid #d1d5db',
+                                        borderRadius: '6px',
+                                        boxSizing: 'border-box'
+                                    }}
+                                />
+                            </div>
+                            <button
+                                type="submit"
+                                disabled={loading}
+                                style={{
+                                    width: '100%',
+                                    padding: '10px',
+                                    backgroundColor: '#4f46e5',
+                                    color: 'white',
+                                    border: 'none',
+                                    borderRadius: '6px',
+                                    cursor: 'pointer',
+                                    fontSize: '14px',
+                                    fontWeight: '500'
+                                }}
+                            >
+                                {loading ? 'Signing in...' : 'Sign In'}
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            );
         }
-        if (userDataStr && !localStorage.getItem('user')) {
-            localStorage.setItem('user', userDataStr);
+        
+        // Dashboard stats
+        function DashboardStats() {
+            const [stats, setStats] = useState(null);
+            const [loading, setLoading] = useState(true);
+            
+            useEffect(() => {
+                axios.get(`${API_BASE}/admin/stats`)
+                    .then(res => setStats(res.data.data))
+                    .catch(err => console.error('Error fetching stats:', err))
+                    .finally(() => setLoading(false));
+            }, []);
+            
+            if (loading) return <div className="loading"><i className="fas fa-spinner fa-spin"></i> Loading...</div>;
+            if (!stats) return <div className="error">Failed to load statistics</div>;
+            
+            const cards = [
+                { title: 'Total Users', value: stats.users.total, icon: 'fa-users', color: '#10b981' },
+                { title: 'Students', value: stats.users.students, icon: 'fa-user-graduate', color: '#3b82f6' },
+                { title: 'Companies', value: stats.users.companies, icon: 'fa-building', color: '#f59e0b' },
+                { title: 'Total Jobs', value: stats.jobs.total, icon: 'fa-briefcase', color: '#8b5cf6' },
+                { title: 'Applications', value: stats.jobs.applications, icon: 'fa-file-alt', color: '#ec4899' },
+                { title: 'Pending Feedback', value: stats.pending.feedback, icon: 'fa-comment', color: '#f97316' },
+            ];
+            
+            return (
+                <div>
+                    <h2 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '20px', color: '#1f2937' }}>
+                        Dashboard Overview
+                    </h2>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px' }}>
+                        {cards.map((card, idx) => (
+                            <div key={idx} className="stat-card" style={{ borderLeft: `4px solid ${card.color}` }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                    <i className={`fas ${card.icon}`} style={{ fontSize: '28px', color: card.color }}></i>
+                                    <div>
+                                        <div className="stat-label">{card.title}</div>
+                                        <div className="stat-value">{card.value}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            );
         }
+        
+        // Main app
+        function App() {
+            const { user, loading, logout } = useAuth();
+            const [page, setPage] = useState('dashboard');
+            
+            if (loading) {
+                return (
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
+                        <i className="fas fa-spinner fa-spin" style={{ fontSize: '32px', color: '#4f46e5' }}></i>
+                    </div>
+                );
+            }
+            
+            if (!user) {
+                return <LoginPage />;
+            }
+            
+            return (
+                <div className="admin-container">
+                    {/* Sidebar */}
+                    <div className="admin-sidebar">
+                        <h2 style={{ fontSize: '20px', marginBottom: '30px', fontWeight: 'bold' }}>
+                            <i className="fas fa-cog" style={{ marginRight: '8px' }}></i> Admin Panel
+                        </h2>
+                        
+                        <a className={`nav-item ${page === 'dashboard' ? 'active' : ''}`} onClick={() => setPage('dashboard')}>
+                            <i className="fas fa-chart-line" style={{ marginRight: '10px' }}></i> Dashboard
+                        </a>
+                        <a className={`nav-item ${page === 'users' ? 'active' : ''}`} onClick={() => setPage('users')}>
+                            <i className="fas fa-users" style={{ marginRight: '10px' }}></i> Users
+                        </a>
+                        <a className={`nav-item ${page === 'jobs' ? 'active' : ''}`} onClick={() => setPage('jobs')}>
+                            <i className="fas fa-briefcase" style={{ marginRight: '10px' }}></i> Jobs
+                        </a>
+                        <a className={`nav-item ${page === 'feedback' ? 'active' : ''}`} onClick={() => setPage('feedback')}>
+                            <i className="fas fa-comments" style={{ marginRight: '10px' }}></i> Feedback
+                        </a>
+                        
+                        <hr style={{ margin: '20px 0', borderColor: '#4b5563' }} />
+                        
+                        <button
+                            onClick={logout}
+                            style={{
+                                width: '100%',
+                                padding: '10px',
+                                backgroundColor: '#7f1d1d',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '6px',
+                                cursor: 'pointer'
+                            }}
+                        >
+                            <i className="fas fa-sign-out-alt" style={{ marginRight: '8px' }}></i> Logout
+                        </button>
+                    </div>
+                    
+                    {/* Main content */}
+                    <div className="admin-main">
+                        <div style={{ marginBottom: '20px' }}>
+                            <p style={{ color: '#6b7280', fontSize: '14px' }}>
+                                Welcome, <strong>{user.firstName} {user.lastName}</strong>
+                            </p>
+                        </div>
+                        
+                        {page === 'dashboard' && <DashboardStats />}
+                        {page === 'users' && <div style={{ padding: '20px', backgroundColor: 'white', borderRadius: '8px' }}>Users page coming soon...</div>}
+                        {page === 'jobs' && <div style={{ padding: '20px', backgroundColor: 'white', borderRadius: '8px' }}>Jobs page coming soon...</div>}
+                        {page === 'feedback' && <div style={{ padding: '20px', backgroundColor: 'white', borderRadius: '8px' }}>Feedback page coming soon...</div>}
+                    </div>
+                </div>
+            );
+        }
+        
+        ReactDOM.render(<App />, document.getElementById('root'));
     </script>
-    
-    <!-- Include the original admin app -->
-    <script type="text/babel" src="/admin/js/app.js"></script>
-</body>
-</html>
-    <!-- Include the admin app script (without React Router) -->
-    <script type="text/babel" src="/admin/js/app.js"></script>
 </body>
 </html>
