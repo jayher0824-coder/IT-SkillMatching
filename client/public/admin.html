@@ -800,14 +800,27 @@
                 
                 try {
                     setConversationLoading(true);
-                    // Fetch existing conversation or messages
+                    // Fetch all conversations and find the one with this user
                     const res = await axios.get(`${API_BASE}/messages`);
-                    const userConv = (res.data.data || []).find(conv => 
-                        conv.participants?.some(p => p._id === user._id)
+                    const allConversations = res.data.data || [];
+                    
+                    const userConv = allConversations.find(conv => 
+                        conv.participants?.some(p => p._id === user._id || p === user._id)
                     );
                     
-                    if (userConv && userConv.messages) {
-                        setMessages(userConv.messages);
+                    if (userConv) {
+                        // Fetch messages for this conversation
+                        const convId = userConv._id;
+                        try {
+                            const messagesRes = await axios.get(`${API_BASE}/messages/conversations/${convId}/messages`);
+                            setMessages(messagesRes.data.data || []);
+                        } catch (msgErr) {
+                            // No messages yet or error fetching
+                            setMessages([]);
+                        }
+                    } else {
+                        // No conversation yet
+                        setMessages([]);
                     }
                 } catch (err) {
                     console.error('Error fetching conversation:', err);
@@ -991,27 +1004,34 @@
                                             <p>No messages yet. Start the conversation!</p>
                                         </div>
                                     ) : (
-                                        messages.map((msg, idx) => (
-                                            <div key={idx} style={{
-                                                display: 'flex',
-                                                justifyContent: msg.senderId === selectedUser._id ? 'flex-start' : 'flex-end',
-                                                marginBottom: '8px'
-                                            }}>
-                                                <div style={{
-                                                    maxWidth: '70%',
-                                                    backgroundColor: msg.senderId === selectedUser._id ? '#e5e7eb' : '#4f46e5',
-                                                    color: msg.senderId === selectedUser._id ? '#1f2937' : 'white',
-                                                    padding: '10px 14px',
-                                                    borderRadius: '8px',
-                                                    fontSize: '14px',
-                                                    lineHeight: '1.4',
-                                                    wordWrap: 'break-word'
+                                        messages.map((msg, idx) => {
+                                            const senderIdStr = typeof msg.senderId === 'object' ? msg.senderId._id : msg.senderId;
+                                            const currentAdminId = msg.senderId && (typeof msg.senderId === 'object' ? msg.senderId.email : '').includes('@');
+                                            const isFromUser = senderIdStr === selectedUser._id || senderIdStr === selectedUser._id?.toString();
+                                            
+                                            return (
+                                                <div key={idx} style={{
+                                                    display: 'flex',
+                                                    justifyContent: isFromUser ? 'flex-start' : 'flex-end',
+                                                    marginBottom: '8px'
                                                 }}>
-                                                    {msg.message || msg.text}
+                                                    <div style={{
+                                                        maxWidth: '70%',
+                                                        backgroundColor: isFromUser ? '#e5e7eb' : '#4f46e5',
+                                                        color: isFromUser ? '#1f2937' : 'white',
+                                                        padding: '10px 14px',
+                                                        borderRadius: '8px',
+                                                        fontSize: '14px',
+                                                        lineHeight: '1.4',
+                                                        wordWrap: 'break-word'
+                                                    }}>
+                                                        {msg.message || msg.text}
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        ))
-                                    )}
+                                            );
+                                        })
+                                    )
+                                )}
                                 </div>
                                 
                                 {/* Message input */}

@@ -460,4 +460,110 @@ router.get('/available-users', protect, async (req, res) => {
   }
 });
 
+// @desc    Get all conversations for admin panel
+// @route   GET /api/messages
+// @access  Private (Admin)
+router.get('/', protect, async (req, res) => {
+  try {
+    const conversations = await Conversation.find()
+      .populate('participants', 'firstName lastName email role')
+      .populate('lastMessage')
+      .sort({ lastMessageAt: -1 });
+
+    res.json({
+      success: true,
+      data: conversations
+    });
+  } catch (error) {
+    console.error('Get all conversations error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
+  }
+});
+
+// @desc    Send message as admin to a user
+// @route   POST /api/messages
+// @access  Private (Admin)
+router.post('/', protect, async (req, res) => {
+  try {
+    const { recipientId, message } = req.body;
+
+    if (!recipientId || !message) {
+      return res.status(400).json({
+        success: false,
+        message: 'Recipient ID and message are required'
+      });
+    }
+
+    // Check if recipient exists
+    const recipient = await User.findById(recipientId);
+    if (!recipient) {
+      return res.status(404).json({
+        success: false,
+        message: 'Recipient not found'
+      });
+    }
+
+    // Find or create conversation
+    let conversation = await Conversation.findOne({
+      participants: { $all: [req.user._id, recipientId] }
+    });
+
+    if (!conversation) {
+      conversation = new Conversation({
+        participants: [req.user._id, recipientId],
+        type: 'direct'
+      });
+      await conversation.save();
+    }
+
+    // Create message
+    const newMessage = new Message({
+      conversationId: conversation._id,
+      senderId: req.user._id,
+      message: message,
+      readBy: [req.user._id]
+    });
+
+    await newMessage.save();
+
+    // Update conversation with last message
+    conversation.lastMessage = newMessage._id;
+    conversation.lastMessageAt = new Date();
+    await conversation.save();
+
+    // Populate sender and recipient info
+    await newMessage.populate('senderId', 'firstName lastName email role');
+
+    // Send notification to recipient
+    try {
+      await NotificationService.createNotification({
+        userId: recipientId,
+        type: 'message',
+        title: `New message from ${req.user.firstName} ${req.user.lastName}`,
+        message: message.substring(0, 100),
+        relatedId: conversation._id,
+        relatedModel: 'Conversation'
+      });
+    } catch (notifError) {
+      console.error('Error sending notification:', notifError);
+    }
+
+    res.status(201).json({
+      success: true,
+      message: 'Message sent successfully',
+      data: newMessage
+    });
+  } catch (error) {
+    console.error('Send message error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error',
+      error: error.message
+    });
+  }
+});
+
 module.exports = router;
