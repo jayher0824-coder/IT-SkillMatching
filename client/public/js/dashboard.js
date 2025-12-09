@@ -870,7 +870,7 @@ async function loadCompanyDashboard() {
                             <div class="divide-y divide-gray-100 dark:divide-gray-600">
                                 ${jobs.length > 0 ?
                                     jobs.slice(0, 5).map(job => `
-                                        <div class="p-6">
+                                        <div class="p-6 border-2 border-gray-200 dark:border-gray-700 rounded-lg hover:border-[#56AE67] dark:hover:border-[#6bc481] cursor-pointer transition" onclick="viewJobApplications('${job._id}')">
                                             <div class="flex items-start justify-between">
                                                 <div class="flex-1">
                                                     <div class="flex items-center space-x-2 mb-2">
@@ -6439,35 +6439,35 @@ async function loadSkillProgress() {
         skillProgressContent.innerHTML = `
             <!-- Overall Stats -->
             <div class="grid md:grid-cols-3 gap-4 mb-8">
-                <div class="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-6 border-2 border-blue-200 dark:border-blue-800">
+                <div class="bg-blue-500 dark:bg-blue-700 rounded-lg p-6 border-2 border-blue-600 dark:border-blue-600">
                     <div class="flex items-center justify-between">
                         <div>
-                            <p class="text-sm text-gray-600 dark:text-gray-400">Total Assessments</p>
-                            <p class="text-3xl font-bold text-gray-900 dark:text-white mt-2">${assessments.length}</p>
+                            <p class="text-sm text-white font-medium">Total Assessments</p>
+                            <p class="text-3xl font-bold text-white mt-2">${assessments.length}</p>
                         </div>
-                        <i class="fas fa-clipboard-check text-4xl text-blue-500"></i>
+                        <i class="fas fa-clipboard-check text-4xl text-blue-100"></i>
                     </div>
                 </div>
-                <div class="bg-green-50 dark:bg-green-900/20 rounded-lg p-6 border-2 border-green-200 dark:border-green-800">
+                <div class="bg-green-500 dark:bg-green-700 rounded-lg p-6 border-2 border-green-600 dark:border-green-600">
                     <div class="flex items-center justify-between">
                         <div>
-                            <p class="text-sm text-gray-600 dark:text-gray-400">Latest Score</p>
-                            <p class="text-3xl font-bold text-gray-900 dark:text-white mt-2">${sortedAssessments[sortedAssessments.length - 1].percentage}%</p>
+                            <p class="text-sm text-white font-medium">Latest Score</p>
+                            <p class="text-3xl font-bold text-white mt-2">${sortedAssessments[sortedAssessments.length - 1].percentage}%</p>
                         </div>
-                        <i class="fas fa-chart-line text-4xl text-green-500"></i>
+                        <i class="fas fa-chart-line text-4xl text-green-100"></i>
                     </div>
                 </div>
-                <div class="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-6 border-2 border-purple-200 dark:border-purple-800">
+                <div class="bg-purple-500 dark:bg-purple-700 rounded-lg p-6 border-2 border-purple-600 dark:border-purple-600">
                     <div class="flex items-center justify-between">
                         <div>
-                            <p class="text-sm text-gray-600 dark:text-gray-400">Avg. Improvement</p>
-                            <p class="text-3xl font-bold text-gray-900 dark:text-white mt-2">
+                            <p class="text-sm text-white font-medium">Avg. Improvement</p>
+                            <p class="text-3xl font-bold text-white mt-2">
                                 ${Object.values(improvements).length > 0 ? 
                                     '+' + Math.round(Object.values(improvements).reduce((a, b) => a + b, 0) / Object.values(improvements).length) + '%' 
                                     : 'N/A'}
                             </p>
                         </div>
-                        <i class="fas fa-trophy text-4xl text-purple-500"></i>
+                        <i class="fas fa-trophy text-4xl text-purple-100"></i>
                     </div>
                 </div>
             </div>
