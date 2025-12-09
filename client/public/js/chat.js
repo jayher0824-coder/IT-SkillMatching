@@ -53,8 +53,25 @@ class ChatManager {
     }
 
     async selectConversation(conversationId) {
+        console.log('Selecting conversation:', conversationId);
+        console.log('Available conversations:', this.conversations.map(c => c._id));
+        
         this.currentConversation = this.conversations.find(c => c._id === conversationId);
-        if (!this.currentConversation) return;
+        
+        if (!this.currentConversation) {
+            console.error('Conversation not found:', conversationId);
+            // Try to reload conversations and find it
+            await this.loadConversations();
+            this.currentConversation = this.conversations.find(c => c._id === conversationId);
+            
+            if (!this.currentConversation) {
+                console.error('Still cannot find conversation after reload');
+                alert('Could not load conversation. Please try again.');
+                return;
+            }
+        }
+
+        console.log('Current conversation set:', this.currentConversation);
 
         // Load messages
         await this.loadMessages(conversationId);
@@ -98,20 +115,30 @@ class ChatManager {
     }
 
     async sendMessage(content) {
+        console.log('sendMessage called with content:', content);
+        console.log('Current conversation:', this.currentConversation);
+        
         if (!this.currentConversation) {
             console.error('No conversation selected');
-            alert('Please select a conversation first');
+            alert('Please select a conversation first. Click on a conversation from the list.');
             return;
         }
         
-        if (!content.trim()) {
+        if (!content || !content.trim()) {
             console.error('Empty message');
             return;
         }
 
         try {
-            console.log('Sending message to conversation:', this.currentConversation._id);
-            const response = await apiCall(`/messages/conversations/${this.currentConversation._id}/messages`, {
+            const conversationId = this.currentConversation._id;
+            if (!conversationId) {
+                console.error('Current conversation has no _id:', this.currentConversation);
+                alert('Invalid conversation. Please select again.');
+                return;
+            }
+            
+            console.log('Sending message to conversation:', conversationId);
+            const response = await apiCall(`/messages/conversations/${conversationId}/messages`, {
                 method: 'POST',
                 body: JSON.stringify({ content: content.trim() })
             });
