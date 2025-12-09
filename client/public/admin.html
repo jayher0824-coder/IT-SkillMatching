@@ -274,6 +274,200 @@
             );
         }
         
+        // Users Management
+        function UsersManagement() {
+            const [users, setUsers] = useState([]);
+            const [loading, setLoading] = useState(true);
+            const [filter, setFilter] = useState('all');
+            
+            useEffect(() => {
+                axios.get(`${API_BASE}/students`)
+                    .then(res => {
+                        const allUsers = res.data.data || [];
+                        setUsers(allUsers);
+                    })
+                    .catch(err => console.error('Error fetching users:', err))
+                    .finally(() => setLoading(false));
+            }, []);
+            
+            if (loading) return <div className="loading"><i className="fas fa-spinner fa-spin"></i> Loading users...</div>;
+            
+            const filtered = filter === 'all' ? users : users.filter(u => u.role === filter);
+            
+            return (
+                <div>
+                    <h2 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '20px', color: '#1f2937' }}>
+                        Users Management
+                    </h2>
+                    
+                    <div style={{ marginBottom: '20px' }}>
+                        <label style={{ marginRight: '10px', color: '#374151' }}>Filter:</label>
+                        <select 
+                            value={filter} 
+                            onChange={(e) => setFilter(e.target.value)}
+                            style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid #d1d5db' }}
+                        >
+                            <option value="all">All Users ({users.length})</option>
+                            <option value="student">Students ({users.filter(u => u.role === 'student').length})</option>
+                            <option value="company">Companies ({users.filter(u => u.role === 'company').length})</option>
+                            <option value="admin">Admins ({users.filter(u => u.role === 'admin').length})</option>
+                        </select>
+                    </div>
+                    
+                    <div style={{ backgroundColor: 'white', borderRadius: '8px', overflow: 'hidden' }}>
+                        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                            <thead style={{ backgroundColor: '#f3f4f6' }}>
+                                <tr>
+                                    <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #e5e7eb', fontWeight: '600', color: '#374151' }}>Name</th>
+                                    <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #e5e7eb', fontWeight: '600', color: '#374151' }}>Email</th>
+                                    <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #e5e7eb', fontWeight: '600', color: '#374151' }}>Role</th>
+                                    <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #e5e7eb', fontWeight: '600', color: '#374151' }}>Joined</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {filtered.length === 0 ? (
+                                    <tr>
+                                        <td colSpan="4" style={{ padding: '20px', textAlign: 'center', color: '#6b7280' }}>No users found</td>
+                                    </tr>
+                                ) : (
+                                    filtered.map((user, idx) => (
+                                        <tr key={idx} style={{ borderBottom: '1px solid #e5e7eb', hover: { backgroundColor: '#f9fafb' } }}>
+                                            <td style={{ padding: '12px', color: '#1f2937' }}>{user.firstName} {user.lastName}</td>
+                                            <td style={{ padding: '12px', color: '#1f2937' }}>{user.email}</td>
+                                            <td style={{ padding: '12px' }}>
+                                                <span style={{ 
+                                                    padding: '4px 8px', 
+                                                    borderRadius: '4px',
+                                                    fontSize: '12px',
+                                                    fontWeight: '600',
+                                                    backgroundColor: user.role === 'student' ? '#d1fae5' : user.role === 'company' ? '#bfdbfe' : '#fef3c7',
+                                                    color: user.role === 'student' ? '#065f46' : user.role === 'company' ? '#1e40af' : '#78350f'
+                                                }}>
+                                                    {user.role}
+                                                </span>
+                                            </td>
+                                            <td style={{ padding: '12px', color: '#6b7280', fontSize: '14px' }}>
+                                                {new Date(user.createdAt).toLocaleDateString()}
+                                            </td>
+                                        </tr>
+                                    ))
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            );
+        }
+        
+        // Feedback Management
+        function FeedbackManagement() {
+            const [feedbacks, setFeedbacks] = useState([]);
+            const [loading, setLoading] = useState(true);
+            
+            useEffect(() => {
+                axios.get(`${API_BASE}/feedback`)
+                    .then(res => {
+                        setFeedbacks(res.data.data || []);
+                    })
+                    .catch(err => console.error('Error fetching feedback:', err))
+                    .finally(() => setLoading(false));
+            }, []);
+            
+            if (loading) return <div className="loading"><i className="fas fa-spinner fa-spin"></i> Loading feedback...</div>;
+            
+            return (
+                <div>
+                    <h2 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '20px', color: '#1f2937' }}>
+                        Student Feedback ({feedbacks.length})
+                    </h2>
+                    
+                    {feedbacks.length === 0 ? (
+                        <div className="error">No feedback submitted yet</div>
+                    ) : (
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(400px, 1fr))', gap: '20px' }}>
+                            {feedbacks.map((feedback, idx) => (
+                                <div key={idx} className="stat-card">
+                                    <div style={{ marginBottom: '12px' }}>
+                                        <strong style={{ color: '#1f2937', fontSize: '16px' }}>
+                                            {feedback.student?.firstName} {feedback.student?.lastName}
+                                        </strong>
+                                        <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '4px' }}>
+                                            {new Date(feedback.createdAt).toLocaleDateString()}
+                                        </div>
+                                    </div>
+                                    <div style={{ fontSize: '14px', color: '#4b5563', lineHeight: '1.6' }}>
+                                        {feedback.message || feedback.content || 'No message'}
+                                    </div>
+                                    {feedback.rating && (
+                                        <div style={{ marginTop: '12px', fontSize: '14px' }}>
+                                            <i className="fas fa-star" style={{ color: '#fbbf24', marginRight: '4px' }}></i>
+                                            Rating: {feedback.rating}/5
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            );
+        }
+        
+        // Messages Management
+        function MessagesManagement() {
+            const [conversations, setConversations] = useState([]);
+            const [loading, setLoading] = useState(true);
+            
+            useEffect(() => {
+                axios.get(`${API_BASE}/messages`)
+                    .then(res => {
+                        setConversations(res.data.data || []);
+                    })
+                    .catch(err => console.error('Error fetching messages:', err))
+                    .finally(() => setLoading(false));
+            }, []);
+            
+            if (loading) return <div className="loading"><i className="fas fa-spinner fa-spin"></i> Loading messages...</div>;
+            
+            return (
+                <div>
+                    <h2 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '20px', color: '#1f2937' }}>
+                        Messages ({conversations.length} conversations)
+                    </h2>
+                    
+                    {conversations.length === 0 ? (
+                        <div className="error">No messages yet</div>
+                    ) : (
+                        <div style={{ backgroundColor: 'white', borderRadius: '8px', overflow: 'hidden' }}>
+                            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                                <thead style={{ backgroundColor: '#f3f4f6' }}>
+                                    <tr>
+                                        <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #e5e7eb', fontWeight: '600', color: '#374151' }}>Participants</th>
+                                        <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #e5e7eb', fontWeight: '600', color: '#374151' }}>Messages</th>
+                                        <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #e5e7eb', fontWeight: '600', color: '#374151' }}>Last Message</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {conversations.map((conv, idx) => (
+                                        <tr key={idx} style={{ borderBottom: '1px solid #e5e7eb' }}>
+                                            <td style={{ padding: '12px', color: '#1f2937' }}>
+                                                {conv.participants?.map(p => p.firstName).join(', ') || 'Conversation'}
+                                            </td>
+                                            <td style={{ padding: '12px', color: '#1f2937' }}>
+                                                {conv.messages?.length || 0}
+                                            </td>
+                                            <td style={{ padding: '12px', color: '#6b7280', fontSize: '14px' }}>
+                                                {conv.updatedAt ? new Date(conv.updatedAt).toLocaleDateString() : 'N/A'}
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+        
         // Main app
         function App() {
             const { user, loading, logout } = useAuth();
@@ -305,11 +499,11 @@
                         <a className={`nav-item ${page === 'users' ? 'active' : ''}`} onClick={() => setPage('users')}>
                             <i className="fas fa-users" style={{ marginRight: '10px' }}></i> Users
                         </a>
-                        <a className={`nav-item ${page === 'jobs' ? 'active' : ''}`} onClick={() => setPage('jobs')}>
-                            <i className="fas fa-briefcase" style={{ marginRight: '10px' }}></i> Jobs
-                        </a>
                         <a className={`nav-item ${page === 'feedback' ? 'active' : ''}`} onClick={() => setPage('feedback')}>
                             <i className="fas fa-comments" style={{ marginRight: '10px' }}></i> Feedback
+                        </a>
+                        <a className={`nav-item ${page === 'messages' ? 'active' : ''}`} onClick={() => setPage('messages')}>
+                            <i className="fas fa-envelope" style={{ marginRight: '10px' }}></i> Messages
                         </a>
                         
                         <hr style={{ margin: '20px 0', borderColor: '#4b5563' }} />
@@ -339,9 +533,9 @@
                         </div>
                         
                         {page === 'dashboard' && <DashboardStats />}
-                        {page === 'users' && <div style={{ padding: '20px', backgroundColor: 'white', borderRadius: '8px' }}>Users page coming soon...</div>}
-                        {page === 'jobs' && <div style={{ padding: '20px', backgroundColor: 'white', borderRadius: '8px' }}>Jobs page coming soon...</div>}
-                        {page === 'feedback' && <div style={{ padding: '20px', backgroundColor: 'white', borderRadius: '8px' }}>Feedback page coming soon...</div>}
+                        {page === 'users' && <UsersManagement />}
+                        {page === 'feedback' && <FeedbackManagement />}
+                        {page === 'messages' && <MessagesManagement />}
                     </div>
                 </div>
             );
