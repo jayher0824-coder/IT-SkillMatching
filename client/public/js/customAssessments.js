@@ -132,6 +132,7 @@ function addAssessmentQuestion() {
                         <option value="multiple-choice">Multiple Choice</option>
                         <option value="true-false">True/False</option>
                         <option value="short-answer">Short Answer</option>
+                        <option value="coding">Coding Challenge</option>
                     </select>
                 </div>
                 <div>
@@ -178,6 +179,53 @@ function toggleQuestionOptions(select) {
     
     if (select.value === 'short-answer') {
         optionsContainer.style.display = 'none';
+    } else if (select.value === 'coding') {
+        // Show coding challenge fields
+        optionsContainer.innerHTML = `
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-xs text-gray-600 dark:text-gray-400 mb-1">Programming Language</label>
+                    <select class="coding-language w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg
+                           dark:bg-gray-600 dark:text-white focus:outline-none">
+                        <option value="python">Python</option>
+                        <option value="javascript">JavaScript</option>
+                        <option value="java">Java</option>
+                        <option value="cpp">C++</option>
+                        <option value="csharp">C#</option>
+                        <option value="php">PHP</option>
+                        <option value="ruby">Ruby</option>
+                        <option value="go">Go</option>
+                        <option value="rust">Rust</option>
+                        <option value="typescript">TypeScript</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-600 dark:text-gray-400 mb-1">Difficulty Level</label>
+                    <select class="coding-difficulty w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg
+                           dark:bg-gray-600 dark:text-white focus:outline-none">
+                        <option value="beginner">Beginner (5-15 min)</option>
+                        <option value="junior">Junior (15-30 min)</option>
+                        <option value="intermediate">Intermediate (30-60 min)</option>
+                        <option value="advanced">Advanced (60+ min)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-600 dark:text-gray-400 mb-1">Code Template (Optional)</label>
+                    <textarea class="coding-template w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg
+                           dark:bg-gray-600 dark:text-white" rows="3" placeholder="Starter code for candidates..."></textarea>
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-600 dark:text-gray-400 mb-1">Test Cases (JSON Format)</label>
+                    <textarea class="coding-test-cases w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg
+                           dark:bg-gray-600 dark:text-white" rows="3" placeholder='[{"input": "5", "output": "120"}]'></textarea>
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-600 dark:text-gray-400 mb-1">Time Limit (seconds)</label>
+                    <input type="number" class="coding-time-limit w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg
+                           dark:bg-gray-600 dark:text-white" value="30" min="5" max="300">
+                </div>
+            </div>
+        `;
     } else if (select.value === 'true-false') {
         optionsContainer.innerHTML = `
             <label class="block text-xs text-gray-600 dark:text-gray-400 mb-2">Answer Options</label>
@@ -230,7 +278,6 @@ async function saveCustomAssessment(jobId) {
         const questionText = item.querySelector('.question-text').value.trim();
         const questionType = item.querySelector('.question-type').value;
         const category = item.querySelector('.question-category').value;
-        const correctAnswer = item.querySelector('.correct-answer').value.trim();
 
         if (!questionText) {
             showToast(`Question ${index + 1} is missing question text`, 'error');
@@ -238,35 +285,76 @@ async function saveCustomAssessment(jobId) {
             return;
         }
 
-        if (!correctAnswer) {
-            showToast(`Question ${index + 1} is missing correct answer`, 'error');
-            hasError = true;
-            return;
-        }
+        // Handle different question types
+        if (questionType === 'coding') {
+            // Coding challenge
+            const language = item.querySelector('.coding-language').value;
+            const difficulty = item.querySelector('.coding-difficulty').value;
+            const codeTemplate = item.querySelector('.coding-template').value.trim();
+            const testCasesStr = item.querySelector('.coding-test-cases').value.trim();
+            const timeLimit = parseInt(item.querySelector('.coding-time-limit').value) || 30;
 
-        const options = [];
-        if (questionType !== 'short-answer') {
-            const optionInputs = item.querySelectorAll('.option-input');
-            optionInputs.forEach(input => {
-                const value = input.value.trim();
-                if (value) options.push(value);
-            });
-
-            if (options.length === 0) {
-                showToast(`Question ${index + 1} needs at least one option`, 'error');
+            if (!testCasesStr) {
+                showToast(`Coding Challenge ${index + 1} needs test cases`, 'error');
                 hasError = true;
                 return;
             }
-        }
 
-        questions.push({
-            questionText,
-            questionType,
-            category,
-            options,
-            correctAnswer,
-            points: 1
-        });
+            let testCases;
+            try {
+                testCases = JSON.parse(testCasesStr);
+                if (!Array.isArray(testCases)) throw new Error();
+            } catch (e) {
+                showToast(`Coding Challenge ${index + 1} has invalid test case format (must be JSON array)`, 'error');
+                hasError = true;
+                return;
+            }
+
+            questions.push({
+                questionText,
+                questionType: 'coding',
+                category,
+                programmingLanguage: language,
+                difficulty,
+                codeTemplate,
+                testCases,
+                timeLimit,
+                points: 5
+            });
+        } else {
+            // Traditional Q&A questions
+            const correctAnswer = item.querySelector('.correct-answer').value.trim();
+
+            if (!correctAnswer) {
+                showToast(`Question ${index + 1} is missing correct answer`, 'error');
+                hasError = true;
+                return;
+            }
+
+            const options = [];
+            if (questionType !== 'short-answer') {
+                const optionInputs = item.querySelectorAll('.option-input');
+                optionInputs.forEach(input => {
+                    const value = input.value.trim();
+                    if (value) options.push(value);
+                });
+
+                if (options.length === 0) {
+                    showToast(`Question ${index + 1} needs at least one option`, 'error');
+                    hasError = true;
+                    return;
+                }
+            }
+
+            questions.push({
+                questionText,
+                questionType,
+                category,
+                options,
+                correctAnswer,
+                points: 1
+            });
+        }
     });
 
     if (hasError) return;
@@ -418,7 +506,42 @@ function loadCustomQuestion(index) {
 
     let optionsHTML = '';
     
-    if (question.questionType === 'multiple-choice' || question.questionType === 'true-false') {
+    if (question.questionType === 'coding') {
+        // Display coding challenge with editor
+        const savedCode = userAnswers[index] || question.codeTemplate || '';
+        optionsHTML = `
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">
+                        Language: <span class="font-bold text-[#56AE67]">${question.programmingLanguage.toUpperCase()}</span>
+                    </label>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">Difficulty: <span class="font-bold">${question.difficulty}</span></label>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">Time Limit: <span class="font-bold">${question.timeLimit}s</span></label>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">Test Cases: <span class="font-bold">${question.testCases.length}</span></label>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">Your Code</label>
+                    <textarea id="custom-code-${index}" class="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-lg
+                           dark:bg-gray-700 dark:text-white focus:outline-none focus:border-[#56AE67] font-mono text-sm"
+                        rows="8" placeholder="Write your code here..."
+                        onchange="saveCustomAnswer(${index}, this.value)">${savedCode}</textarea>
+                </div>
+                <button onclick="testCustomCode(${index})" 
+                    class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+                    onmouseover="this.style.backgroundColor='#1d4ed8'" 
+                    onmouseout="this.style.backgroundColor='#2563eb'">
+                    <i class="fas fa-play mr-2"></i>Run Test Cases
+                </button>
+                <div id="custom-test-results-${index}" class="hidden"></div>
+            </div>
+        `;
+    } else if (question.questionType === 'multiple-choice' || question.questionType === 'true-false') {
         optionsHTML = question.options.map((option, i) => `
             <label class="flex items-center p-4 border-2 border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer
                    hover:border-[#56AE67] transition ${userAnswers[index] === option ? 'border-[#56AE67] bg-green-50 dark:bg-green-900/20' : ''}">
@@ -442,7 +565,7 @@ function loadCustomQuestion(index) {
     content.innerHTML = `
         <div class="mb-6">
             <div class="inline-block px-3 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-full text-sm mb-3">
-                ${question.category}
+                ${question.questionType === 'coding' ? 'Coding Challenge' : question.category}
             </div>
             <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-6">
                 ${index + 1}. ${question.questionText}
@@ -580,5 +703,93 @@ async function submitCustomAssessment() {
                 error: error.message
             });
         }
+    }
+}
+
+// Test code in custom assessment coding challenges
+async function testCustomCode(questionIndex) {
+    const { assessment } = window.customAssessmentData;
+    const question = assessment.questions[questionIndex];
+    const codeElement = document.getElementById(`custom-code-${questionIndex}`);
+    const resultsElement = document.getElementById(`custom-test-results-${questionIndex}`);
+    
+    if (!codeElement) return;
+    
+    const code = codeElement.value.trim();
+    if (!code) {
+        showToast('Please write some code first', 'warning');
+        return;
+    }
+    
+    try {
+        showToast('Testing code...', 'info');
+        
+        // Call code execution API
+        const response = await apiCall('/assessments/test-code', {
+            method: 'POST',
+            body: JSON.stringify({
+                code,
+                language: question.programmingLanguage,
+                testCases: question.testCases,
+                timeLimit: question.timeLimit
+            })
+        });
+        
+        if (response.success) {
+            const results = response.results;
+            let resultsHTML = '<div class="border-2 border-gray-300 dark:border-gray-600 rounded-lg p-4 bg-gray-50 dark:bg-gray-800">';
+            resultsHTML += '<h4 class="font-semibold text-gray-900 dark:text-white mb-3">Test Results:</h4>';
+            resultsHTML += '<div class="space-y-2">';
+            
+            let passCount = 0;
+            results.forEach((result, i) => {
+                const passed = result.passed;
+                if (passed) passCount++;
+                const statusClass = passed ? 'text-green-600' : 'text-red-600';
+                const statusIcon = passed ? 'fa-check-circle' : 'fa-times-circle';
+                
+                resultsHTML += `
+                    <div class="flex items-start space-x-2">
+                        <i class="fas ${statusIcon} ${statusClass} mt-0.5"></i>
+                        <div class="flex-1">
+                            <div class="text-sm font-medium text-gray-900 dark:text-white">
+                                Test Case ${i + 1}: <span class="${statusClass}">${passed ? 'PASS' : 'FAIL'}</span>
+                            </div>
+                            ${!passed ? `
+                                <div class="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                                    Expected: <code class="bg-gray-200 dark:bg-gray-700 px-2 py-1 rounded">${result.expected}</code>
+                                </div>
+                                <div class="text-xs text-gray-600 dark:text-gray-400">
+                                    Got: <code class="bg-gray-200 dark:bg-gray-700 px-2 py-1 rounded">${result.output || 'No output'}</code>
+                                </div>
+                            ` : ''}
+                            ${result.executionTime ? `<div class="text-xs text-gray-500 dark:text-gray-400">Time: ${result.executionTime}ms</div>` : ''}
+                        </div>
+                    </div>
+                `;
+            });
+            
+            resultsHTML += '</div>';
+            resultsHTML += `<div class="mt-3 text-sm font-medium text-gray-900 dark:text-white">
+                Passed: ${passCount}/${results.length}
+            </div></div>`;
+            
+            resultsElement.innerHTML = resultsHTML;
+            resultsElement.classList.remove('hidden');
+            showToast(`Test Results: ${passCount}/${results.length} passed`, passCount === results.length ? 'success' : 'warning');
+        } else {
+            throw new Error(response.message || 'Failed to test code');
+        }
+    } catch (error) {
+        console.error('Error testing code:', error);
+        resultsElement.innerHTML = `
+            <div class="border-2 border-red-300 rounded-lg p-4 bg-red-50 dark:bg-red-900/20">
+                <div class="text-sm font-medium text-red-800 dark:text-red-400">
+                    <i class="fas fa-exclamation-circle mr-2"></i>Error: ${error.message}
+                </div>
+            </div>
+        `;
+        resultsElement.classList.remove('hidden');
+        showToast('Error: ' + error.message, 'error');
     }
 }
