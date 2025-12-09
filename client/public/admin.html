@@ -703,37 +703,6 @@
                 </div>
             );
         }
-                                                    {new Date(feedback.createdAt).toLocaleDateString()}
-                                                </div>
-                                            </div>
-                                            <span style={{ 
-                                                padding: '4px 8px', 
-                                                borderRadius: '4px',
-                                                fontSize: '11px',
-                                                fontWeight: '600',
-                                                backgroundColor: feedback.student?.role === 'student' || feedback.user?.role === 'student' ? '#d1fae5' : '#bfdbfe',
-                                                color: feedback.student?.role === 'student' || feedback.user?.role === 'student' ? '#065f46' : '#1e40af'
-                                            }}>
-                                                {feedback.student?.role || feedback.user?.role || 'user'}
-                                            </span>
-                                        </div>
-                                    </div>
-                                    <div style={{ fontSize: '14px', color: '#4b5563', lineHeight: '1.6' }}>
-                                        {feedback.message || feedback.content || 'No message'}
-                                    </div>
-                                    {feedback.rating && (
-                                        <div style={{ marginTop: '12px', fontSize: '14px' }}>
-                                            <i className="fas fa-star" style={{ color: '#fbbf24', marginRight: '4px' }}></i>
-                                            Rating: {feedback.rating}/5
-                                        </div>
-                                    )}
-                                </div>
-                            ))}
-                        </div>
-                    )}
-                </div>
-            );
-        }
         
         // Notifications Management
         function NotificationsManagement() {
