@@ -9,7 +9,8 @@
     "create-admin": "node scripts/create-admin.js",
     "reset-passwords": "node scripts/reset-passwords.js",
     "create-assessments": "node scripts/create-assessment-questions.js",
-    "create-companies": "node scripts/create-ph-companies-data.js"
+    "create-companies": "node scripts/create-ph-companies-data.js",
+    "seed-test-data": "node scripts/seed-test-data.js"
   },
   "keywords": [
     "ojt",
