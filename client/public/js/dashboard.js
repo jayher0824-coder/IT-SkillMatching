@@ -202,7 +202,7 @@ async function loadStudentDashboard() {
                                     </div>
                                 </div>
                                 <!-- Notification Bell (Desktop) -->
-                                <div id="student-notification-bell-container" class="flex flex-shrink-0 items-center justify-center" style="min-width: 50px; display: flex;"></div>
+                                <div id="student-notification-bell-container"></div>
                             </div>
                         </div>
 

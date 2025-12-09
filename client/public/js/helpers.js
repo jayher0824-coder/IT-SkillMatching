@@ -255,14 +255,11 @@ async function loadNotificationBell(containerId) {
         
         const html = await response.text();
         container.innerHTML = html;
-        console.log('Notification bell HTML loaded successfully');
+        console.log('Notification bell HTML loaded into', containerId);
         
-        // Make sure container is visible
-        container.style.display = 'flex';
-        
-        // Initialize the notification bell after loading
+        // Initialize the notification bell after a brief delay
         setTimeout(() => {
-            console.log('Initializing notification bell...');
+            console.log('Initializing notification bell functionality');
             if (typeof window.initializeNotificationBell === 'function') {
                 window.initializeNotificationBell();
                 console.log('Notification bell initialized');
@@ -271,7 +268,7 @@ async function loadNotificationBell(containerId) {
                 window.fetchAndUpdateNotifications();
                 console.log('Notifications fetched');
             }
-        }, 100);
+        }, 200);
         
     } catch (error) {
         console.error('Error loading notification bell:', error);
