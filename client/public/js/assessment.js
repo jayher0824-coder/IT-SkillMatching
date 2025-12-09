@@ -39,6 +39,28 @@
     }
 })();
 
+// Load code editor component
+let codeEditorLoaded = false;
+async function loadCodeEditorComponent() {
+    if (codeEditorLoaded) return;
+    
+    try {
+        const response = await fetch('/components/code-editor.html');
+        const html = await response.text();
+        
+        // Check if code editor container already exists
+        if (!document.getElementById('code-editor-container')) {
+            const container = document.createElement('div');
+            container.innerHTML = html;
+            document.body.appendChild(container);
+        }
+        
+        codeEditorLoaded = true;
+    } catch (error) {
+        console.error('Failed to load code editor component:', error);
+    }
+}
+
 // Helper to save state to sessionStorage
 function saveAssessmentState() {
     try {
@@ -416,6 +438,17 @@ async function showQuestion(index) {
                 </p>
             </div>
         `;
+    } else if (question.type === 'coding') {
+        questionContainer.innerHTML = `
+            <div class="mb-6">
+                <h4 class="text-xl font-semibold mb-6 text-gray-800 dark:text-gray-100">${question.question || 'Coding Challenge'}</h4>
+                <p class="text-gray-600 dark:text-gray-400 mb-4">${question.description || 'Write code to solve this challenge.'}</p>
+            </div>
+        `;
+        
+        // Load and display code editor component
+        await loadCodeEditorComponent();
+        displayCodeEditor(question);
     }
     
     // Update navigation buttons
@@ -442,15 +475,30 @@ async function showQuestion(index) {
 async function saveCurrentAnswer() {
     if (!(await ensureAssessmentStateAsync())) return;
 
-    const answerInput = document.querySelector('input[name="answer"]:checked') || 
-                       document.querySelector('textarea[name="answer"]');
+    const question = window.assessmentState.currentAssessment?.questions?.[window.assessmentState.currentQuestionIndex];
+    let answer = '';
 
-    if (answerInput) {
+    // Handle different question types
+    if (question.type === 'coding') {
+        const codeEditor = document.getElementById('code-editor');
+        if (codeEditor) {
+            answer = codeEditor.value.trim();
+        }
+    } else {
+        const answerInput = document.querySelector('input[name="answer"]:checked') || 
+                           document.querySelector('textarea[name="answer"]');
+        if (answerInput) {
+            answer = (answerInput.value || '').trim();
+        }
+    }
+
+    if (answer) {
         const q = window.assessmentState.currentAssessment?.questions?.[window.assessmentState.currentQuestionIndex];
         window.assessmentState.userAnswers[window.assessmentState.currentQuestionIndex] = {
             questionIndex: window.assessmentState.currentQuestionIndex,
             questionId: q?._id,
-            answer: (answerInput.value || '').trim()
+            answer: answer,
+            language: question.type === 'coding' ? document.getElementById('code-language')?.value : null
         };
         saveAssessmentState(); // Save to sessionStorage
     }

@@ -1,5 +1,15 @@
 const mongoose = require('mongoose');
 
+const testCaseSchema = new mongoose.Schema({
+  input: String, // Input parameters for the test case
+  expectedOutput: String, // Expected output
+  description: String, // Description of what this test case checks
+  isHidden: { // Whether to show test case to student before submission
+    type: Boolean,
+    default: false
+  }
+}, { _id: false });
+
 const questionSchema = new mongoose.Schema({
   question: {
     type: String,
@@ -35,6 +45,18 @@ const questionSchema = new mongoose.Schema({
     default: 1,
   },
   explanation: String,
+  // New fields for coding questions
+  programmingLanguage: {
+    type: String,
+    enum: ['python', 'javascript', 'java', 'cpp', 'csharp', 'php', 'ruby', 'go', 'rust', 'typescript'],
+    required: function() { return this.type === 'coding'; }
+  },
+  codeTemplate: String, // Starter code for students
+  testCases: [testCaseSchema], // Test cases for code validation
+  timeLimit: {
+    type: Number, // in seconds, optional per-question limit
+    default: null
+  }
 });
 
 const assessmentSchema = new mongoose.Schema({

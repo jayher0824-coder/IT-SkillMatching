@@ -1,0 +1,269 @@
+<!-- Create Coding Question Modal -->
+<div id="create-coding-question-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-gray-900 rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+        <!-- Header -->
+        <div class="sticky top-0 bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6 border-b border-blue-800 flex justify-between items-center">
+            <div>
+                <h2 class="text-2xl font-bold mb-1">Create Coding Question</h2>
+                <p class="text-blue-100">Set up a programming challenge with test cases</p>
+            </div>
+            <button onclick="closeCodingQuestionModal()" class="text-2xl hover:bg-blue-800 w-10 h-10 rounded-full flex items-center justify-center">
+                ×
+            </button>
+        </div>
+
+        <!-- Form Content -->
+        <div class="p-6 space-y-6">
+            <!-- Basic Question Info -->
+            <div class="bg-gray-50 dark:bg-gray-800 p-6 rounded-lg border-2 border-gray-200 dark:border-gray-700">
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                    <i class="fas fa-book mr-2 text-blue-600"></i>Question Details
+                </h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Question Title *</label>
+                        <input type="text" id="coding-question-title" placeholder="e.g., FizzBuzz Challenge" class="w-full px-4 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:border-blue-500 dark:bg-gray-700 dark:text-white">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Programming Language *</label>
+                        <select id="coding-question-lang" class="w-full px-4 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:border-blue-500 dark:bg-gray-700 dark:text-white">
+                            <option value="">Select Language</option>
+                            <option value="python">Python</option>
+                            <option value="javascript">JavaScript</option>
+                            <option value="java">Java</option>
+                            <option value="cpp">C++</option>
+                            <option value="csharp">C#</option>
+                            <option value="php">PHP</option>
+                            <option value="ruby">Ruby</option>
+                            <option value="go">Go</option>
+                            <option value="rust">Rust</option>
+                            <option value="typescript">TypeScript</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="mt-4">
+                    <label class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Problem Description *</label>
+                    <textarea id="coding-question-desc" placeholder="Describe what the student needs to solve..." rows="4" class="w-full px-4 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:border-blue-500 dark:bg-gray-700 dark:text-white resize-none"></textarea>
+                </div>
+
+                <div class="mt-4">
+                    <label class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Code Template (Starter Code)</label>
+                    <textarea id="coding-question-template" placeholder="Optional: Provide starter code for students..." rows="5" class="w-full px-4 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:border-blue-500 dark:bg-gray-700 dark:text-white font-mono text-sm resize-none"></textarea>
+                    <small class="text-gray-600 dark:text-gray-400 mt-1 block">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        Leave empty if students should write from scratch
+                    </small>
+                </div>
+
+                <div class="mt-4">
+                    <label class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Time Limit (seconds)</label>
+                    <input type="number" id="coding-question-timelimit" placeholder="e.g., 30" min="5" max="300" value="60" class="w-full px-4 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:border-blue-500 dark:bg-gray-700 dark:text-white">
+                </div>
+            </div>
+
+            <!-- Test Cases -->
+            <div class="bg-gray-50 dark:bg-gray-800 p-6 rounded-lg border-2 border-gray-200 dark:border-gray-700">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+                        <i class="fas fa-vial mr-2 text-green-600"></i>Test Cases *
+                    </h3>
+                    <button onclick="addTestCase()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition duration-200">
+                        <i class="fas fa-plus mr-2"></i>Add Test Case
+                    </button>
+                </div>
+
+                <div id="test-cases-list" class="space-y-4">
+                    <!-- Test cases will be added here -->
+                </div>
+
+                <p class="text-xs text-gray-600 dark:text-gray-400 mt-4">
+                    <i class="fas fa-lightbulb mr-1"></i>
+                    <strong>Tip:</strong> At least one visible test case is recommended to guide students. Hidden test cases are revealed only after submission.
+                </p>
+            </div>
+
+            <!-- Category Selection -->
+            <div class="bg-gray-50 dark:bg-gray-800 p-6 rounded-lg border-2 border-gray-200 dark:border-gray-700">
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                    <i class="fas fa-tag mr-2 text-purple-600"></i>Category *
+                </h3>
+                
+                <select id="coding-question-category" class="w-full px-4 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:border-blue-500 dark:bg-gray-700 dark:text-white">
+                    <option value="">Select a Category</option>
+                    <option value="Python">Python</option>
+                    <option value="JavaScript">JavaScript</option>
+                    <option value="Java">Java</option>
+                    <option value="C++">C++</option>
+                    <option value="Algorithm">Algorithm</option>
+                    <option value="DataStructure">Data Structure</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="sticky bottom-0 bg-gray-100 dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 p-6 flex gap-3 justify-end">
+            <button onclick="closeCodingQuestionModal()" class="px-6 py-2 bg-gray-300 hover:bg-gray-400 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-900 dark:text-white font-bold rounded-lg transition duration-200">
+                Cancel
+            </button>
+            <button onclick="saveCodingQuestion()" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition duration-200">
+                <i class="fas fa-save mr-2"></i>Save Question
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let testCaseCount = 0;
+
+    // Add a new test case input
+    function addTestCase(input = '', expectedOutput = '', description = '', isHidden = false) {
+        testCaseCount++;
+        const container = document.getElementById('test-cases-list');
+        
+        const testCaseEl = document.createElement('div');
+        testCaseEl.id = `test-case-${testCaseCount}`;
+        testCaseEl.className = 'p-4 bg-white dark:bg-gray-700 border-2 border-gray-300 dark:border-gray-600 rounded-lg';
+        testCaseEl.innerHTML = `
+            <div class="flex justify-between items-start mb-3">
+                <h4 class="font-semibold text-gray-900 dark:text-white">Test Case #${testCaseCount}</h4>
+                <button onclick="removeTestCase('test-case-${testCaseCount}')" class="text-red-600 hover:text-red-700 text-lg">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">Input</label>
+                    <textarea placeholder="e.g., 3" rows="2" class="test-input w-full px-3 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:border-blue-500 dark:bg-gray-600 dark:text-white font-mono text-sm resize-none" value="${input}">${input}</textarea>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">Expected Output</label>
+                    <textarea placeholder="e.g., FizzBuzz" rows="2" class="test-expected w-full px-3 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:border-blue-500 dark:bg-gray-600 dark:text-white font-mono text-sm resize-none" value="${expectedOutput}">${expectedOutput}</textarea>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">Description</label>
+                <input type="text" placeholder="What does this test case check?" class="test-desc w-full px-3 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:border-blue-500 dark:bg-gray-600 dark:text-white text-sm" value="${description}">
+            </div>
+
+            <div class="flex items-center">
+                <input type="checkbox" id="hidden-${testCaseCount}" class="test-hidden w-4 h-4" ${isHidden ? 'checked' : ''}>
+                <label for="hidden-${testCaseCount}" class="ml-2 text-xs text-gray-700 dark:text-gray-300 cursor-pointer">
+                    Hidden test case (shown only after submission)
+                </label>
+            </div>
+        `;
+        
+        container.appendChild(testCaseEl);
+    }
+
+    // Remove a test case
+    function removeTestCase(id) {
+        const element = document.getElementById(id);
+        if (element) {
+            element.remove();
+        }
+    }
+
+    // Open the modal
+    function openCodingQuestionModal() {
+        document.getElementById('create-coding-question-modal').classList.remove('hidden');
+        testCaseCount = 0;
+        document.getElementById('test-cases-list').innerHTML = '';
+        addTestCase(); // Add one empty test case by default
+    }
+
+    // Close the modal
+    function closeCodingQuestionModal() {
+        document.getElementById('create-coding-question-modal').classList.add('hidden');
+    }
+
+    // Save the coding question
+    async function saveCodingQuestion() {
+        // Validate required fields
+        const title = document.getElementById('coding-question-title').value.trim();
+        const language = document.getElementById('coding-question-lang').value;
+        const description = document.getElementById('coding-question-desc').value.trim();
+        const category = document.getElementById('coding-question-category').value;
+
+        if (!title || !language || !description || !category) {
+            alert('Please fill in all required fields');
+            return;
+        }
+
+        // Collect test cases
+        const testCases = [];
+        document.querySelectorAll('[id^="test-case-"]').forEach(el => {
+            const input = el.querySelector('.test-input').value.trim();
+            const expectedOutput = el.querySelector('.test-expected').value.trim();
+            const desc = el.querySelector('.test-desc').value.trim();
+            const isHidden = el.querySelector('.test-hidden').checked;
+
+            if (input && expectedOutput) {
+                testCases.push({
+                    input,
+                    expectedOutput,
+                    description: desc || 'Test case',
+                    isHidden
+                });
+            }
+        });
+
+        if (testCases.length === 0) {
+            alert('Please add at least one test case');
+            return;
+        }
+
+        const question = {
+            type: 'coding',
+            question: title,
+            description: description,
+            programmingLanguage: language,
+            category: category,
+            codeTemplate: document.getElementById('coding-question-template').value.trim() || null,
+            timeLimit: parseInt(document.getElementById('coding-question-timelimit').value) || 60,
+            testCases: testCases,
+            options: [] // Not used for coding questions
+        };
+
+        try {
+            const response = await fetch('/api/assessments/create-question', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${sessionStorage.getItem('authToken')}`
+                },
+                body: JSON.stringify(question)
+            });
+
+            if (!response.ok) {
+                throw new Error(`Failed to create question: ${response.status}`);
+            }
+
+            const result = await response.json();
+            showToast('Coding question created successfully!', 'success');
+            closeCodingQuestionModal();
+            
+            // Refresh question list if available
+            if (typeof refreshQuestionList === 'function') {
+                refreshQuestionList();
+            }
+        } catch (error) {
+            console.error('Error saving question:', error);
+            showToast('Failed to create question: ' + error.message, 'error');
+        }
+    }
+
+    // Show toast notification (expects this function to exist in parent)
+    function showToast(message, type) {
+        if (typeof window.showToast === 'function') {
+            window.showToast(message, type);
+        } else {
+            alert(message);
+        }
+    }
+</script>

@@ -681,4 +681,147 @@ router.post('/init', protect, authorize('admin'), async (req, res) => {
   }
 });
 
+// @desc    Execute student code and run test cases
+// @route   POST /api/assessments/test-code
+// @access  Private
+router.post('/test-code', protect, async (req, res) => {
+  try {
+    const { code, language, testCases = [] } = req.body;
+
+    if (!code || !language) {
+      return res.status(400).json({
+        success: false,
+        message: 'Code and language are required'
+      });
+    }
+
+    const { executeCode, validateCodeSyntax } = require('../../services/codeExecutionService');
+
+    // Validate syntax first
+    const syntaxCheck = validateCodeSyntax(code, language);
+    if (!syntaxCheck.valid) {
+      return res.status(400).json({
+        success: false,
+        message: syntaxCheck.error
+      });
+    }
+
+    // Execute code with test cases
+    const result = await executeCode(code, language, testCases);
+
+    res.json({
+      success: result.success,
+      ...result
+    });
+  } catch (error) {
+    console.error('Code execution error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Code execution failed',
+      error: error.message
+    });
+  }
+});
+
+// @desc    Get supported programming languages for code testing
+// @route   GET /api/assessments/languages
+// @access  Public
+router.get('/languages', (req, res) => {
+  try {
+    const { getSupportedLanguages } = require('../../services/codeExecutionService');
+    const languages = getSupportedLanguages();
+
+    res.json({
+      success: true,
+      languages: languages
+    });
+  } catch (error) {
+    console.error('Error getting languages:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to get supported languages'
+    });
+  }
+});
+
+// @desc    Create a new question for an assessment
+// @route   POST /api/assessments/create-question
+// @access  Private (Admin/Company only)
+router.post('/create-question', protect, authorize('admin', 'company'), async (req, res) => {
+  try {
+    const {
+      type,
+      question,
+      description,
+      category,
+      options = [],
+      programmingLanguage = null,
+      codeTemplate = null,
+      testCases = [],
+      timeLimit = 60
+    } = req.body;
+
+    // Validate required fields
+    if (!question || !type || !category) {
+      return res.status(400).json({
+        success: false,
+        message: 'Missing required fields: question, type, category'
+      });
+    }
+
+    // Validate type
+    const validTypes = ['multiple-choice', 'true-false', 'short-answer', 'coding'];
+    if (!validTypes.includes(type)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid question type'
+      });
+    }
+
+    // Validate coding-specific fields
+    if (type === 'coding') {
+      if (!programmingLanguage) {
+        return res.status(400).json({
+          success: false,
+          message: 'Programming language is required for coding questions'
+        });
+      }
+      if (!testCases || testCases.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'At least one test case is required for coding questions'
+        });
+      }
+    }
+
+    // Create question object
+    const newQuestion = {
+      type,
+      question,
+      description: description || '',
+      category,
+      options: type === 'coding' ? [] : options,
+      programmingLanguage: type === 'coding' ? programmingLanguage : null,
+      codeTemplate: type === 'coding' ? codeTemplate : null,
+      testCases: type === 'coding' ? testCases : [],
+      timeLimit: type === 'coding' ? timeLimit : null
+    };
+
+    // Store in database if needed (optional - can be used without creating an assessment)
+    // For now, return the question structure
+    res.status(201).json({
+      success: true,
+      message: 'Question created successfully',
+      question: newQuestion
+    });
+  } catch (error) {
+    console.error('Error creating question:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to create question',
+      error: error.message
+    });
+  }
+});
+
 module.exports = router;
