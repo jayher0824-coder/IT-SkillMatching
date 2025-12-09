@@ -18,7 +18,7 @@
                 </h1>
                 <p class="text-gray-600 dark:text-gray-400">Chat with students, companies, and administrators</p>
             </div>
-            <button onclick="window.location.href='/dashboard.html'" class="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition">
+            <button id="back-to-dashboard-btn" class="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition">
                 <i class="fas fa-arrow-left mr-2"></i>Back to Dashboard
             </button>
         </div>
@@ -33,7 +33,7 @@
                         <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
                             Conversations
                         </h2>
-                        <button id="new-chat-btn" onclick="showNewChatModal()" class="text-[#56AE67] hover:text-[#3d8b4f]">
+                        <button id="new-chat-btn" class="text-[#56AE67] hover:text-[#3d8b4f]">
                             <i class="fas fa-plus-circle text-xl"></i>
                         </button>
                     </div>
@@ -45,7 +45,6 @@
                         type="text" 
                         id="chat-search-input"
                         placeholder="Search conversations..." 
-                        onkeyup="searchConversations()"
                         class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#56AE67]">
                 </div>
 
@@ -83,21 +82,19 @@
                 <div class="chat-input-container">
                     <div class="chat-input">
                         <textarea 
+                        <textarea 
                             id="chat-message-input"
                             placeholder="Select a conversation to start messaging..."
                             rows="1"
                             disabled
-                            oninput="autoResizeTextarea(this)"
-                            onkeypress="handleChatKeyPress(event)"
                             class="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg resize-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#56AE67]"></textarea>
                         <button 
-                            onclick="sendChatMessage()"
+                            id="chat-send-btn"
                             disabled
                             class="chat-send-btn">
                             <i class="fas fa-paper-plane"></i>
                             <span>Send</span>
                         </button>
-                    </div>
                 </div>
             </div>
         </div>
@@ -111,9 +108,9 @@
                 <button onclick="closeNewChatModal()" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
                     <i class="fas fa-times text-xl"></i>
                 </button>
-            </div>
-            
-            <div class="space-y-4">
+                <button id="close-modal-btn" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                    <i class="fas fa-times text-xl"></i>
+                </button>pace-y-4">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Select User</label>
                     <select id="new-chat-user" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#56AE67]">
@@ -124,9 +121,9 @@
                 <button onclick="startNewChat()" class="w-full px-4 py-2 bg-[#56AE67] hover:bg-[#3d8b4f] text-white rounded-lg font-semibold transition">
                     <i class="fas fa-comment-alt mr-2"></i>Start Conversation
                 </button>
-            </div>
-        </div>
-    </div>
+                <button id="start-chat-btn" class="w-full px-4 py-2 bg-[#56AE67] hover:bg-[#3d8b4f] text-white rounded-lg font-semibold transition">
+                    <i class="fas fa-comment-alt mr-2"></i>Start Conversation
+                </button>
 
     <!-- Scripts -->
     <script src="/js/sanitize.js"></script>
@@ -141,6 +138,9 @@
                 window.location.href = '/';
                 return;
             }
+
+            // Add event listeners
+            setupEventListeners();
 
             try {
                 // Initialize chat manager
@@ -157,6 +157,56 @@
                 showToast('Error loading chat', 'error');
             }
         });
+
+        // Setup all event listeners
+        function setupEventListeners() {
+            // Back to dashboard button
+            const backBtn = document.getElementById('back-to-dashboard-btn');
+            if (backBtn) {
+                backBtn.addEventListener('click', () => {
+                    window.location.href = '/dashboard.html';
+                });
+            }
+
+            // New chat button
+            const newChatBtn = document.getElementById('new-chat-btn');
+            if (newChatBtn) {
+                newChatBtn.addEventListener('click', showNewChatModal);
+            }
+
+            // Search input
+            const searchInput = document.getElementById('chat-search-input');
+            if (searchInput) {
+                searchInput.addEventListener('keyup', searchConversations);
+            }
+
+            // Message input
+            const messageInput = document.getElementById('chat-message-input');
+            if (messageInput) {
+                messageInput.addEventListener('input', function() {
+                    autoResizeTextarea(this);
+                });
+                messageInput.addEventListener('keypress', handleChatKeyPress);
+            }
+
+            // Send button
+            const sendBtn = document.getElementById('chat-send-btn');
+            if (sendBtn) {
+                sendBtn.addEventListener('click', sendChatMessage);
+            }
+
+            // Modal close button
+            const closeModalBtn = document.getElementById('close-modal-btn');
+            if (closeModalBtn) {
+                closeModalBtn.addEventListener('click', closeNewChatModal);
+            }
+
+            // Start chat button
+            const startChatBtn = document.getElementById('start-chat-btn');
+            if (startChatBtn) {
+                startChatBtn.addEventListener('click', startNewChat);
+            }
+        }
 
         // New chat modal functions
         async function showNewChatModal() {
