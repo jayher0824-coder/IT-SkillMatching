@@ -122,11 +122,30 @@ async function loadStudentDashboard() {
 
         dashboardContainer.innerHTML = `
             <div class="flex flex-col md:flex-row h-screen bg-gray-50 dark:bg-gray-900">
+                <!-- Mobile Header with Hamburger -->
+                <div class="md:hidden bg-white dark:bg-gray-800 shadow-md px-4 py-3 flex items-center justify-between sticky top-0 z-50">
+                    <div class="flex items-center">
+                        <button id="mobile-menu-toggle" class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white mr-3">
+                            <i class="fas fa-bars text-xl"></i>
+                        </button>
+                        <h2 class="text-lg font-bold text-gray-900 dark:text-white">SkillSync</h2>
+                    </div>
+                    <div id="student-notification-bell-container-mobile"></div>
+                </div>
+
+                <!-- Mobile Overlay -->
+                <div id="mobile-menu-overlay" class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden md:hidden"></div>
+
                 <!-- Sidebar -->
-                <div class="w-full md:w-64 bg-white dark:bg-gray-800 shadow-lg md:h-screen overflow-y-auto">
-                    <div class="p-4 md:p-6">
-                        <h2 class="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">Student Portal</h2>
-                        <p class="text-gray-600 dark:text-gray-300 text-xs md:text-sm mt-1">Your OJT Journey</p>
+                <div id="mobile-sidebar" class="fixed md:relative inset-y-0 left-0 transform -translate-x-full md:translate-x-0 transition-transform duration-300 ease-in-out w-64 md:w-64 bg-white dark:bg-gray-800 shadow-lg md:h-screen overflow-y-auto z-50">
+                    <div class="p-4 md:p-6 flex items-center justify-between">
+                        <div>
+                            <h2 class="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">Student Portal</h2>
+                            <p class="text-gray-600 dark:text-gray-300 text-xs md:text-sm mt-1">Your OJT Journey</p>
+                        </div>
+                        <button id="mobile-menu-close" class="md:hidden text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white">
+                            <i class="fas fa-times text-xl"></i>
+                        </button>
                     </div>
 
                     <!-- Navigation -->
@@ -179,8 +198,8 @@ async function loadStudentDashboard() {
                                         <p class="text-gray-600 dark:text-gray-300 mt-1 md:mt-2 text-sm md:text-base">Welcome back${studentProfile?.firstName ? ', ' + studentProfile.firstName : ''}! Here's your OJT journey overview.</p>
                                     </div>
                                 </div>
-                                <!-- Notification Bell -->
-                                <div id="student-notification-bell-container"></div>
+                                <!-- Notification Bell (Desktop) -->
+                                <div id="student-notification-bell-container" class="hidden md:block"></div>
                             </div>
                         </div>
 
@@ -619,8 +638,49 @@ async function loadStudentDashboard() {
                 });
             }
             
-            // Load notification bell component
+            // Mobile menu toggle functionality
+            const mobileMenuToggle = document.getElementById('mobile-menu-toggle');
+            const mobileMenuClose = document.getElementById('mobile-menu-close');
+            const mobileSidebar = document.getElementById('mobile-sidebar');
+            const mobileOverlay = document.getElementById('mobile-menu-overlay');
+            
+            const openMobileMenu = () => {
+                mobileSidebar.classList.remove('-translate-x-full');
+                mobileOverlay.classList.remove('hidden');
+                document.body.style.overflow = 'hidden'; // Prevent background scrolling
+            };
+            
+            const closeMobileMenu = () => {
+                mobileSidebar.classList.add('-translate-x-full');
+                mobileOverlay.classList.add('hidden');
+                document.body.style.overflow = ''; // Restore scrolling
+            };
+            
+            if (mobileMenuToggle) {
+                mobileMenuToggle.addEventListener('click', openMobileMenu);
+            }
+            
+            if (mobileMenuClose) {
+                mobileMenuClose.addEventListener('click', closeMobileMenu);
+            }
+            
+            if (mobileOverlay) {
+                mobileOverlay.addEventListener('click', closeMobileMenu);
+            }
+            
+            // Close mobile menu when clicking any navigation item
+            const navItems = document.querySelectorAll('.nav-item');
+            navItems.forEach(item => {
+                item.addEventListener('click', () => {
+                    if (window.innerWidth < 768) { // Only on mobile
+                        closeMobileMenu();
+                    }
+                });
+            });
+            
+            // Load notification bell component (desktop and mobile)
             loadNotificationBell('student-notification-bell-container');
+            loadNotificationBell('student-notification-bell-container-mobile');
         }, 1000);
 
     } catch (error) {
@@ -3005,6 +3065,7 @@ function filterApplications(status) {
                 btn.style.backgroundColor = '#8b5cf6';
             }
         }
+        
     });
     
     // Set active button - full opacity and ring
