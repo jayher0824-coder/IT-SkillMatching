@@ -18,7 +18,17 @@ class ChatManager {
         try {
             const response = await apiCall('/messages/conversations');
             if (response.success) {
+                const currentId = this.currentConversation?._id?.toString();
                 this.conversations = response.data;
+                
+                // Preserve current conversation reference with updated data
+                if (currentId) {
+                    this.currentConversation = this.conversations.find(c => 
+                        (c._id?.toString() || c._id) === currentId
+                    );
+                    console.log('Preserved current conversation after reload:', this.currentConversation?._id);
+                }
+                
                 this.updateConversationsList();
                 this.updateUnreadCount();
             }
@@ -54,25 +64,45 @@ class ChatManager {
 
     async selectConversation(conversationId) {
         console.log('=== SELECT CONVERSATION START ===');
-        console.log('Selecting conversation:', conversationId);
-        console.log('Available conversations:', this.conversations.map(c => ({ id: c._id, email: c.otherParticipant?.email })));
+        console.log('Selecting conversation ID:', conversationId, 'Type:', typeof conversationId);
+        console.log('Available conversations:', this.conversations.map(c => ({ 
+            id: c._id, 
+            idType: typeof c._id,
+            email: c.otherParticipant?.email 
+        })));
         
-        this.currentConversation = this.conversations.find(c => c._id === conversationId);
+        // Try to find with both string and object comparison
+        this.currentConversation = this.conversations.find(c => {
+            const cId = c._id?.toString() || c._id;
+            const searchId = conversationId?.toString() || conversationId;
+            return cId === searchId;
+        });
         
         if (!this.currentConversation) {
-            console.error('Conversation not found:', conversationId);
+            console.error('Conversation not found with ID:', conversationId);
+            console.log('Reloading conversations...');
+            
             // Try to reload conversations and find it
             await this.loadConversations();
-            this.currentConversation = this.conversations.find(c => c._id === conversationId);
+            
+            this.currentConversation = this.conversations.find(c => {
+                const cId = c._id?.toString() || c._id;
+                const searchId = conversationId?.toString() || conversationId;
+                return cId === searchId;
+            });
             
             if (!this.currentConversation) {
                 console.error('Still cannot find conversation after reload');
-                alert('Could not load conversation. Please try again.');
+                console.log('All conversation IDs:', this.conversations.map(c => c._id));
+                alert('Could not load conversation. Please refresh the page and try again.');
                 return;
             }
         }
 
-        console.log('Current conversation set:', this.currentConversation);
+        console.log('✓ Current conversation set successfully:', {
+            id: this.currentConversation._id,
+            otherUser: this.currentConversation.otherParticipant?.email
+        });
 
         // Show mobile chat view on mobile devices
         this.showMobileChat();
@@ -91,7 +121,9 @@ class ChatManager {
         
         // Update active state in sidebar
         document.querySelectorAll('.chat-list-item').forEach(item => {
-            item.classList.toggle('active', item.dataset.conversationId === conversationId);
+            const itemId = item.dataset.conversationId?.toString();
+            const currId = conversationId?.toString();
+            item.classList.toggle('active', itemId === currId);
         });
         
         console.log('=== SELECT CONVERSATION END ===');
@@ -121,35 +153,38 @@ class ChatManager {
     }
 
     async sendMessage(content) {
-        console.log('sendMessage called with content:', content);
+        console.log('=== SEND MESSAGE START ===');
+        console.log('Content:', content?.substring(0, 50));
         console.log('Current conversation:', this.currentConversation);
         
         if (!this.currentConversation) {
-            console.error('No conversation selected');
-            alert('Please select a conversation first. Click on a conversation from the list.');
+            console.error('❌ No conversation selected');
+            alert('Please click on a conversation from the list first, then try sending again.');
             return;
         }
         
         if (!content || !content.trim()) {
-            console.error('Empty message');
+            console.error('❌ Empty message');
             return;
         }
 
         try {
             const conversationId = this.currentConversation._id;
             if (!conversationId) {
-                console.error('Current conversation has no _id:', this.currentConversation);
-                alert('Invalid conversation. Please select again.');
+                console.error('❌ Current conversation missing _id:', this.currentConversation);
+                alert('Invalid conversation. Please click the conversation again.');
+                // Try to fix by reloading
+                await this.loadConversations();
                 return;
             }
             
-            console.log('Sending message to conversation:', conversationId);
+            console.log('✓ Sending to conversation ID:', conversationId);
             const response = await apiCall(`/messages/conversations/${conversationId}/messages`, {
                 method: 'POST',
                 body: JSON.stringify({ content: content.trim() })
             });
             
-            console.log('Message sent response:', response);
+            console.log('✓ Message sent, response:', response);
             
             if (response.success) {
                 this.messages.push(response.data);
@@ -165,12 +200,14 @@ class ChatManager {
                     input.value = '';
                     input.style.height = 'auto';
                 }
+                
+                console.log('=== SEND MESSAGE SUCCESS ===');
             } else {
-                console.error('Failed to send message:', response);
+                console.error('❌ Failed to send message:', response);
                 alert('Failed to send message: ' + (response.message || 'Unknown error'));
             }
         } catch (error) {
-            console.error('Error sending message:', error);
+            console.error('❌ Error sending message:', error);
             alert('Failed to send message: ' + error.message);
         }
     }
