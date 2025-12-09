@@ -519,12 +519,11 @@ router.post('/', protect, async (req, res) => {
       await conversation.save();
     }
 
-    // Create message
+    // Create message with correct field names
     const newMessage = new Message({
-      conversationId: conversation._id,
-      senderId: req.user._id,
-      message: message,
-      readBy: [req.user._id]
+      conversation: conversation._id,
+      sender: req.user._id,
+      content: message
     });
 
     await newMessage.save();
@@ -535,7 +534,7 @@ router.post('/', protect, async (req, res) => {
     await conversation.save();
 
     // Populate sender and recipient info
-    await newMessage.populate('senderId', 'firstName lastName email role');
+    await newMessage.populate('sender', 'firstName lastName email role');
 
     // Send notification to recipient
     try {
