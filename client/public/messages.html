@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Messages - IT OJT Platform</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    <link href="/css/chat.css" rel="stylesheet">
+</head>
+<body class="bg-gray-50 dark:bg-gray-900">
+    <div class="container mx-auto px-4 py-8">
+        <div class="mb-6 flex justify-between items-center">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+                    <i class="fas fa-comments mr-2" style="color: #56AE67;"></i>
+                    Messages
+                </h1>
+                <p class="text-gray-600 dark:text-gray-400">Chat with students, companies, and administrators</p>
+            </div>
+            <button onclick="window.location.href='/dashboard.html'" class="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition">
+                <i class="fas fa-arrow-left mr-2"></i>Back to Dashboard
+            </button>
+        </div>
+
+        <!-- Chat Container -->
+        <div class="chat-container bg-white dark:bg-gray-800">
+            <!-- Sidebar -->
+            <div class="chat-sidebar mobile-show">
+                <!-- Header -->
+                <div class="chat-header">
+                    <div class="flex items-center justify-between">
+                        <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+                            Conversations
+                        </h2>
+                        <button id="new-chat-btn" onclick="showNewChatModal()" class="text-[#56AE67] hover:text-[#3d8b4f]">
+                            <i class="fas fa-plus-circle text-xl"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Search -->
+                <div class="chat-search">
+                    <input 
+                        type="text" 
+                        id="chat-search-input"
+                        placeholder="Search conversations..." 
+                        onkeyup="searchConversations()"
+                        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#56AE67]">
+                </div>
+
+                <!-- Conversations List -->
+                <div class="chat-list" id="chat-conversations-list">
+                    <!-- Conversations will be loaded here -->
+                    <div class="p-8 text-center text-gray-500 dark:text-gray-400">
+                        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-[#56AE67] mx-auto mb-4"></div>
+                        <p>Loading conversations...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Chat Area -->
+            <div class="chat-main">
+                <!-- Chat Header -->
+                <div class="chat-header" id="chat-header">
+                    <div class="chat-empty-state">
+                        <i class="fas fa-comment-dots text-6xl mb-4 text-gray-300 dark:text-gray-600"></i>
+                        <h3 class="text-xl font-semibold mb-2">Select a conversation</h3>
+                        <p>Choose a conversation from the list to start messaging</p>
+                    </div>
+                </div>
+
+                <!-- Messages -->
+                <div class="chat-messages" id="chat-messages-container">
+                    <div class="chat-empty-state">
+                        <i class="fas fa-comment-dots text-6xl mb-4 text-gray-300 dark:text-gray-600"></i>
+                        <h3 class="text-xl font-semibold mb-2">Select a conversation</h3>
+                        <p>Choose a conversation from the list to start messaging</p>
+                    </div>
+                </div>
+
+                <!-- Input Area -->
+                <div class="chat-input-container">
+                    <div class="chat-input">
+                        <textarea 
+                            id="chat-message-input"
+                            placeholder="Type a message..."
+                            rows="1"
+                            oninput="autoResizeTextarea(this)"
+                            onkeypress="handleChatKeyPress(event)"
+                            class="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg resize-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#56AE67]"></textarea>
+                        <button 
+                            onclick="sendChatMessage()"
+                            class="chat-send-btn">
+                            <i class="fas fa-paper-plane"></i>
+                            <span>Send</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- New Chat Modal -->
+    <div id="new-chat-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-gray-800 rounded-lg max-w-md w-full p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold text-gray-900 dark:text-white">Start New Conversation</h3>
+                <button onclick="closeNewChatModal()" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Select User</label>
+                    <select id="new-chat-user" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#56AE67]">
+                        <option value="">Loading users...</option>
+                    </select>
+                </div>
+                
+                <button onclick="startNewChat()" class="w-full px-4 py-2 bg-[#56AE67] hover:bg-[#3d8b4f] text-white rounded-lg font-semibold transition">
+                    <i class="fas fa-comment-alt mr-2"></i>Start Conversation
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="/js/helpers.js"></script>
+    <script src="/js/chat.js"></script>
+    <script>
+        // Initialize chat when page loads
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Check authentication
+            const authToken = sessionStorage.getItem('authToken');
+            if (!authToken) {
+                window.location.href = '/';
+                return;
+            }
+
+            try {
+                // Initialize chat manager
+                await window.chatManager.init();
+                
+                // Check URL for conversation ID
+                const urlParams = new URLSearchParams(window.location.search);
+                const conversationId = urlParams.get('conversation');
+                if (conversationId) {
+                    await window.chatManager.selectConversation(conversationId);
+                }
+            } catch (error) {
+                console.error('Error initializing chat:', error);
+                showToast('Error loading chat', 'error');
+            }
+        });
+
+        // New chat modal functions
+        async function showNewChatModal() {
+            const modal = document.getElementById('new-chat-modal');
+            const select = document.getElementById('new-chat-user');
+            
+            modal.classList.remove('hidden');
+            
+            // Load users
+            try {
+                const currentUser = JSON.parse(sessionStorage.getItem('user'));
+                let users = [];
+                
+                // Load based on role
+                if (currentUser.role === 'student') {
+                    // Load companies and admin
+                    const companiesRes = await apiCall('/companies');
+                    if (companiesRes.success) {
+                        users = companiesRes.data.map(c => ({
+                            _id: c.user._id,
+                            email: c.user.email,
+                            type: 'Company'
+                        }));
+                    }
+                } else if (currentUser.role === 'company') {
+                    // Load students
+                    const studentsRes = await apiCall('/students');
+                    if (studentsRes.success) {
+                        users = studentsRes.data.map(s => ({
+                            _id: s.user._id,
+                            email: s.user.email,
+                            type: 'Student'
+                        }));
+                    }
+                }
+                
+                select.innerHTML = '<option value="">Select a user...</option>' + 
+                    users.map(u => `<option value="${u._id}">${u.email} (${u.type})</option>`).join('');
+                    
+            } catch (error) {
+                console.error('Error loading users:', error);
+                select.innerHTML = '<option value="">Error loading users</option>';
+            }
+        }
+
+        function closeNewChatModal() {
+            document.getElementById('new-chat-modal').classList.add('hidden');
+        }
+
+        async function startNewChat() {
+            const select = document.getElementById('new-chat-user');
+            const userId = select.value;
+            
+            if (!userId) {
+                showToast('Please select a user', 'error');
+                return;
+            }
+            
+            closeNewChatModal();
+            await window.chatManager.createConversation(userId);
+        }
+
+        // Toast notification function
+        function showToast(message, type = 'info') {
+            console.log(`[${type.toUpperCase()}] ${message}`);
+            // You can implement a proper toast notification here
+        }
+    </script>
+</body>
+</html>
