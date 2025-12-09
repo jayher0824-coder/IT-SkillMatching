@@ -1006,7 +1006,6 @@
                                     ) : (
                                         messages.map((msg, idx) => {
                                             const senderIdStr = typeof msg.senderId === 'object' ? msg.senderId._id : msg.senderId;
-                                            const currentAdminId = msg.senderId && (typeof msg.senderId === 'object' ? msg.senderId.email : '').includes('@');
                                             const isFromUser = senderIdStr === selectedUser._id || senderIdStr === selectedUser._id?.toString();
                                             
                                             return (
@@ -1031,7 +1030,7 @@
                                             );
                                         })
                                     )
-                                )}
+                                }
                                 </div>
                                 
                                 {/* Message input */}
