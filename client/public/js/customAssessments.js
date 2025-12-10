@@ -739,7 +739,7 @@ async function testCustomCode(questionIndex) {
             const results = response.results;
             let resultsHTML = '<div class="border-2 border-gray-300 dark:border-gray-600 rounded-lg p-4 bg-gray-50 dark:bg-gray-800">';
             resultsHTML += '<h4 class="font-semibold text-gray-900 dark:text-white mb-2">Test Results:</h4>';
-            resultsHTML += '<p class="text-xs text-gray-500 dark:text-gray-400 mb-3 italic">(Simulated execution - actual submission will run real tests)</p>';
+            resultsHTML += '<p class="text-xs text-amber-600 dark:text-amber-400 mb-3 italic"><i class="fas fa-exclamation-circle mr-1"></i>Preview only - Actual tests run on submission</p>';
             resultsHTML += '<div class="space-y-2">';
             
             let passCount = 0;
