@@ -3,6 +3,14 @@
  * Handles company-created assessments for job applications
  */
 
+// Helper function to escape HTML special characters
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
 // Create Assessment Modal (Company Side)
 function openCreateAssessmentModal(jobId) {
     const modalHTML = `
@@ -510,55 +518,110 @@ function loadCustomQuestion(index) {
         // Display coding challenge with editor
         const savedCode = userAnswers[index] || question.codeTemplate || '';
         optionsHTML = `
-            <div class="space-y-3">
-                <div>
-                    <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">
-                        Language: <span class="font-bold text-[#56AE67]">${question.programmingLanguage.toUpperCase()}</span>
-                    </label>
+            <div class="space-y-4">
+                <!-- Problem Description -->
+                <div class="bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500 p-4 rounded">
+                    <h3 class="font-semibold text-gray-900 dark:text-white mb-2">Problem:</h3>
+                    <p class="text-gray-700 dark:text-gray-300">${question.questionText}</p>
                 </div>
-                <div>
-                    <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">Difficulty: <span class="font-bold">${question.difficulty}</span></label>
+
+                <!-- Metadata -->
+                <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                    <div class="bg-gray-100 dark:bg-gray-700 p-3 rounded">
+                        <label class="block text-xs font-medium text-gray-600 dark:text-gray-400">Language</label>
+                        <span class="font-bold text-[#56AE67]">${question.programmingLanguage.toUpperCase()}</span>
+                    </div>
+                    <div class="bg-gray-100 dark:bg-gray-700 p-3 rounded">
+                        <label class="block text-xs font-medium text-gray-600 dark:text-gray-400">Difficulty</label>
+                        <span class="font-bold text-gray-900 dark:text-white">${question.difficulty}</span>
+                    </div>
+                    <div class="bg-gray-100 dark:bg-gray-700 p-3 rounded">
+                        <label class="block text-xs font-medium text-gray-600 dark:text-gray-400">Time Limit</label>
+                        <span class="font-bold text-gray-900 dark:text-white">${question.timeLimit}s</span>
+                    </div>
+                    <div class="bg-gray-100 dark:bg-gray-700 p-3 rounded">
+                        <label class="block text-xs font-medium text-gray-600 dark:text-gray-400">Test Cases</label>
+                        <span class="font-bold text-gray-900 dark:text-white">${question.testCases.length}</span>
+                    </div>
                 </div>
+
+                <!-- Starter Code Template (if provided) -->
+                ${question.codeTemplate ? `
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">📝 Starter Code Template:</label>
+                        <pre class="bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto text-xs border border-gray-700"><code>${escapeHtml(question.codeTemplate)}</code></pre>
+                    </div>
+                ` : ''}
+
+                <!-- Test Cases (Input/Output Examples) -->
                 <div>
-                    <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">Time Limit: <span class="font-bold">${question.timeLimit}s</span></label>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">📋 Test Cases (Expected Input/Output):</label>
+                    <div class="space-y-2 max-h-40 overflow-y-auto">
+                        ${question.testCases.map((tc, i) => `
+                            <div class="bg-gray-100 dark:bg-gray-700 p-3 rounded text-sm border-l-4 border-green-500">
+                                <div class="font-semibold text-gray-900 dark:text-white mb-1">Test ${i + 1}:</div>
+                                <div class="text-gray-700 dark:text-gray-300">
+                                    <span class="font-medium">Input:</span> <code class="bg-gray-200 dark:bg-gray-600 px-2 py-1 rounded">${escapeHtml(tc.input)}</code>
+                                </div>
+                                <div class="text-gray-700 dark:text-gray-300">
+                                    <span class="font-medium">Expected Output:</span> <code class="bg-gray-200 dark:bg-gray-600 px-2 py-1 rounded">${escapeHtml(tc.output)}</code>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
                 </div>
+
+                <!-- Code Editor -->
                 <div>
-                    <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">Test Cases: <span class="font-bold">${question.testCases.length}</span></label>
-                </div>
-                <div>
-                    <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">Your Code</label>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">✍️ Your Code:</label>
                     <textarea id="custom-code-${index}" class="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-lg
                            dark:bg-gray-700 dark:text-white focus:outline-none focus:border-[#56AE67] font-mono text-sm"
-                        rows="8" placeholder="Write your code here..."
+                        rows="10" placeholder="Write your code here..."
                         onchange="saveCustomAnswer(${index}, this.value)">${savedCode}</textarea>
                 </div>
-                <button onclick="testCustomCode(${index})" 
-                    class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
-                    onmouseover="this.style.backgroundColor='#1d4ed8'" 
-                    onmouseout="this.style.backgroundColor='#2563eb'">
-                    <i class="fas fa-play mr-2"></i>Run Test Cases
-                </button>
+
+                <!-- Test Button -->
+                <div class="flex gap-2">
+                    <button onclick="testCustomCode(${index})" 
+                        class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium"
+                        onmouseover="this.style.backgroundColor='#1d4ed8'" 
+                        onmouseout="this.style.backgroundColor='#2563eb'">
+                        <i class="fas fa-play mr-2"></i>Run Test Cases
+                    </button>
+                </div>
+
+                <!-- Test Results -->
                 <div id="custom-test-results-${index}" class="hidden"></div>
             </div>
         `;
     } else if (question.questionType === 'multiple-choice' || question.questionType === 'true-false') {
-        optionsHTML = question.options.map((option, i) => `
-            <label class="flex items-center p-4 border-2 border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer
-                   hover:border-[#56AE67] transition ${userAnswers[index] === option ? 'border-[#56AE67] bg-green-50 dark:bg-green-900/20' : ''}">
-                <input type="radio" name="custom-q-${index}" value="${option}" 
-                    ${userAnswers[index] === option ? 'checked' : ''}
-                    onchange="saveCustomAnswer(${index}, this.value)"
-                    class="mr-3">
-                <span class="text-gray-900 dark:text-white">${option}</span>
-            </label>
-        `).join('');
+        optionsHTML = `
+            <div class="space-y-4">
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">${question.questionText}</h3>
+                <div class="space-y-2">
+                    ${question.options.map((option, i) => `
+                        <label class="flex items-center p-4 border-2 border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer
+                               hover:border-[#56AE67] transition ${userAnswers[index] === option ? 'border-[#56AE67] bg-green-50 dark:bg-green-900/20' : ''}">
+                            <input type="radio" name="custom-q-${index}" value="${option}" 
+                                ${userAnswers[index] === option ? 'checked' : ''}
+                                onchange="saveCustomAnswer(${index}, this.value)"
+                                class="mr-3">
+                            <span class="text-gray-900 dark:text-white">${option}</span>
+                        </label>
+                    `).join('')}
+                </div>
+            </div>
+        `;
     } else if (question.questionType === 'short-answer') {
         optionsHTML = `
-            <textarea id="custom-answer-${index}" rows="4"
-                class="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-lg
-                       dark:bg-gray-700 dark:text-white focus:outline-none focus:border-[#56AE67]"
-                placeholder="Enter your answer here..."
-                onchange="saveCustomAnswer(${index}, this.value)">${userAnswers[index] || ''}</textarea>
+            <div class="space-y-3">
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">${question.questionText}</h3>
+                <textarea id="custom-answer-${index}" rows="4"
+                    class="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-lg
+                           dark:bg-gray-700 dark:text-white focus:outline-none focus:border-[#56AE67]"
+                    placeholder="Enter your answer here..."
+                    onchange="saveCustomAnswer(${index}, this.value)">${userAnswers[index] || ''}</textarea>
+            </div>
         `;
     }
 
