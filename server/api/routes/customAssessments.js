@@ -68,7 +68,18 @@ router.post('/', protect, authorize('company'), async (req, res) => {
                     questionData.programmingLanguage = q.programmingLanguage;
                     questionData.difficulty = q.difficulty;
                     questionData.codeTemplate = q.codeTemplate || '';
-                    questionData.testCases = q.testCases || [];
+                    
+                    // Ensure test cases are in correct format
+                    let testCases = q.testCases || [];
+                    if (Array.isArray(testCases)) {
+                        questionData.testCases = testCases.map(tc => ({
+                            input: typeof tc === 'object' ? tc.input : String(tc),
+                            output: typeof tc === 'object' ? tc.output : String(tc)
+                        }));
+                    } else {
+                        questionData.testCases = [];
+                    }
+                    
                     questionData.timeLimit = q.timeLimit || 30;
                     // Store the correct answer or solution reference
                     questionData.correctAnswer = q.correctAnswer || '';
