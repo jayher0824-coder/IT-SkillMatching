@@ -906,12 +906,23 @@ async function loadCompanyDashboard() {
                                                             title="View Assessment Results">
                                                             <i class="fas fa-chart-bar"></i>
                                                         </button>
-                                                    ` : ''}
-                                                    <button onclick="openCreateAssessmentModal('${job._id}')" 
-                                                        class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 text-sm"
-                                                        title="Create Custom Assessment">
-                                                        <i class="fas fa-clipboard-list"></i>
-                                                    </button>
+                                                        <button onclick="openEditAssessmentModal('${job._id}', '${job.customAssessment._id}')" 
+                                                            class="text-amber-600 hover:text-amber-800 dark:text-amber-400 dark:hover:text-amber-300 text-sm"
+                                                            title="Edit Assessment">
+                                                            <i class="fas fa-edit"></i>
+                                                        </button>
+                                                        <button onclick="deleteCustomAssessment('${job.customAssessment._id}')" 
+                                                            class="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 text-sm"
+                                                            title="Delete Assessment">
+                                                            <i class="fas fa-trash"></i>
+                                                        </button>
+                                                    ` : `
+                                                        <button onclick="openCreateAssessmentModal('${job._id}')" 
+                                                            class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 text-sm"
+                                                            title="Create Custom Assessment">
+                                                            <i class="fas fa-clipboard-list"></i>
+                                                        </button>
+                                                    `}
                                                     <button onclick="editJob('${job._id}')" 
                                                         class="text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-300 text-sm"
                                                         title="Edit Job">

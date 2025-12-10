@@ -794,3 +794,465 @@ async function testCustomCode(questionIndex) {
         showToast('Error: ' + error.message, 'error');
     }
 }
+
+// Edit Assessment Modal (Company Side)
+async function openEditAssessmentModal(jobId, assessmentId) {
+    try {
+        showToast('Loading assessment...', 'info');
+        
+        // Fetch the assessment
+        const assessment = await apiCall(`/custom-assessments/${assessmentId}`);
+        
+        const modalHTML = `
+            <div id="edit-assessment-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4" style="overflow: hidden;">
+                <div class="bg-white dark:bg-gray-800 rounded-lg max-w-4xl w-full flex flex-col" style="max-height: 90vh; height: 90vh;">
+                    <div class="flex justify-between items-center p-6 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
+                        <h2 class="text-2xl font-bold text-gray-900 dark:text-white">
+                            <i class="fas fa-edit mr-2"></i>Edit Custom Assessment
+                        </h2>
+                        <button onclick="document.getElementById('edit-assessment-modal').remove()" 
+                            class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                            <i class="fas fa-times text-xl"></i>
+                        </button>
+                    </div>
+
+                    <div class="p-6 flex-1" style="overflow-y: auto; overflow-x: hidden;">
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                Assessment Title *
+                            </label>
+                            <input type="text" id="edit-assessment-title" 
+                                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg
+                                       dark:bg-gray-700 dark:text-white focus:outline-none focus:border-[#56AE67]"
+                                value="${assessment.title}">
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                Description
+                            </label>
+                            <textarea id="edit-assessment-description" rows="2"
+                                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg
+                                       dark:bg-gray-700 dark:text-white focus:outline-none focus:border-[#56AE67]">${assessment.description || ''}</textarea>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-4 mb-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    Duration (minutes)
+                                </label>
+                                <input type="number" id="edit-assessment-duration" value="${assessment.duration}" min="5" max="120"
+                                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg
+                                           dark:bg-gray-700 dark:text-white focus:outline-none focus:border-[#56AE67]">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    Passing Score (%)
+                                </label>
+                                <input type="number" id="edit-assessment-passing-score" value="${assessment.passingScore}" min="0" max="100"
+                                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg
+                                           dark:bg-gray-700 dark:text-white focus:outline-none focus:border-[#56AE67]">
+                            </div>
+                        </div>
+
+                        <div class="border-t border-gray-200 dark:border-gray-700 pt-4">
+                            <div class="flex justify-between items-center mb-4">
+                                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Questions</h3>
+                                <button onclick="addEditAssessmentQuestion()" 
+                                    class="px-4 py-2 text-white rounded-lg hover:bg-[#3d8b4f] transition font-medium"
+                                    style="background-color: #56AE67; color: white;"
+                                    onmouseover="this.style.backgroundColor='#3d8b4f'" 
+                                    onmouseout="this.style.backgroundColor='#56AE67'">
+                                    <i class="fas fa-plus mr-2"></i>Add Question
+                                </button>
+                            </div>
+                            <div id="edit-assessment-questions-container"></div>
+                        </div>
+                    </div>
+
+                    <div class="p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 flex-shrink-0">
+                        <div class="flex justify-end space-x-3">
+                            <button onclick="document.getElementById('edit-assessment-modal').remove()" 
+                                class="px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition">
+                                Cancel
+                            </button>
+                            <button onclick="updateCustomAssessment('${assessmentId}')" 
+                                class="px-6 py-2 text-white rounded-lg transition font-bold"
+                                style="background-color: #56AE67;"
+                                onmouseover="this.style.backgroundColor='#3d8b4f'" 
+                                onmouseout="this.style.backgroundColor='#56AE67'">
+                                <i class="fas fa-save mr-2"></i>Save Changes
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+        
+        // Populate questions
+        const questionsContainer = document.getElementById('edit-assessment-questions-container');
+        editQuestionCounter = 0;
+        assessment.questions.forEach((q, index) => {
+            editQuestionCounter = index + 1;
+            renderEditQuestion(q, index, questionsContainer);
+        });
+    } catch (error) {
+        console.error('Error loading assessment:', error);
+        showToast('Error: ' + error.message, 'error');
+    }
+}
+
+let editQuestionCounter = 0;
+
+function renderEditQuestion(question, index, container) {
+    const questionHTML = `
+        <div class="question-item bg-gray-100 dark:bg-gray-700 rounded-lg p-4 mb-4" data-question-id="${index}">
+            <div class="flex justify-between items-start mb-3">
+                <h4 class="font-medium text-gray-900 dark:text-white">Question ${index + 1}</h4>
+                <button onclick="this.closest('.question-item').remove()" 
+                    class="text-red-600 hover:text-red-800">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+
+            <div class="mb-3">
+                <input type="text" class="question-text w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg
+                       dark:bg-gray-600 dark:text-white focus:outline-none focus:border-[#56AE67]"
+                    value="${question.questionText}">
+            </div>
+
+            <div class="grid grid-cols-2 gap-3 mb-3">
+                <div>
+                    <label class="block text-xs text-gray-600 dark:text-gray-400 mb-1">Question Type</label>
+                    <select class="question-type w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg
+                           dark:bg-gray-600 dark:text-white focus:outline-none" 
+                           onchange="toggleQuestionOptions(this)">
+                        <option value="multiple-choice" ${question.questionType === 'multiple-choice' ? 'selected' : ''}>Multiple Choice</option>
+                        <option value="true-false" ${question.questionType === 'true-false' ? 'selected' : ''}>True/False</option>
+                        <option value="short-answer" ${question.questionType === 'short-answer' ? 'selected' : ''}>Short Answer</option>
+                        <option value="coding" ${question.questionType === 'coding' ? 'selected' : ''}>Coding Challenge</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-600 dark:text-gray-400 mb-1">Category</label>
+                    <select class="question-category w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg
+                           dark:bg-gray-600 dark:text-white focus:outline-none">
+                        <option value="technical" ${question.category === 'technical' ? 'selected' : ''}>Technical</option>
+                        <option value="behavioral" ${question.category === 'behavioral' ? 'selected' : ''}>Behavioral</option>
+                        <option value="situational" ${question.category === 'situational' ? 'selected' : ''}>Situational</option>
+                        <option value="general" ${question.category === 'general' ? 'selected' : ''}>General</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="options-container">
+                ${question.questionType === 'coding' ? `
+                    <div class="space-y-3">
+                        <div>
+                            <label class="block text-xs text-gray-600 dark:text-gray-400 mb-1">Programming Language</label>
+                            <select class="coding-language w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg
+                                   dark:bg-gray-600 dark:text-white focus:outline-none">
+                                <option value="python" ${question.programmingLanguage === 'python' ? 'selected' : ''}>Python</option>
+                                <option value="javascript" ${question.programmingLanguage === 'javascript' ? 'selected' : ''}>JavaScript</option>
+                                <option value="java" ${question.programmingLanguage === 'java' ? 'selected' : ''}>Java</option>
+                                <option value="cpp" ${question.programmingLanguage === 'cpp' ? 'selected' : ''}>C++</option>
+                                <option value="csharp" ${question.programmingLanguage === 'csharp' ? 'selected' : ''}>C#</option>
+                                <option value="php" ${question.programmingLanguage === 'php' ? 'selected' : ''}>PHP</option>
+                                <option value="ruby" ${question.programmingLanguage === 'ruby' ? 'selected' : ''}>Ruby</option>
+                                <option value="go" ${question.programmingLanguage === 'go' ? 'selected' : ''}>Go</option>
+                                <option value="rust" ${question.programmingLanguage === 'rust' ? 'selected' : ''}>Rust</option>
+                                <option value="typescript" ${question.programmingLanguage === 'typescript' ? 'selected' : ''}>TypeScript</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-600 dark:text-gray-400 mb-1">Difficulty Level</label>
+                            <select class="coding-difficulty w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg
+                                   dark:bg-gray-600 dark:text-white focus:outline-none">
+                                <option value="beginner" ${question.difficulty === 'beginner' ? 'selected' : ''}>Beginner (5-15 min)</option>
+                                <option value="junior" ${question.difficulty === 'junior' ? 'selected' : ''}>Junior (15-30 min)</option>
+                                <option value="intermediate" ${question.difficulty === 'intermediate' ? 'selected' : ''}>Intermediate (30-60 min)</option>
+                                <option value="advanced" ${question.difficulty === 'advanced' ? 'selected' : ''}>Advanced (60+ min)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-600 dark:text-gray-400 mb-1">Code Template (Optional)</label>
+                            <textarea class="coding-template w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg
+                                   dark:bg-gray-600 dark:text-white" rows="3">${question.codeTemplate || ''}</textarea>
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-600 dark:text-gray-400 mb-1">Test Cases (JSON Format)</label>
+                            <textarea class="coding-test-cases w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg
+                                   dark:bg-gray-600 dark:text-white" rows="3">${JSON.stringify(question.testCases || [])}</textarea>
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-600 dark:text-gray-400 mb-1">Time Limit (seconds)</label>
+                            <input type="number" class="coding-time-limit w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg
+                                   dark:bg-gray-600 dark:text-white" value="${question.timeLimit || 30}" min="5" max="300">
+                        </div>
+                    </div>
+                ` : question.questionType === 'true-false' ? `
+                    <label class="block text-xs text-gray-600 dark:text-gray-400 mb-2">Answer Options</label>
+                    <div class="space-y-2 mb-2">
+                        <input type="text" class="option-input w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg
+                               dark:bg-gray-600 dark:text-white" value="True" readonly>
+                        <input type="text" class="option-input w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg
+                               dark:bg-gray-600 dark:text-white" value="False" readonly>
+                    </div>
+                ` : question.questionType === 'short-answer' ? `
+                    <div></div>
+                ` : `
+                    <label class="block text-xs text-gray-600 dark:text-gray-400 mb-2">Answer Options</label>
+                    <div class="space-y-2 mb-2">
+                        ${(question.options || []).map((opt, i) => `
+                            <input type="text" class="option-input w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg
+                                   dark:bg-gray-600 dark:text-white" value="${opt}">
+                        `).join('')}
+                    </div>
+                `}
+            </div>
+
+            <div>
+                <label class="block text-xs text-gray-600 dark:text-gray-400 mb-1">Correct Answer</label>
+                <input type="text" class="correct-answer w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg
+                       dark:bg-gray-600 dark:text-white focus:outline-none focus:border-[#56AE67]"
+                    value="${question.correctAnswer || ''}">
+            </div>
+        </div>
+    `;
+
+    container.insertAdjacentHTML('beforeend', questionHTML);
+}
+
+function addEditAssessmentQuestion() {
+    editQuestionCounter++;
+    const container = document.getElementById('edit-assessment-questions-container');
+    
+    const questionHTML = `
+        <div class="question-item bg-gray-100 dark:bg-gray-700 rounded-lg p-4 mb-4" data-question-id="${editQuestionCounter}">
+            <div class="flex justify-between items-start mb-3">
+                <h4 class="font-medium text-gray-900 dark:text-white">Question ${editQuestionCounter}</h4>
+                <button onclick="this.closest('.question-item').remove()" 
+                    class="text-red-600 hover:text-red-800">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+
+            <div class="mb-3">
+                <input type="text" class="question-text w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg
+                       dark:bg-gray-600 dark:text-white focus:outline-none focus:border-[#56AE67]"
+                    placeholder="Enter your question">
+            </div>
+
+            <div class="grid grid-cols-2 gap-3 mb-3">
+                <div>
+                    <label class="block text-xs text-gray-600 dark:text-gray-400 mb-1">Question Type</label>
+                    <select class="question-type w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg
+                           dark:bg-gray-600 dark:text-white focus:outline-none" 
+                           onchange="toggleQuestionOptions(this)">
+                        <option value="multiple-choice">Multiple Choice</option>
+                        <option value="true-false">True/False</option>
+                        <option value="short-answer">Short Answer</option>
+                        <option value="coding">Coding Challenge</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-600 dark:text-gray-400 mb-1">Category</label>
+                    <select class="question-category w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg
+                           dark:bg-gray-600 dark:text-white focus:outline-none">
+                        <option value="technical">Technical</option>
+                        <option value="behavioral">Behavioral</option>
+                        <option value="situational">Situational</option>
+                        <option value="general">General</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="options-container">
+                <label class="block text-xs text-gray-600 dark:text-gray-400 mb-2">Answer Options</label>
+                <div class="space-y-2 mb-2">
+                    <input type="text" class="option-input w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg
+                           dark:bg-gray-600 dark:text-white" placeholder="Option A">
+                    <input type="text" class="option-input w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg
+                           dark:bg-gray-600 dark:text-white" placeholder="Option B">
+                    <input type="text" class="option-input w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg
+                           dark:bg-gray-600 dark:text-white" placeholder="Option C">
+                    <input type="text" class="option-input w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg
+                           dark:bg-gray-600 dark:text-white" placeholder="Option D">
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-xs text-gray-600 dark:text-gray-400 mb-1">Correct Answer</label>
+                <input type="text" class="correct-answer w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg
+                       dark:bg-gray-600 dark:text-white focus:outline-none focus:border-[#56AE67]"
+                    placeholder="Enter the exact correct answer">
+            </div>
+        </div>
+    `;
+
+    container.insertAdjacentHTML('beforeend', questionHTML);
+}
+
+async function updateCustomAssessment(assessmentId) {
+    const title = document.getElementById('edit-assessment-title').value.trim();
+    const description = document.getElementById('edit-assessment-description').value.trim();
+    const duration = parseInt(document.getElementById('edit-assessment-duration').value);
+    const passingScore = parseInt(document.getElementById('edit-assessment-passing-score').value);
+
+    if (!title) {
+        showToast('Please enter an assessment title', 'error');
+        return;
+    }
+
+    // Collect questions
+    const questionItems = document.querySelectorAll('.question-item');
+    if (questionItems.length === 0) {
+        showToast('Please add at least one question', 'error');
+        return;
+    }
+
+    const questions = [];
+    let hasError = false;
+
+    questionItems.forEach((item, index) => {
+        const questionText = item.querySelector('.question-text').value.trim();
+        const questionType = item.querySelector('.question-type').value;
+        const category = item.querySelector('.question-category').value;
+
+        if (!questionText) {
+            showToast(`Question ${index + 1} is missing question text`, 'error');
+            hasError = true;
+            return;
+        }
+
+        // Handle different question types
+        if (questionType === 'coding') {
+            // Coding challenge
+            const language = item.querySelector('.coding-language').value;
+            const difficulty = item.querySelector('.coding-difficulty').value;
+            const codeTemplate = item.querySelector('.coding-template').value.trim();
+            const testCasesStr = item.querySelector('.coding-test-cases').value.trim();
+            const timeLimit = parseInt(item.querySelector('.coding-time-limit').value) || 30;
+
+            if (!testCasesStr) {
+                showToast(`Coding Challenge ${index + 1} needs test cases`, 'error');
+                hasError = true;
+                return;
+            }
+
+            let testCases;
+            try {
+                testCases = JSON.parse(testCasesStr);
+                if (!Array.isArray(testCases)) throw new Error();
+            } catch (e) {
+                showToast(`Coding Challenge ${index + 1} has invalid test case format (must be JSON array)`, 'error');
+                hasError = true;
+                return;
+            }
+
+            questions.push({
+                questionText,
+                questionType: 'coding',
+                category,
+                programmingLanguage: language,
+                difficulty,
+                codeTemplate,
+                testCases,
+                timeLimit,
+                points: 5
+            });
+        } else {
+            // Traditional Q&A questions
+            const correctAnswer = item.querySelector('.correct-answer').value.trim();
+
+            if (!correctAnswer) {
+                showToast(`Question ${index + 1} is missing correct answer`, 'error');
+                hasError = true;
+                return;
+            }
+
+            const options = [];
+            if (questionType !== 'short-answer') {
+                const optionInputs = item.querySelectorAll('.option-input');
+                optionInputs.forEach(input => {
+                    const value = input.value.trim();
+                    if (value) options.push(value);
+                });
+
+                if (options.length === 0) {
+                    showToast(`Question ${index + 1} needs at least one option`, 'error');
+                    hasError = true;
+                    return;
+                }
+            }
+
+            questions.push({
+                questionText,
+                questionType,
+                category,
+                options,
+                correctAnswer,
+                points: 1
+            });
+        }
+    });
+
+    if (hasError) return;
+
+    try {
+        showToast('Updating assessment...', 'info');
+        
+        const response = await apiCall(`/custom-assessments/${assessmentId}`, {
+            method: 'PUT',
+            body: JSON.stringify({
+                title,
+                description,
+                duration,
+                passingScore,
+                questions
+            })
+        });
+
+        if (response.success) {
+            showToast('Assessment updated successfully!', 'success');
+            document.getElementById('edit-assessment-modal').remove();
+            // Refresh company dashboard to show updated assessment
+            if (typeof loadCompanyDashboard === 'function') {
+                loadCompanyDashboard();
+            }
+        } else {
+            throw new Error(response.message || 'Failed to update assessment');
+        }
+    } catch (error) {
+        console.error('Error updating assessment:', error);
+        showToast('Error: ' + error.message, 'error');
+    }
+}
+
+async function deleteCustomAssessment(assessmentId) {
+    const confirmed = confirm('Are you sure you want to delete this assessment? This action cannot be undone.');
+    if (!confirmed) return;
+
+    try {
+        showToast('Deleting assessment...', 'info');
+        
+        const response = await apiCall(`/custom-assessments/${assessmentId}`, {
+            method: 'DELETE'
+        });
+
+        if (response.success) {
+            showToast('Assessment deleted successfully!', 'success');
+            // Refresh company dashboard
+            if (typeof loadCompanyDashboard === 'function') {
+                loadCompanyDashboard();
+            }
+        } else {
+            throw new Error(response.message || 'Failed to delete assessment');
+        }
+    } catch (error) {
+        console.error('Error deleting assessment:', error);
+        showToast('Error: ' + error.message, 'error');
+    }
+}

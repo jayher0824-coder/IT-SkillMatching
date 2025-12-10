@@ -435,4 +435,187 @@ router.get('/submissions/:submissionId', protect, async (req, res, next) => {
     }
 });
 
+// @route   PUT /api/custom-assessments/:assessmentId
+// @desc    Update custom assessment (Company only)
+// @access  Private (Company)
+router.put('/:assessmentId', protect, authorize('company'), async (req, res) => {
+    try {
+        const { assessmentId } = req.params;
+        const { title, description, duration, passingScore, questions } = req.body;
+
+        console.log('Updating assessment:', { assessmentId, companyUser: req.user._id });
+
+        // Validate ObjectId
+        if (!mongoose.Types.ObjectId.isValid(assessmentId)) {
+            console.log('Invalid assessment ID format:', assessmentId);
+            return res.status(400).json({ success: false, message: 'Invalid assessment ID format' });
+        }
+
+        // Get the assessment
+        const assessment = await CustomAssessment.findById(assessmentId);
+        if (!assessment) {
+            console.log('Assessment not found:', assessmentId);
+            return res.status(404).json({ success: false, message: 'Assessment not found' });
+        }
+
+        // Verify the company owns this assessment
+        if (assessment.company.toString() !== req.user._id.toString()) {
+            console.log('Authorization failed - company mismatch');
+            return res.status(403).json({ success: false, message: 'Not authorized to edit this assessment' });
+        }
+
+        // Check if assessment has submissions (can't edit if students have submitted)
+        const submissionCount = await CustomAssessmentSubmission.countDocuments({ assessment: assessmentId });
+        if (submissionCount > 0) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Cannot edit assessment after students have submitted. Delete submissions first or create a new assessment.' 
+            });
+        }
+
+        // Validate questions
+        if (!questions || !Array.isArray(questions) || questions.length === 0) {
+            return res.status(400).json({ success: false, message: 'At least one question is required' });
+        }
+
+        // Update assessment fields
+        assessment.title = title || assessment.title;
+        assessment.description = description || assessment.description;
+        assessment.duration = duration !== undefined ? duration : assessment.duration;
+        assessment.passingScore = passingScore !== undefined ? passingScore : assessment.passingScore;
+
+        // Update questions
+        assessment.questions = questions.map(q => {
+            const questionData = {
+                questionText: q.questionText,
+                questionType: q.questionType || 'multiple-choice',
+                category: q.category || 'technical',
+                points: q.points || (q.questionType === 'coding' ? 5 : 1)
+            };
+
+            // Handle different question types
+            if (q.questionType === 'coding') {
+                // Coding challenge
+                questionData.programmingLanguage = q.programmingLanguage;
+                questionData.difficulty = q.difficulty;
+                questionData.codeTemplate = q.codeTemplate || '';
+                
+                // Ensure test cases are in correct format
+                let testCases = q.testCases || [];
+                if (Array.isArray(testCases)) {
+                    questionData.testCases = testCases.map(tc => ({
+                        input: typeof tc === 'object' ? tc.input : String(tc),
+                        output: typeof tc === 'object' ? tc.output : String(tc)
+                    }));
+                } else {
+                    questionData.testCases = [];
+                }
+                
+                questionData.timeLimit = q.timeLimit || 30;
+                questionData.correctAnswer = q.correctAnswer || '';
+            } else {
+                // Traditional Q&A questions
+                questionData.options = q.options || [];
+                questionData.correctAnswer = q.correctAnswer;
+            }
+
+            return questionData;
+        });
+
+        await assessment.save();
+        console.log('Assessment updated:', assessment._id);
+
+        res.json({
+            success: true,
+            message: 'Custom assessment updated successfully',
+            assessment: {
+                _id: assessment._id,
+                title: assessment.title,
+                questionCount: assessment.questions.length
+            }
+        });
+    } catch (error) {
+        console.error('Error updating custom assessment:', error);
+        console.error('Error details:', {
+            message: error.message,
+            name: error.name,
+            validationErrors: error.errors ? Object.keys(error.errors) : 'none'
+        });
+        res.status(500).json({ success: false, message: 'Server error updating assessment', error: error.message });
+    }
+});
+
+// @route   GET /api/custom-assessments/:assessmentId
+// @desc    Get custom assessment for editing (Company only - with correct answers)
+// @access  Private (Company)
+router.get('/:assessmentId', protect, authorize('company'), async (req, res) => {
+    try {
+        const { assessmentId } = req.params;
+
+        // Validate ObjectId
+        if (!mongoose.Types.ObjectId.isValid(assessmentId)) {
+            return res.status(400).json({ success: false, message: 'Invalid assessment ID format' });
+        }
+
+        const assessment = await CustomAssessment.findById(assessmentId);
+        if (!assessment) {
+            return res.status(404).json({ success: false, message: 'Assessment not found' });
+        }
+
+        // Verify the company owns this assessment
+        if (assessment.company.toString() !== req.user._id.toString()) {
+            return res.status(403).json({ success: false, message: 'Not authorized to view this assessment' });
+        }
+
+        res.json(assessment);
+    } catch (error) {
+        console.error('Error fetching custom assessment:', error);
+        res.status(500).json({ success: false, message: 'Server error' });
+    }
+});
+
+// @route   DELETE /api/custom-assessments/:assessmentId
+// @desc    Delete custom assessment (Company only)
+// @access  Private (Company)
+router.delete('/:assessmentId', protect, authorize('company'), async (req, res) => {
+    try {
+        const { assessmentId } = req.params;
+
+        console.log('Deleting assessment:', { assessmentId, companyUser: req.user._id });
+
+        // Validate ObjectId
+        if (!mongoose.Types.ObjectId.isValid(assessmentId)) {
+            return res.status(400).json({ success: false, message: 'Invalid assessment ID format' });
+        }
+
+        const assessment = await CustomAssessment.findById(assessmentId);
+        if (!assessment) {
+            return res.status(404).json({ success: false, message: 'Assessment not found' });
+        }
+
+        // Verify the company owns this assessment
+        if (assessment.company.toString() !== req.user._id.toString()) {
+            return res.status(403).json({ success: false, message: 'Not authorized to delete this assessment' });
+        }
+
+        // Delete assessment
+        await CustomAssessment.findByIdAndDelete(assessmentId);
+        console.log('Assessment deleted:', assessmentId);
+
+        // Remove assessment from job
+        await Job.findByIdAndUpdate(assessment.job, {
+            $unset: { customAssessment: 1 },
+            requireCustomAssessment: false
+        });
+
+        res.json({
+            success: true,
+            message: 'Custom assessment deleted successfully'
+        });
+    } catch (error) {
+        console.error('Error deleting custom assessment:', error);
+        res.status(500).json({ success: false, message: 'Server error deleting assessment', error: error.message });
+    }
+});
+
 module.exports = router;
