@@ -738,7 +738,8 @@ async function testCustomCode(questionIndex) {
         if (response.success) {
             const results = response.results;
             let resultsHTML = '<div class="border-2 border-gray-300 dark:border-gray-600 rounded-lg p-4 bg-gray-50 dark:bg-gray-800">';
-            resultsHTML += '<h4 class="font-semibold text-gray-900 dark:text-white mb-3">Test Results:</h4>';
+            resultsHTML += '<h4 class="font-semibold text-gray-900 dark:text-white mb-2">Test Results:</h4>';
+            resultsHTML += '<p class="text-xs text-gray-500 dark:text-gray-400 mb-3 italic">(Simulated execution - actual submission will run real tests)</p>';
             resultsHTML += '<div class="space-y-2">';
             
             let passCount = 0;
@@ -763,7 +764,7 @@ async function testCustomCode(questionIndex) {
                                     Got: <code class="bg-gray-200 dark:bg-gray-700 px-2 py-1 rounded">${result.output || 'No output'}</code>
                                 </div>
                             ` : ''}
-                            ${result.executionTime ? `<div class="text-xs text-gray-500 dark:text-gray-400">Time: ${result.executionTime}ms</div>` : ''}
+                            ${result.executionTime ? `<div class="text-xs text-gray-500 dark:text-gray-400">Time: ${result.executionTime.toFixed(2)}ms</div>` : ''}
                         </div>
                     </div>
                 `;
