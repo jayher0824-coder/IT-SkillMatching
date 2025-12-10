@@ -37,7 +37,7 @@ const customAssessmentSchema = new mongoose.Schema({
         },
         questionType: {
             type: String,
-            enum: ['multiple-choice', 'true-false', 'short-answer'],
+            enum: ['multiple-choice', 'true-false', 'short-answer', 'coding'],
             default: 'multiple-choice'
         },
         options: [String], // For multiple choice
@@ -50,7 +50,16 @@ const customAssessmentSchema = new mongoose.Schema({
             type: String,
             enum: ['technical', 'behavioral', 'situational', 'general'],
             default: 'technical'
-        }
+        },
+        // Coding challenge specific fields
+        programmingLanguage: String, // e.g., 'python', 'javascript'
+        difficulty: String, // e.g., 'beginner', 'intermediate', 'advanced'
+        codeTemplate: String, // Starter code for candidates
+        testCases: [{
+            input: String,
+            output: String
+        }],
+        timeLimit: Number // Time limit in seconds
     }],
     isActive: {
         type: Boolean,

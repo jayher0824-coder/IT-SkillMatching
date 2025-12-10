@@ -54,14 +54,32 @@ router.post('/', protect, authorize('company'), async (req, res) => {
             description,
             duration: duration || 30,
             passingScore: passingScore || 60,
-            questions: questions.map(q => ({
-                questionText: q.questionText,
-                questionType: q.questionType || 'multiple-choice',
-                options: q.options || [],
-                correctAnswer: q.correctAnswer,
-                points: q.points || 1,
-                category: q.category || 'technical'
-            }))
+            questions: questions.map(q => {
+                const questionData = {
+                    questionText: q.questionText,
+                    questionType: q.questionType || 'multiple-choice',
+                    category: q.category || 'technical',
+                    points: q.points || (q.questionType === 'coding' ? 5 : 1)
+                };
+
+                // Handle different question types
+                if (q.questionType === 'coding') {
+                    // Coding challenge
+                    questionData.programmingLanguage = q.programmingLanguage;
+                    questionData.difficulty = q.difficulty;
+                    questionData.codeTemplate = q.codeTemplate || '';
+                    questionData.testCases = q.testCases || [];
+                    questionData.timeLimit = q.timeLimit || 30;
+                    // Store the correct answer or solution reference
+                    questionData.correctAnswer = q.correctAnswer || '';
+                } else {
+                    // Traditional Q&A questions
+                    questionData.options = q.options || [];
+                    questionData.correctAnswer = q.correctAnswer;
+                }
+
+                return questionData;
+            })
         });
 
         await assessment.save();
@@ -84,6 +102,12 @@ router.post('/', protect, authorize('company'), async (req, res) => {
         });
     } catch (error) {
         console.error('Error creating custom assessment:', error);
+        console.error('Error stack:', error.stack);
+        console.error('Error details:', {
+            message: error.message,
+            name: error.name,
+            validationErrors: error.errors ? Object.keys(error.errors) : 'none'
+        });
         res.status(500).json({ success: false, message: 'Server error creating assessment', error: error.message });
     }
 });
