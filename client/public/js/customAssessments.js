@@ -861,6 +861,13 @@ async function testCustomCode(questionIndex) {
 // Edit Assessment Modal (Company Side)
 async function openEditAssessmentModal(jobId, assessmentId) {
     try {
+        // Validate assessment ID
+        if (!assessmentId || assessmentId.trim() === '' || assessmentId === 'undefined') {
+            showToast('Error: Invalid assessment ID', 'error');
+            console.error('Invalid assessment ID:', assessmentId);
+            return;
+        }
+
         showToast('Loading assessment...', 'info');
         
         // Fetch the assessment
@@ -1295,6 +1302,13 @@ async function updateCustomAssessment(assessmentId) {
 }
 
 async function deleteCustomAssessment(assessmentId) {
+    // Validate assessment ID
+    if (!assessmentId || assessmentId.trim() === '' || assessmentId === 'undefined') {
+        showToast('Error: Invalid assessment ID', 'error');
+        console.error('Invalid assessment ID:', assessmentId);
+        return;
+    }
+
     const confirmed = confirm('Are you sure you want to delete this assessment? This action cannot be undone.');
     if (!confirmed) return;
 

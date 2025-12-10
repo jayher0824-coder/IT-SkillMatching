@@ -906,12 +906,12 @@ async function loadCompanyDashboard() {
                                                             title="View Assessment Results">
                                                             <i class="fas fa-chart-bar"></i>
                                                         </button>
-                                                        <button onclick="openEditAssessmentModal('${job._id}', '${job.customAssessment._id}')" 
+                                                        <button onclick="openEditAssessmentModal('${job._id}', '${typeof job.customAssessment === 'object' ? job.customAssessment._id : job.customAssessment}')" 
                                                             class="text-amber-600 hover:text-amber-800 dark:text-amber-400 dark:hover:text-amber-300 text-sm"
                                                             title="Edit Assessment">
                                                             <i class="fas fa-edit"></i>
                                                         </button>
-                                                        <button onclick="deleteCustomAssessment('${job.customAssessment._id}')" 
+                                                        <button onclick="deleteCustomAssessment('${typeof job.customAssessment === 'object' ? job.customAssessment._id : job.customAssessment}')" 
                                                             class="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 text-sm"
                                                             title="Delete Assessment">
                                                             <i class="fas fa-trash"></i>
