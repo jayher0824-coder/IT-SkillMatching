@@ -91,20 +91,23 @@ async function initializeApp() {
                     }
 
                     // Restore the saved page or show dashboard
-                    if (savedPage && ['student-dashboard', 'company-dashboard'].includes(savedPage)) {
-                        if ((currentUser.role === 'student' && savedPage === 'student-dashboard') ||
-                            (currentUser.role === 'company' && savedPage === 'company-dashboard')) {
-                            showPage(savedPage);
-                            if (savedPage === 'student-dashboard') {
-                                loadStudentDashboard();
-                            } else if (savedPage === 'company-dashboard') {
-                                loadCompanyDashboard();
+                    // Use setTimeout to ensure dashboard.js and other scripts are fully loaded
+                    setTimeout(() => {
+                        if (savedPage && ['student-dashboard', 'company-dashboard'].includes(savedPage)) {
+                            if ((currentUser.role === 'student' && savedPage === 'student-dashboard') ||
+                                (currentUser.role === 'company' && savedPage === 'company-dashboard')) {
+                                showPage(savedPage);
+                                if (savedPage === 'student-dashboard') {
+                                    loadStudentDashboard();
+                                } else if (savedPage === 'company-dashboard') {
+                                    loadCompanyDashboard();
+                                }
                             }
+                        } else {
+                            // No saved page or invalid saved page - show the appropriate dashboard
+                            showDashboard();
                         }
-                    } else {
-                        // No saved page or invalid saved page - show the appropriate dashboard
-                        showDashboard();
-                    }
+                    }, 0);
                 } catch (error) {
                     console.error('Error during initialization (auth/me):', error);
                     // Only clear session on explicit authorization errors (401/403) or expired token
@@ -120,18 +123,21 @@ async function initializeApp() {
                         console.warn('Non-auth error during token verification, preserving session.');
                         showToast('Temporary server issue validating session — please try refreshing again.', 'warning');
                         // Attempt to show dashboard based on stored userData if available
-                        try {
-                            const storedUser = JSON.parse(sessionStorage.getItem('userData') || 'null');
-                            if (storedUser && storedUser.role) {
-                                currentUser = storedUser;
-                                updateNavigation();
-                                showDashboard();
-                            } else {
+                        // Use setTimeout to ensure dashboard functions are loaded
+                        setTimeout(() => {
+                            try {
+                                const storedUser = JSON.parse(sessionStorage.getItem('userData') || 'null');
+                                if (storedUser && storedUser.role) {
+                                    currentUser = storedUser;
+                                    updateNavigation();
+                                    showDashboard();
+                                } else {
+                                    showLandingPage();
+                                }
+                            } catch (e) {
                                 showLandingPage();
                             }
-                        } catch (e) {
-                            showLandingPage();
-                        }
+                        }, 0);
                     }
                 }
             }
