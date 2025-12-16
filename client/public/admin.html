@@ -1692,16 +1692,26 @@
             useEffect(() => {
                 fetchAdmins();
             }, []);
-            
+
             const fetchAdmins = async () => {
                 try {
                     const response = await axios.get(`${API_BASE}/admin/users`, {
                         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
                     });
-                    const adminUsers = response.data.users.filter(u => u.role === 'admin');
+                    // Defensive: handle both { users: [...] } and { data: [...] } and undefined
+                    let usersArr = [];
+                    if (Array.isArray(response.data?.users)) {
+                        usersArr = response.data.users;
+                    } else if (Array.isArray(response.data?.data)) {
+                        usersArr = response.data.data;
+                    } else {
+                        usersArr = [];
+                    }
+                    const adminUsers = usersArr.filter(u => u && u.role === 'admin');
                     setAdmins(adminUsers);
                 } catch (error) {
                     console.error('Error fetching admins:', error);
+                    setAdmins([]);
                 } finally {
                     setLoading(false);
                 }
