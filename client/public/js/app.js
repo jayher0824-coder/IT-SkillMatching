@@ -106,14 +106,33 @@ async function initializeApp() {
                         showDashboard();
                     }
                 } catch (error) {
-                    console.error('Error during initialization:', error);
-                    // If token verification fails, clear invalid token and show landing
-                    authToken = null;
-                    currentUser = null;
-                    sessionStorage.removeItem('authToken');
-                    sessionStorage.removeItem('userData');
-                    sessionStorage.removeItem('currentPage');
-                    showLandingPage();
+                    console.error('Error during initialization (auth/me):', error);
+                    // Only clear session on explicit authorization errors (401/403) or expired token
+                    if (error && (error.status === 401 || error.status === 403)) {
+                        authToken = null;
+                        currentUser = null;
+                        sessionStorage.removeItem('authToken');
+                        sessionStorage.removeItem('userData');
+                        sessionStorage.removeItem('currentPage');
+                        showLandingPage();
+                    } else {
+                        // Temporary server or network error — keep session intact and show a friendly message
+                        console.warn('Non-auth error during token verification, preserving session.');
+                        showToast('Temporary server issue validating session — please try refreshing again.', 'warning');
+                        // Attempt to show dashboard based on stored userData if available
+                        try {
+                            const storedUser = JSON.parse(sessionStorage.getItem('userData') || 'null');
+                            if (storedUser && storedUser.role) {
+                                currentUser = storedUser;
+                                updateNavigation();
+                                showDashboard();
+                            } else {
+                                showLandingPage();
+                            }
+                        } catch (e) {
+                            showLandingPage();
+                        }
+                    }
                 }
             }
         } else {
