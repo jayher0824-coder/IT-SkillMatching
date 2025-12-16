@@ -78,22 +78,7 @@ router.get('/stats', protect, authorize('admin'), async (req, res) => {
 // @desc    Get all users for admin management
 // @route   GET /api/admin/users
 // @access  Private (Admin only)
-router.get('/users', protect, authorize('admin'), async (req, res) => {
-  try {
-    const users = await User.find().select('firstName lastName email role isActive lastLogin createdAt').sort({ createdAt: -1 });
-    
-    res.json({
-      success: true,
-      data: users,
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({
-      success: false,
-      message: 'Server error',
-    });
-  }
-});
+
 
 // @desc    Get all retake requests
 // @route   GET /api/admin/retake-requests
@@ -1073,6 +1058,55 @@ router.post('/password-reset-requests/:userId/:index/reject', protect, authorize
     res.status(500).json({
       success: false,
       message: 'Server error while rejecting request'
+    });
+  }
+});
+
+// @desc    Create a new admin user
+// @route   POST /api/admin/users
+// @access  Private (Admin only)
+router.post('/users', protect, authorize('admin'), async (req, res) => {
+  try {
+    const { email, password, firstName, lastName } = req.body;
+    if (!email || !password) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email and password are required.'
+      });
+    }
+    // Check for existing user
+    const existing = await User.findOne({ email });
+    if (existing) {
+      return res.status(400).json({
+        success: false,
+        message: 'A user with this email already exists.'
+      });
+    }
+    // Create admin user
+    const user = new User({
+      email,
+      password,
+      firstName: firstName || '',
+      lastName: lastName || '',
+      role: 'admin',
+      isActive: true
+    });
+    await user.save();
+    res.status(201).json({
+      success: true,
+      data: {
+        _id: user._id,
+        email: user.email,
+        role: user.role,
+        firstName: user.firstName,
+        lastName: user.lastName
+      }
+    });
+  } catch (error) {
+    console.error('Error creating admin:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error creating admin.'
     });
   }
 });
