@@ -900,23 +900,29 @@ async function loadCompanyDashboard() {
                                                         title="View Applications">
                                                         <i class="fas fa-users"></i>
                                                     </button>
-                                                    ${job.requireCustomAssessment ? `
+                                                    ${job.requireCustomAssessment ? (job.customAssessment ? `
                                                         <button onclick="viewAssessmentResults('${job._id}')" 
                                                             class="text-purple-600 hover:text-purple-800 dark:text-purple-400 dark:hover:text-purple-300 text-sm"
                                                             title="View Assessment Results">
                                                             <i class="fas fa-chart-bar"></i>
                                                         </button>
-                                                        <button onclick="openEditAssessmentModal('${job._id}', '${typeof job.customAssessment === 'object' ? job.customAssessment._id : job.customAssessment}')" 
+                                                        <button onclick="openEditAssessmentModal('${job._id}', '${job.customAssessment && typeof job.customAssessment === 'object' ? job.customAssessment._id : (job.customAssessment || '')}')" 
                                                             class="text-amber-600 hover:text-amber-800 dark:text-amber-400 dark:hover:text-amber-300 text-sm"
                                                             title="Edit Assessment">
                                                             <i class="fas fa-edit"></i>
                                                         </button>
-                                                        <button onclick="deleteCustomAssessment('${typeof job.customAssessment === 'object' ? job.customAssessment._id : job.customAssessment}')" 
+                                                        <button onclick="deleteCustomAssessment('${job.customAssessment && typeof job.customAssessment === 'object' ? job.customAssessment._id : (job.customAssessment || '')}')" 
                                                             class="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 text-sm"
                                                             title="Delete Assessment">
                                                             <i class="fas fa-trash"></i>
                                                         </button>
                                                     ` : `
+                                                        <button onclick="openCreateAssessmentModal('${job._id}')" 
+                                                            class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 text-sm"
+                                                            title="Create Custom Assessment">
+                                                            <i class="fas fa-clipboard-list"></i>
+                                                        </button>
+                                                    ) : `
                                                         <button onclick="openCreateAssessmentModal('${job._id}')" 
                                                             class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 text-sm"
                                                             title="Create Custom Assessment">

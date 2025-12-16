@@ -1,0 +1,6 @@
+*** Begin Patch
+*** Update File: client/public/index.html
+@@
+-    <script src="./js/dashboard.js?v=2025120613"></script>
++    <script src="./js/dashboard.js?v=2025121612"></script>
+*** End Patch
