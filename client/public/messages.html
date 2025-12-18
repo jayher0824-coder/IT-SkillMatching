@@ -127,10 +127,8 @@
                             </div>
                         </div>
                         
-                        <!-- Hidden select for form submission -->
-                        <select id="new-chat-user" class="hidden" required>
-                            <option value="">Select a user...</option>
-                        </select>
+                        <!-- Hidden input for user ID -->
+                        <input type="hidden" id="new-chat-user" value="">
                     </div>
                     <div id="selected-user-display" class="text-sm text-gray-700 dark:text-gray-300 mt-2"></div>
                 </div>
@@ -403,18 +401,21 @@
 
         async function startNewChat() {
             try {
-                const select = document.getElementById('new-chat-user');
-                const userId = select.value;
+                const userInput = document.getElementById('new-chat-user');
+                const userId = userInput.value?.trim();
                 
-                console.log('Start chat clicked. Select element:', select);
-                console.log('Selected value:', userId);
+                console.log('Start chat clicked.');
+                console.log('User input element:', userInput);
+                console.log('User input value:', userInput.value);
+                console.log('Selected user ID after trim:', userId);
                 console.log('Value is truthy:', !!userId);
                 
-                if (!userId || userId.trim() === '') {
-                    showToast('Please select a user from the list', 'error');
+                if (!userId) {
+                    showToast('Please select a user from the list first', 'error');
                     return;
                 }
                 
+                console.log('Creating conversation with user:', userId);
                 closeNewChatModal();
                 await window.chatManager.createConversation(userId);
             } catch (error) {
