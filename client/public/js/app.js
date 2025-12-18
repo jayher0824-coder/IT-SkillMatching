@@ -92,22 +92,26 @@ async function initializeApp() {
 
                     // Restore the saved page or show dashboard
                     // Use setTimeout to ensure dashboard.js and other scripts are fully loaded
-                    setTimeout(() => {
+                    setTimeout(async () => {
                         if (savedPage && ['student-dashboard', 'company-dashboard'].includes(savedPage)) {
                             if ((currentUser.role === 'student' && savedPage === 'student-dashboard') ||
                                 (currentUser.role === 'company' && savedPage === 'company-dashboard')) {
                                 showPage(savedPage);
                                 if (savedPage === 'student-dashboard') {
-                                    loadStudentDashboard();
+                                    await loadStudentDashboard();
                                 } else if (savedPage === 'company-dashboard') {
-                                    loadCompanyDashboard();
+                                    await loadCompanyDashboard();
                                 }
                             }
                         } else {
                             // No saved page or invalid saved page - show the appropriate dashboard
-                            showDashboard();
+                            await showDashboard();
                         }
-                    }, 0);
+                        // Hide overlay after dashboard loads
+                        if (loadingOverlay) {
+                            loadingOverlay.classList.add('hidden');
+                        }
+                    }, 100);
                 } catch (error) {
                     console.error('Error during initialization (auth/me):', error);
                     // Only clear session on explicit authorization errors (401/403) or expired token
@@ -124,20 +128,25 @@ async function initializeApp() {
                         showToast('Temporary server issue validating session — please try refreshing again.', 'warning');
                         // Attempt to show dashboard based on stored userData if available
                         // Use setTimeout to ensure dashboard functions are loaded
-                        setTimeout(() => {
+                        setTimeout(async () => {
                             try {
                                 const storedUser = JSON.parse(sessionStorage.getItem('userData') || 'null');
                                 if (storedUser && storedUser.role) {
                                     currentUser = storedUser;
                                     updateNavigation();
-                                    showDashboard();
+                                    await showDashboard();
                                 } else {
                                     showLandingPage();
                                 }
                             } catch (e) {
                                 showLandingPage();
                             }
-                        }, 0);
+                            // Hide overlay after dashboard loads
+                            const loadingOverlay = document.getElementById('loading-overlay');
+                            if (loadingOverlay) {
+                                loadingOverlay.classList.add('hidden');
+                            }
+                        }, 100);
                     }
                 }
             }
@@ -315,7 +324,7 @@ async function loadSkillsAssessedCount() {
     }
 }
 
-function showDashboard() {
+async function showDashboard() {
     if (!currentUser) {
         console.error('showDashboard called but currentUser is null');
         return;
@@ -326,11 +335,11 @@ function showDashboard() {
     if (currentUser.role === 'student') {
         console.log('Loading student dashboard');
         showPage('student-dashboard');
-        loadStudentDashboard();
+        await loadStudentDashboard();
     } else if (currentUser.role === 'company') {
         console.log('Loading company dashboard');
         showPage('company-dashboard');
-        loadCompanyDashboard();
+        await loadCompanyDashboard();
     } else if (currentUser.role === 'admin') {
         console.log('Admin user detected, redirecting to admin dashboard');
         // Store admin token and user data before redirecting
@@ -749,16 +758,6 @@ function showSettingsModal() {
     const modal = document.getElementById('settings-modal');
     if (!modal) {
         // Create modal if it doesn't exist
-        createSettingsModal();
-    } else {
-        modal.classList.remove('hidden');
-    }
-}
-
-// ===== SETTINGS MODAL =====
-function showSettingsModal() {
-    const modal = document.getElementById('settings-modal');
-    if (!modal) {
         createSettingsModal();
     } else {
         modal.classList.remove('hidden');
@@ -1978,7 +1977,13 @@ async function handleAuth(event, role, mode) {
         
         // Handle post-authentication flow
         showToast(isRegister ? 'Registration successful!' : 'Login successful!', 'success');
-        showDashboard();
+        await showDashboard();
+        
+        // Hide loading overlay after dashboard loads
+        const loadingOverlay = document.getElementById('loading-overlay');
+        if (loadingOverlay) {
+            loadingOverlay.classList.add('hidden');
+        }
         
     } catch (error) {
         console.error('Authentication error:', error);
@@ -2045,7 +2050,13 @@ async function handleStudentRegistration(event) {
         showToast('Registration successful! Welcome to IT OJT SkillMatch!', 'success');
         
         // Redirect to dashboard or assessment
-        showDashboard();
+        await showDashboard();
+        
+        // Hide loading overlay after dashboard loads
+        const loadingOverlay = document.getElementById('loading-overlay');
+        if (loadingOverlay) {
+            loadingOverlay.classList.add('hidden');
+        }
         
     } catch (error) {
         console.error('Student registration error:', error);

@@ -93,15 +93,7 @@ function switchToSection(sectionName) {
 // ============================================
 
 // Student Dashboard
-async function loadStudentDashboard() {
-    // Hide other pages and show student dashboard
-    document.getElementById('landing-page').classList.add('hidden');
-    document.getElementById('assessment-page').classList.add('hidden');
-    document.getElementById('company-dashboard').classList.add('hidden');
-}
-
-// Expose to global scope for inline/onload usage
-window.loadStudentDashboard = loadStudentDashboard;
+// The actual loadStudentDashboard function is defined after the helper functions below
 
 // ============================================
 // SKILL ASSESSMENT: FETCH FROM GITHUB
@@ -169,6 +161,16 @@ async function showRandomSkillQuestion(skill, containerId) {
         container.innerHTML = 'Error loading questions.';
     }
 }
+
+// ============================================
+// STUDENT DASHBOARD LOADING
+// ============================================
+
+async function loadStudentDashboard() {
+    // Hide other pages and show student dashboard
+    document.getElementById('landing-page').classList.add('hidden');
+    document.getElementById('assessment-page').classList.add('hidden');
+    document.getElementById('company-dashboard').classList.add('hidden');
     document.getElementById('student-dashboard').classList.remove('hidden');
 
     const dashboardContainer = document.getElementById('student-dashboard');
@@ -782,6 +784,9 @@ async function showRandomSkillQuestion(skill, containerId) {
         `;
     }
 }
+
+// Expose to global scope for inline/onload usage
+window.loadStudentDashboard = loadStudentDashboard;
 
 // Company Dashboard
 // ============================================
