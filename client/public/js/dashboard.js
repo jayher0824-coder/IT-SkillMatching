@@ -6083,10 +6083,7 @@ window.showAvatarUpload = function() {
             </div>
             <div class="flex justify-end space-x-3">
                 ${createSecondaryButton('Cancel', 'closeModal()', 'px-6 py-2 rounded-lg')}
-                <button type="submit" id="upload-avatar-btn" disabled
-                    class="${BUTTON_STYLES.primaryClass} px-6 py-2 rounded-lg font-semibold disabled:bg-gray-400 dark:disabled:bg-gray-600 disabled:cursor-not-allowed">
-                    <i class="fas fa-check mr-2"></i>Upload
-                </button>
+                ${createPrimaryButton('Upload', '', 'fas fa-check', 'px-6 py-2 rounded-lg font-semibold disabled:bg-gray-400 dark:disabled:bg-gray-600 disabled:cursor-not-allowed', 'submit', true)}
             </div>
         </form>
     `;

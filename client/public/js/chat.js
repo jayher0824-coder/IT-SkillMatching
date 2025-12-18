@@ -592,10 +592,9 @@ async function sendChatMessage() {
 }
 
 // Search conversations
-function searchConversations() {
+window.searchConversations = function() {
     const searchInput = document.getElementById('chat-search-input');
     const searchTerm = searchInput?.value.toLowerCase() || '';
-    
     const items = document.querySelectorAll('.chat-list-item');
     items.forEach(item => {
         const text = item.textContent.toLowerCase();

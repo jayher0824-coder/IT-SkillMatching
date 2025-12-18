@@ -342,19 +342,19 @@
             userDropdown.classList.remove('hidden');
         }
 
-        function selectUser(userId, displayText) {
+
+        window.selectUser = function(userId, displayText) {
             const select = document.getElementById('new-chat-user');
             const selectedDisplay = document.getElementById('selected-user-display');
             const userDropdown = document.getElementById('user-dropdown');
             const searchInput = document.getElementById('user-search-input');
-            
             select.value = userId;
             selectedDisplay.textContent = '✓ Selected: ' + displayText;
             userDropdown.classList.add('hidden');
             searchInput.value = displayText;
         }
 
-        function closeNewChatModal() {
+        window.closeNewChatModal = function() {
             document.getElementById('new-chat-modal').classList.add('hidden');
         }
 
