@@ -238,11 +238,12 @@ async function startAssessment(category = null) {
         
         showToast(`Loaded ${selected.length} questions`, 'success');
 
-        // Initialize UI
+        // Initialize UI - hide results section and show questions
         document.getElementById('student-dashboard').classList.add('hidden');
         document.getElementById('assessment-page').classList.remove('hidden');
         document.getElementById('assessment-info').classList.add('hidden');
         document.getElementById('assessment-questions').classList.remove('hidden');
+        document.getElementById('assessment-results').classList.add('hidden');
 
         // Protect against copying/selecting
         enableAssessmentAntiCheat();
