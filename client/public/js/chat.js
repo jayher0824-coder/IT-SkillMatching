@@ -349,6 +349,10 @@ class ChatManager {
                 </div>
             `;
         }
+
+        this.updateMessagesView();
+    }
+
     // Delete the current conversation
     async deleteCurrentConversation() {
         if (!this.currentConversation) return;
@@ -370,9 +374,6 @@ class ChatManager {
         } catch (error) {
             showToast('Error deleting conversation', 'error');
         }
-    }
-
-        this.updateMessagesView();
     }
 
     updateMessagesView() {
@@ -441,21 +442,22 @@ class ChatManager {
                 </div>
             `;
         }).join('');
-        // Delete a message by ID
-        async deleteMessage(messageId) {
-            if (!confirm('Delete this message?')) return;
-            try {
-                const response = await apiCall(`/messages/${messageId}`, { method: 'DELETE' });
-                if (response.success) {
-                    // Remove from local messages and update view
-                    this.messages = this.messages.filter(m => m._id !== messageId);
-                    this.updateMessagesView();
-                } else {
-                    showToast(response.message || 'Failed to delete message', 'error');
-                }
-            } catch (error) {
-                showToast('Error deleting message', 'error');
+    }
+
+    // Delete a message by ID
+    async deleteMessage(messageId) {
+        if (!confirm('Delete this message?')) return;
+        try {
+            const response = await apiCall(`/messages/${messageId}`, { method: 'DELETE' });
+            if (response.success) {
+                // Remove from local messages and update view
+                this.messages = this.messages.filter(m => m._id !== messageId);
+                this.updateMessagesView();
+            } else {
+                showToast(response.message || 'Failed to delete message', 'error');
             }
+        } catch (error) {
+            showToast('Error deleting message', 'error');
         }
     }
 
