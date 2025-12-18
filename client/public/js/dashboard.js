@@ -1277,15 +1277,13 @@ window.showStudentProfileModal = function() {
                 
                 <div class="flex justify-between mt-8 pt-4 border-t border-gray-200 dark:border-gray-600 sticky bottom-0 bg-white dark:bg-gray-800 -mx-6 px-6 pb-4">
                     <button type="button" onclick="closeModal()" 
-                        class="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition font-semibold border-2 border-gray-700 dark:border-gray-400"
+                        ${BUTTON_STYLES.secondary} px-6 py-2 rounded-lg font-semibold border-2 border-gray-700 dark:border-gray-400 focus:outline-none focus:ring-2 focus:ring-[#56AE67] focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-gray-800"
                         style="border: 2px solid #374151;">
                         Cancel
                     </button>
                     <button type="submit" 
-                        class="bg-[#56AE67] text-white px-6 py-2 rounded-lg hover:bg-[#3d8b4f] transition font-semibold border-2 border-green-800 dark:border-green-600"
-                        style="background-color: #56AE67; color: white; border: 2px solid #2d6b3c;"
-                        onmouseover="this.style.backgroundColor='#3d8b4f'" 
-                        onmouseout="this.style.backgroundColor='#56AE67'">
+                        ${BUTTON_STYLES.primary} class="${BUTTON_STYLES.primaryClass} px-6 py-2 rounded-lg font-semibold focus:outline-none focus:ring-2 focus:ring-[#56AE67] focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-gray-800" ${BUTTON_STYLES.primaryEvents}
+                        >
                         <span class="loading hidden"></span>
                         Save Profile
                     </button>

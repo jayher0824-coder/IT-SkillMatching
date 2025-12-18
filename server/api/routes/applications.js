@@ -1,7 +1,11 @@
+const express = require('express');
+const router = express.Router();
+const { protect, authorize } = require('../../auth/middleware/auth');
+const Job = require('../../database/models/Job');
+const Student = require('../../database/models/Student');
 // @desc    Get all job applications (admin view)
 // @route   GET /api/applications
 // @access  Private (Admin only, or extend for company)
-const { authorize } = require('../../auth/middleware/auth');
 router.get('/', protect, authorize('admin'), async (req, res) => {
   try {
     // Optionally add filters (e.g., by job, company, status, search)
@@ -40,11 +44,7 @@ router.get('/', protect, authorize('admin'), async (req, res) => {
     });
   }
 });
-const express = require('express');
-const router = express.Router();
-const { protect } = require('../../auth/middleware/auth');
-const Job = require('../../database/models/Job');
-const Student = require('../../database/models/Student');
+
 
 // @desc    Withdraw job application
 // @route   POST /api/applications/:applicationId/withdraw
