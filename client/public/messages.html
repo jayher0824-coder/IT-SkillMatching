@@ -340,13 +340,25 @@
             
             userList.innerHTML = users.map(u => `
                 <button type="button" 
-                    class="w-full text-left px-4 py-2 text-gray-900 dark:text-gray-100 hover:bg-[#56AE67] hover:text-white dark:hover:bg-[#3d8b4f] transition border-b border-gray-200 dark:border-gray-600 last:border-b-0"
-                    onclick="selectUser('${u._id}', '${u.displayName} - ${u.email} (${u.type})')">
+                    class="user-select-btn w-full text-left px-4 py-2 text-gray-900 dark:text-gray-100 hover:bg-[#56AE67] hover:text-white dark:hover:bg-[#3d8b4f] transition border-b border-gray-200 dark:border-gray-600 last:border-b-0"
+                    data-user-id="${String(u._id)}"
+                    data-user-display="${u.displayName} - ${u.email} (${u.type})">
                     <div class="font-medium">${u.displayName}</div>
                     <div class="text-xs text-gray-600 dark:text-gray-400">${u.email}</div>
                     <div class="text-xs"><span class="inline-block px-2 py-0.5 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded">${u.type}</span></div>
                 </button>
             `).join('');
+            
+            // Add event listeners to user buttons
+            userList.querySelectorAll('.user-select-btn').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const userId = this.dataset.userId;
+                    const displayText = this.dataset.userDisplay;
+                    console.log('User button clicked:', userId, displayText);
+                    selectUser(userId, displayText);
+                });
+            });
             
             userDropdown.classList.remove('hidden');
         }
