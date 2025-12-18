@@ -296,9 +296,18 @@
             const userList = document.getElementById('user-list');
             const select = document.getElementById('new-chat-user');
             const searchInput = document.getElementById('user-search-input');
+            const selectedDisplay = document.getElementById('selected-user-display');
+            const userDropdown = document.getElementById('user-dropdown');
             
-            modal.classList.remove('hidden');
+            // Reset form state
+            select.value = '';
             searchInput.value = '';
+            selectedDisplay.textContent = '';
+            selectedDisplay.style.display = 'none';
+            userDropdown.classList.add('hidden');
+            
+            // Show modal
+            modal.classList.remove('hidden');
             
             // Load users
             try {
@@ -348,22 +357,48 @@
             const selectedDisplay = document.getElementById('selected-user-display');
             const userDropdown = document.getElementById('user-dropdown');
             const searchInput = document.getElementById('user-search-input');
+            
+            // Set the select value
             select.value = userId;
+            console.log('Selected user ID:', userId, 'Select value now:', select.value);
+            
+            // Update display
             selectedDisplay.textContent = '✓ Selected: ' + displayText;
+            selectedDisplay.style.display = 'block';
+            
+            // Hide dropdown and clear search
             userDropdown.classList.add('hidden');
             searchInput.value = displayText;
         }
 
         window.closeNewChatModal = function() {
-            document.getElementById('new-chat-modal').classList.add('hidden');
+            const modal = document.getElementById('new-chat-modal');
+            const select = document.getElementById('new-chat-user');
+            const selectedDisplay = document.getElementById('selected-user-display');
+            const searchInput = document.getElementById('user-search-input');
+            const userDropdown = document.getElementById('user-dropdown');
+            
+            // Reset form
+            select.value = '';
+            selectedDisplay.textContent = '';
+            selectedDisplay.style.display = 'none';
+            searchInput.value = '';
+            userDropdown.classList.add('hidden');
+            
+            // Hide modal
+            modal.classList.add('hidden');
         }
 
         async function startNewChat() {
             const select = document.getElementById('new-chat-user');
             const userId = select.value;
             
-            if (!userId) {
-                showToast('Please select a user', 'error');
+            console.log('Start chat clicked. Select element:', select);
+            console.log('Selected value:', userId);
+            console.log('Value is truthy:', !!userId);
+            
+            if (!userId || userId.trim() === '') {
+                showToast('Please select a user from the list', 'error');
                 return;
             }
             
