@@ -98,6 +98,75 @@ async function loadStudentDashboard() {
     document.getElementById('landing-page').classList.add('hidden');
     document.getElementById('assessment-page').classList.add('hidden');
     document.getElementById('company-dashboard').classList.add('hidden');
+    // ...existing code...
+}
+
+// ============================================
+// SKILL ASSESSMENT: FETCH FROM GITHUB
+// ============================================
+/**
+ * Fetches questions from the LinkedIn Skill Assessments Quizzes GitHub repo (raw markdown)
+ * @param {string} skill - e.g. 'python', 'javascript', 'java'
+ * @returns {Promise<Array>} Array of question objects
+ */
+async function fetchSkillQuestions(skill) {
+    // Map skill to repo folder/filename
+    const skillMap = {
+        python: 'python/python-quiz.md',
+        javascript: 'javascript/javascript-quiz.md',
+        java: 'java/java-quiz.md',
+        csharp: 'c-sharp/c-sharp-quiz.md',
+        cpp: 'c++/c++-quiz.md',
+        html: 'html/html-quiz.md',
+        css: 'css/css-quiz.md',
+        // Add more as needed
+    };
+    const file = skillMap[skill.toLowerCase()];
+    if (!file) throw new Error('Skill not supported');
+    const url = `https://raw.githubusercontent.com/Ebazhanov/linkedin-skill-assessments-quizzes/main/${file}`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('Failed to fetch questions');
+    const text = await res.text();
+    // Parse markdown: questions start with 'Q' or a number, answers with '- ['
+    const questionBlocks = text.split(/\n(?=\d+\.|Q\d+:)/g);
+    const questions = questionBlocks.map(block => {
+        const lines = block.split('\n');
+        const qLine = lines.find(l => /^\d+\.|^Q\d+:/.test(l));
+        if (!qLine) return null;
+        const question = qLine.replace(/^\d+\.|^Q\d+:/, '').trim();
+        const options = lines.filter(l => /^- \[.?\]/.test(l)).map(l => l.replace(/^- \[.?\] ?/, '').trim());
+        return options.length ? { question, options } : null;
+    }).filter(Boolean);
+    return questions;
+}
+
+/**
+ * Display a random question from a selected skill
+ * @param {string} skill
+ * @param {string} containerId
+ */
+async function showRandomSkillQuestion(skill, containerId) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    container.innerHTML = 'Loading...';
+    try {
+        const questions = await fetchSkillQuestions(skill);
+        if (!questions.length) {
+            container.innerHTML = 'No questions found.';
+            return;
+        }
+        const q = questions[Math.floor(Math.random() * questions.length)];
+        let html = `<div class="mb-2 font-semibold">${q.question}</div><ul class="mb-2">`;
+        q.options.forEach(opt => {
+            html += `<li class="mb-1"><input type="radio" name="skill-q" /> ${opt}</li>`;
+        });
+        html += '</ul>';
+        html += `<button onclick="showRandomSkillQuestion('${skill}', '${containerId}')" class="${BUTTON_STYLES.primaryClass}">Next Random Question</button>`;
+        container.innerHTML = html;
+    } catch (e) {
+        container.innerHTML = 'Error loading questions.';
+    }
+}
     document.getElementById('student-dashboard').classList.remove('hidden');
 
     const dashboardContainer = document.getElementById('student-dashboard');
