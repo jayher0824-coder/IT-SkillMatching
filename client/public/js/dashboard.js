@@ -98,6 +98,10 @@ async function loadStudentDashboard() {
     document.getElementById('landing-page').classList.add('hidden');
     document.getElementById('assessment-page').classList.add('hidden');
     document.getElementById('company-dashboard').classList.add('hidden');
+}
+
+// Expose to global scope for inline/onload usage
+window.loadStudentDashboard = loadStudentDashboard;
     // ...existing code...
 }
 
