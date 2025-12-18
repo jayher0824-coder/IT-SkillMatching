@@ -226,6 +226,15 @@ router.post('/', protect, authorize('company'), async (req, res) => {
       });
     }
 
+    // Server-side validation: job title must contain at least one letter or number
+    const title = req.body.title || '';
+    if (!/[A-Za-z0-9]/.test(title)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Job title must contain at least one letter or number.'
+      });
+    }
+
     const jobData = {
       ...req.body,
       company: company._id,

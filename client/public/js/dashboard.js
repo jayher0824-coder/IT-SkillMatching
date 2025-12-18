@@ -1803,14 +1803,21 @@ function removeSkillRow(button) {
 
 async function saveJob(event) {
     event.preventDefault();
-    
+
     const form = document.getElementById('create-job-form');
     const loading = form.querySelector('.loading');
     const submitBtn = form.querySelector('button[type="submit"]');
-    
+
+    // Validate job title: must contain at least one letter or number
+    const jobTitle = document.getElementById('jobTitle').value;
+    if (!/[A-Za-z0-9]/.test(jobTitle)) {
+        showToast('Job title must contain at least one letter or number.', 'error');
+        return;
+    }
+
     loading.classList.remove('hidden');
     submitBtn.disabled = true;
-    
+
     try {
         // Collect skills
         const skillRows = document.querySelectorAll('.skill-row');
@@ -1822,9 +1829,9 @@ async function saveJob(event) {
                 return name ? { name, level, priority } : null;
             })
             .filter(skill => skill !== null);
-        
+
         const formData = {
-            title: document.getElementById('jobTitle').value,
+            title: jobTitle,
             department: document.getElementById('jobDepartment').value,
             description: document.getElementById('jobDescription').value,
             jobType: document.getElementById('jobType').value,
@@ -1849,16 +1856,16 @@ async function saveJob(event) {
             requireCustomAssessment: document.getElementById('requireCustomAssessment').checked,
             status: 'active',
         };
-        
+
         await apiCall('/jobs', {
             method: 'POST',
             body: JSON.stringify(formData)
         });
-        
+
         showToast('Job posted successfully!', 'success');
         closeModal();
         loadCompanyDashboard();
-        
+
     } catch (error) {
         console.error('Error creating job:', error);
         showToast('Error creating job: ' + error.message, 'error');
