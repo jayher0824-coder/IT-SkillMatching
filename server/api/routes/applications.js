@@ -1,3 +1,45 @@
+// @desc    Get all job applications (admin view)
+// @route   GET /api/applications
+// @access  Private (Admin only, or extend for company)
+const { authorize } = require('../../auth/middleware/auth');
+router.get('/', protect, authorize('admin'), async (req, res) => {
+  try {
+    // Optionally add filters (e.g., by job, company, status, search)
+    const jobs = await Job.find({})
+      .populate({
+        path: 'applications.student',
+        select: 'firstName lastName assessmentScore skills education portfolio resume user',
+        populate: { path: 'user', select: 'email' }
+      })
+      .populate('company', 'companyName');
+
+    // Flatten all applications
+    let allApplications = [];
+    jobs.forEach(job => {
+      job.applications.forEach(app => {
+        allApplications.push({
+          ...app.toObject(),
+          job: {
+            _id: job._id,
+            title: job.title,
+            company: job.company?.companyName || '',
+          }
+        });
+      });
+    });
+
+    res.json({
+      success: true,
+      data: allApplications
+    });
+  } catch (error) {
+    console.error('Error fetching all applications:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error: ' + error.message
+    });
+  }
+});
 const express = require('express');
 const router = express.Router();
 const { protect } = require('../../auth/middleware/auth');
