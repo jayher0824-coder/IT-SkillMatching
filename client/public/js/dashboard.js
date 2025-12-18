@@ -102,8 +102,6 @@ async function loadStudentDashboard() {
 
 // Expose to global scope for inline/onload usage
 window.loadStudentDashboard = loadStudentDashboard;
-    // ...existing code...
-}
 
 // ============================================
 // SKILL ASSESSMENT: FETCH FROM GITHUB
