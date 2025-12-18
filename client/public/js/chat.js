@@ -345,9 +345,32 @@ class ChatManager {
                             <p class="text-sm text-gray-500 dark:text-gray-400 capitalize">${other?.role || ''}</p>
                         </div>
                     </div>
+                    <button onclick="window.chatManager.deleteCurrentConversation()" class="text-red-500 hover:text-red-700 ml-4 text-sm flex items-center" title="Delete Conversation"><i class="fas fa-trash mr-1"></i>Delete</button>
                 </div>
             `;
         }
+    // Delete the current conversation
+    async deleteCurrentConversation() {
+        if (!this.currentConversation) return;
+        if (!confirm('Delete this conversation and all its messages?')) return;
+        const id = this.currentConversation._id;
+        try {
+            const response = await apiCall(`/messages/conversations/${id}`, { method: 'DELETE' });
+            if (response.success) {
+                // Remove from local conversations and reset view
+                this.conversations = this.conversations.filter(c => c._id !== id);
+                this.currentConversation = null;
+                this.messages = [];
+                this.updateConversationsList();
+                this.updateChatView();
+                showToast('Conversation deleted', 'success');
+            } else {
+                showToast(response.message || 'Failed to delete conversation', 'error');
+            }
+        } catch (error) {
+            showToast('Error deleting conversation', 'error');
+        }
+    }
 
         this.updateMessagesView();
     }
@@ -403,21 +426,37 @@ class ChatManager {
         messagesContainer.innerHTML = validMessages.map(msg => {
             const isOwn = msg.sender._id === currentUser._id;
             const time = this.formatTime(msg.createdAt);
-            
             return `
-                <div class="chat-message ${isOwn ? 'own' : ''}">
+                <div class="chat-message ${isOwn ? 'own' : ''}" data-message-id="${msg._id}">
                     <div class="chat-message-avatar">
                         ${this.getInitials(msg.sender.email || 'Unknown')}
                     </div>
                     <div>
                         <div class="chat-message-content">
                             ${this.escapeHtml(msg.content)}
+                            ${isOwn ? `<button class="chat-delete-btn text-xs text-red-500 ml-2" title="Delete" onclick="window.chatManager.deleteMessage('${msg._id}')"><i class='fas fa-trash'></i></button>` : ''}
                         </div>
                         <div class="chat-message-time">${time}</div>
                     </div>
                 </div>
             `;
         }).join('');
+        // Delete a message by ID
+        async deleteMessage(messageId) {
+            if (!confirm('Delete this message?')) return;
+            try {
+                const response = await apiCall(`/messages/${messageId}`, { method: 'DELETE' });
+                if (response.success) {
+                    // Remove from local messages and update view
+                    this.messages = this.messages.filter(m => m._id !== messageId);
+                    this.updateMessagesView();
+                } else {
+                    showToast(response.message || 'Failed to delete message', 'error');
+                }
+            } catch (error) {
+                showToast('Error deleting message', 'error');
+            }
+        }
     }
 
     scrollToBottom() {

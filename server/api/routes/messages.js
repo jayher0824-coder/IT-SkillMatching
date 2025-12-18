@@ -1,3 +1,26 @@
+// @desc    Delete a conversation and its messages
+// @route   DELETE /api/messages/conversations/:id
+// @access  Private
+router.delete('/conversations/:id', protect, async (req, res) => {
+  try {
+    const conversation = await Conversation.findById(req.params.id);
+    if (!conversation) {
+      return res.status(404).json({ success: false, message: 'Conversation not found' });
+    }
+    // Only allow participants to delete
+    if (!conversation.participants.some(p => p.toString() === req.user._id.toString())) {
+      return res.status(403).json({ success: false, message: 'Access denied' });
+    }
+    // Delete all messages in the conversation
+    await Message.deleteMany({ conversation: req.params.id });
+    // Delete the conversation itself
+    await conversation.deleteOne();
+    res.json({ success: true, message: 'Conversation deleted' });
+  } catch (error) {
+    console.error('Delete conversation error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
 const express = require('express');
 const router = express.Router();
 const { protect } = require('../../auth/middleware/auth');
