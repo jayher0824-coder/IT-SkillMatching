@@ -1,3 +1,11 @@
+const express = require('express');
+const router = express.Router();
+const { protect } = require('../../auth/middleware/auth');
+const Conversation = require('../../database/models/Conversation');
+const Message = require('../../database/models/Message');
+const User = require('../../database/models/User');
+const NotificationService = require('../../services/notificationService');
+
 // @desc    Delete a conversation and its messages
 // @route   DELETE /api/messages/conversations/:id
 // @access  Private
@@ -21,13 +29,6 @@ router.delete('/conversations/:id', protect, async (req, res) => {
     res.status(500).json({ success: false, message: 'Server error' });
   }
 });
-const express = require('express');
-const router = express.Router();
-const { protect } = require('../../auth/middleware/auth');
-const Conversation = require('../../database/models/Conversation');
-const Message = require('../../database/models/Message');
-const User = require('../../database/models/User');
-const NotificationService = require('../../services/notificationService');
 
 // @desc    Get all conversations for logged-in user
 // @route   GET /api/messages/conversations
