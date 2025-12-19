@@ -309,38 +309,86 @@ async function showRandomSkillQuestion(skill, containerId) {
         }
         const q = questions[Math.floor(Math.random() * questions.length)];
         
+        // Get category display name
+        const categoryName = container.parentElement?.dataset?.category || skill;
+        const categoryDisplayNames = {
+            'programming': 'Programming Fundamentals',
+            'webDevelopment': 'Web Development',
+            'networking': 'Networking',
+            'problemSolving': 'Problem Solving',
+            'database': 'Database Management',
+            'python': 'Python',
+            'java': 'Java',
+            'javascript': 'JavaScript',
+            'typescript': 'TypeScript',
+            'csharp': 'C#',
+            'cpp': 'C++',
+            'html': 'HTML',
+            'css': 'CSS',
+            'sql': 'SQL'
+        };
+        
+        const displayCategory = categoryDisplayNames[categoryName] || categoryName;
+        const questionsAnswered = container.dataset.questionsAnswered || 0;
+        const questionsCorrect = container.dataset.questionsCorrect || 0;
+        
         // Display question with gamification and feedback features
         let html = `
-            <div class="quiz-container bg-gradient-to-r from-green-50 to-blue-50 p-6 rounded-lg shadow-lg">
-                <div class="mb-4">
-                    <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-2xl font-bold text-gray-800">Question ${q.id}</h3>
-                        <span class="px-3 py-1 bg-blue-500 text-white rounded-full text-sm font-semibold">Difficulty: ${q.difficulty}</span>
+            <div class="quiz-container bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 p-6 rounded-lg shadow-lg">
+                <div class="mb-6 pb-4 border-b-2 border-gray-300 dark:border-gray-600">
+                    <div class="flex justify-between items-start mb-3">
+                        <div>
+                            <h2 class="text-xl font-bold text-gray-800 dark:text-white">${displayCategory} Quiz</h2>
+                            <p class="text-sm text-gray-600 dark:text-gray-400">Question ${q.id} • Difficulty: <span class="font-semibold">${q.difficulty.charAt(0).toUpperCase() + q.difficulty.slice(1)}</span></p>
+                        </div>
+                        <div class="bg-gradient-to-br from-green-400 to-blue-500 text-white px-4 py-2 rounded-lg text-right">
+                            <div class="text-2xl font-bold">🏆 ${quizGamification.points}</div>
+                            <div class="text-xs font-semibold">Level ${quizGamification.level}</div>
+                        </div>
                     </div>
-                    <div class="flex justify-between mb-4 text-sm">
-                        <span class="${BUTTON_STYLES.primaryClass} px-3 py-1 rounded">🏆 Points: ${quizGamification.points}</span>
-                        <span class="${BUTTON_STYLES.primaryClass} px-3 py-1 rounded">⭐ Level: ${quizGamification.level}</span>
+                    <div class="w-full bg-gray-300 dark:bg-gray-600 rounded-full h-2">
+                        <div class="bg-green-500 h-2 rounded-full" style="width: 25%; transition: width 0.3s;"></div>
                     </div>
                 </div>
-                <p class="text-lg font-semibold text-gray-900 mb-6 p-4 bg-white rounded border-l-4 border-green-500">${q.question}</p>
+                
+                <p class="text-lg font-semibold text-gray-900 dark:text-white mb-6 p-4 bg-white dark:bg-gray-800 rounded border-l-4 border-green-500">${q.question}</p>
+                
                 <div class="mb-6">
-                    <p class="text-sm text-gray-600 mb-3 italic">💡 Hint: ${q.hint}</p>
+                    <p class="text-sm text-blue-700 dark:text-blue-300 mb-4 p-3 bg-blue-50 dark:bg-blue-900/30 rounded flex items-start">
+                        <span class="mr-2">💡</span>
+                        <span>${q.hint}</span>
+                    </p>
                     <div class="space-y-2">
         `;
         
         q.options.forEach((opt, idx) => {
-            html += `<button onclick="answerQuestion('${opt}', '${q.correctAnswer}', '${q.hint}')" class="${BUTTON_STYLES.primaryClass} w-full text-left p-3 mb-2 hover:shadow-md">✓ ${opt}</button>`;
+            html += `<button onclick="answerQuestion('${opt.replace(/'/g, "\\'")}', '${q.correctAnswer.replace(/'/g, "\\'")}', '${q.hint.replace(/'/g, "\\'")}')" class="${BUTTON_STYLES.primaryClass} w-full text-left p-4 mb-2 hover:shadow-md transition transform hover:scale-105">
+                <span class="flex items-center">
+                    <span class="mr-3 text-lg">⭕</span>
+                    ${opt}
+                </span>
+            </button>`;
         });
         
         html += `
                     </div>
                 </div>
-                <button onclick="showRandomSkillQuestion('${skill}', '${containerId}')" class="${BUTTON_STYLES.primaryClass} w-full mt-4">🔄 Next Random Question</button>
+                
+                <div class="flex gap-3">
+                    <button onclick="showRandomSkillQuestion('${skill}', '${containerId}')" class="${BUTTON_STYLES.primaryClass} flex-1">🔄 Next Question</button>
+                </div>
             </div>
         `;
         container.innerHTML = html;
     } catch (e) {
-        container.innerHTML = 'Error loading questions.';
+        console.error('Error loading questions:', e);
+        container.innerHTML = `
+            <div class="bg-red-50 dark:bg-red-900/20 border-2 border-red-300 dark:border-red-700 rounded-lg p-6 text-center">
+                <p class="text-red-800 dark:text-red-300 font-semibold mb-2">⚠️ Error Loading Questions</p>
+                <p class="text-red-700 dark:text-red-400 text-sm mb-4">${e.message || 'Could not fetch questions for this category.'}</p>
+                <button onclick="location.reload()" class="${BUTTON_STYLES.primaryClass}">🔄 Reload Page</button>
+            </div>
+        `;
     }
 }
 
@@ -5063,81 +5111,78 @@ function toggleSettingsDropdown() {
 function startCategoryAssessment(category) {
     console.log('Starting assessment for category:', category);
     
-    // List of programming languages that should use the new skill quiz system
-    const programmingLanguages = ['python', 'java', 'javascript', 'typescript', 'csharp', 'cpp', 'c', 'php', 'ruby', 'go', 'rust', 'swift', 'kotlin', 'objectivec', 'r', 'scala', 'perl', 'visualbasic', 'assembly', 'matlab', 'html', 'css', 'sql'];
+    // All categories and languages now use the new gamified quiz system
+    const allCategories = ['python', 'java', 'javascript', 'typescript', 'csharp', 'cpp', 'c', 'php', 'ruby', 'go', 'rust', 'swift', 'kotlin', 'objectivec', 'r', 'scala', 'perl', 'visualbasic', 'assembly', 'matlab', 'html', 'css', 'sql', 'programming', 'webDevelopment', 'networking', 'problemSolving', 'database'];
     
-    // Check if this is a programming language - use new gamified quiz system
-    if (programmingLanguages.includes(category)) {
-        const skillNames = {
-            'python': 'Python',
-            'java': 'Java',
-            'javascript': 'JavaScript',
-            'typescript': 'TypeScript',
-            'csharp': 'C#',
-            'cpp': 'C++',
-            'c': 'C',
-            'php': 'PHP',
-            'ruby': 'Ruby',
-            'go': 'Go',
-            'rust': 'Rust',
-            'swift': 'Swift',
-            'kotlin': 'Kotlin',
-            'objectivec': 'Objective-C',
-            'r': 'R',
-            'scala': 'Scala',
-            'perl': 'Perl',
-            'visualbasic': 'Visual Basic',
-            'assembly': 'Assembly',
-            'matlab': 'MATLAB',
-            'html': 'HTML',
-            'css': 'CSS',
-            'sql': 'SQL'
-        };
-        
-        // Hide all sections and show assessment section with skill quiz
-        document.querySelectorAll('.section').forEach(section => section.classList.add('hidden'));
-        const assessmentSection = document.getElementById('assessment-section');
-        if (assessmentSection) {
-            assessmentSection.classList.remove('hidden');
-        }
-        
-        showToast(`Loading ${skillNames[category]} Quiz...`, 'info');
-        
-        // Create a quiz container if it doesn't exist
-        let quizContainer = document.getElementById('skill-quiz-container');
-        if (!quizContainer) {
-            const container = document.createElement('div');
-            container.id = 'skill-quiz-container';
-            container.className = 'mt-6 p-6 bg-white dark:bg-gray-800 rounded-lg';
-            if (assessmentSection) {
-                assessmentSection.appendChild(container);
-            }
-            quizContainer = container;
-        }
-        
-        // Load and display the skill quiz with gamification
-        showRandomSkillQuestion(category, 'skill-quiz-container');
-        
-        return;
-    }
-    
-    // For non-programming categories, use the old assessment system
-    const categoryNames = {
-        'programming': 'Programming',
-        'database': 'Database',
+    const skillNames = {
+        'python': 'Python',
+        'java': 'Java',
+        'javascript': 'JavaScript',
+        'typescript': 'TypeScript',
+        'csharp': 'C#',
+        'cpp': 'C++',
+        'c': 'C',
+        'php': 'PHP',
+        'ruby': 'Ruby',
+        'go': 'Go',
+        'rust': 'Rust',
+        'swift': 'Swift',
+        'kotlin': 'Kotlin',
+        'objectivec': 'Objective-C',
+        'r': 'R',
+        'scala': 'Scala',
+        'perl': 'Perl',
+        'visualbasic': 'Visual Basic',
+        'assembly': 'Assembly',
+        'matlab': 'MATLAB',
+        'html': 'HTML',
+        'css': 'CSS',
+        'sql': 'SQL',
+        'programming': 'Programming Fundamentals',
         'webDevelopment': 'Web Development',
         'networking': 'Networking',
-        'problemSolving': 'Problem Solving'
+        'problemSolving': 'Problem Solving',
+        'database': 'Database Management'
     };
     
-    showToast(`Loading ${categoryNames[category]} assessment...`, 'info');
+    // Map general categories to specific skills for question fetching
+    const categoryToSkill = {
+        'programming': 'python', // Use Python as representative
+        'webDevelopment': 'javascript',
+        'networking': 'sql', // Use SQL as a proxy for general tech
+        'problemSolving': 'java',
+        'database': 'sql'
+    };
     
-    if (typeof startAssessment === 'function') {
-        startAssessment(category);
-    } else {
-        console.error('startAssessment function not found. Make sure assessment.js is loaded.');
-        showToast('Assessment system is loading. Please try again.', 'warning');
+    // Determine which skill to use for fetching questions
+    const skillToFetch = categoryToSkill[category] || category;
+    
+    // Hide all sections and show assessment section with skill quiz
+    document.querySelectorAll('.section').forEach(section => section.classList.add('hidden'));
+    const assessmentSection = document.getElementById('assessment-section');
+    if (assessmentSection) {
+        assessmentSection.classList.remove('hidden');
     }
+    
+    showToast(`Loading ${skillNames[category]} Quiz...`, 'info');
+    
+    // Create a quiz container if it doesn't exist
+    let quizContainer = document.getElementById('skill-quiz-container');
+    if (!quizContainer) {
+        const container = document.createElement('div');
+        container.id = 'skill-quiz-container';
+        container.className = 'mt-6 p-6 bg-white dark:bg-gray-800 rounded-lg';
+        if (assessmentSection) {
+            assessmentSection.appendChild(container);
+        }
+        quizContainer = container;
+    }
+    
+    // Store the original category for reference
+    quizContainer.dataset.category = category;
+    
+    // Load and display the skill quiz with gamification
+    showRandomSkillQuestion(skillToFetch, 'skill-quiz-container');
 }
 
 // Ensure loadAssessmentSection exists (dashboard button calls this)
