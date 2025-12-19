@@ -4948,7 +4948,65 @@ function toggleSettingsDropdown() {
 function startCategoryAssessment(category) {
     console.log('Starting assessment for category:', category);
     
-    // Show loading feedback
+    // List of programming languages that should use the new skill quiz system
+    const programmingLanguages = ['python', 'java', 'javascript', 'typescript', 'csharp', 'cpp', 'c', 'php', 'ruby', 'go', 'rust', 'swift', 'kotlin', 'objectivec', 'r', 'scala', 'perl', 'visualbasic', 'assembly', 'matlab', 'html', 'css', 'sql'];
+    
+    // Check if this is a programming language - use new gamified quiz system
+    if (programmingLanguages.includes(category)) {
+        const skillNames = {
+            'python': 'Python',
+            'java': 'Java',
+            'javascript': 'JavaScript',
+            'typescript': 'TypeScript',
+            'csharp': 'C#',
+            'cpp': 'C++',
+            'c': 'C',
+            'php': 'PHP',
+            'ruby': 'Ruby',
+            'go': 'Go',
+            'rust': 'Rust',
+            'swift': 'Swift',
+            'kotlin': 'Kotlin',
+            'objectivec': 'Objective-C',
+            'r': 'R',
+            'scala': 'Scala',
+            'perl': 'Perl',
+            'visualbasic': 'Visual Basic',
+            'assembly': 'Assembly',
+            'matlab': 'MATLAB',
+            'html': 'HTML',
+            'css': 'CSS',
+            'sql': 'SQL'
+        };
+        
+        // Hide all sections and show assessment section with skill quiz
+        document.querySelectorAll('.section').forEach(section => section.classList.add('hidden'));
+        const assessmentSection = document.getElementById('assessment-section');
+        if (assessmentSection) {
+            assessmentSection.classList.remove('hidden');
+        }
+        
+        showToast(`Loading ${skillNames[category]} Quiz...`, 'info');
+        
+        // Create a quiz container if it doesn't exist
+        let quizContainer = document.getElementById('skill-quiz-container');
+        if (!quizContainer) {
+            const container = document.createElement('div');
+            container.id = 'skill-quiz-container';
+            container.className = 'mt-6 p-6 bg-white dark:bg-gray-800 rounded-lg';
+            if (assessmentSection) {
+                assessmentSection.appendChild(container);
+            }
+            quizContainer = container;
+        }
+        
+        // Load and display the skill quiz with gamification
+        showRandomSkillQuestion(category, 'skill-quiz-container');
+        
+        return;
+    }
+    
+    // For non-programming categories, use the old assessment system
     const categoryNames = {
         'programming': 'Programming',
         'database': 'Database',
