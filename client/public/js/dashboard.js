@@ -209,119 +209,65 @@ function updateGamificationDisplay() {
 // SKILL ASSESSMENT: FETCH FROM GITHUB
 // ============================================
 /**
- * Fetches questions from the LinkedIn Skill Assessments Quizzes GitHub repo (raw markdown)
+ * Fetches questions from the backend API (which proxies GitHub to bypass CSP)
  * @param {string} skill - e.g. 'python', 'javascript', 'java'
  * @returns {Promise<Array>} Array of question objects
  */
 async function fetchSkillQuestions(skill) {
-    // Map skill to repo folder/filename
-    const skillMap = {
-        python: 'python/python-quiz.md',
-        javascript: 'javascript/javascript-quiz.md',
-        java: 'java/java-quiz.md',
-        csharp: 'c-sharp/c-sharp-quiz.md',
-        cpp: 'c++/c++-quiz.md',
-        html: 'html/html-quiz.md',
-        css: 'css/css-quiz.md',
-        sql: 'sql/sql-quiz.md',
-        php: 'php/php-quiz.md',
-        ruby: 'ruby/ruby-quiz.md',
-        go: 'go/go-quiz.md',
-        rust: 'rust/rust-quiz.md',
-        swift: 'swift/swift-quiz.md',
-        kotlin: 'kotlin/kotlin-quiz.md',
-        typescript: 'typescript/typescript-quiz.md',
-        r: 'r/r-quiz.md',
-        scala: 'scala/scala-quiz.md',
-        perl: 'perl/perl-quiz.md',
-        assembly: 'assembly/assembly-quiz.md',
-        matlab: 'matlab/matlab-quiz.md'
-    };
-    const file = skillMap[skill.toLowerCase()];
-    if (!file) throw new Error('Skill not supported');
-    const url = `https://raw.githubusercontent.com/Ebazhanov/linkedin-skill-assessments-quizzes/main/${file}`;
-    const res = await fetch(url);
-    if (!res.ok) throw new Error('Failed to fetch questions');
-    const text = await res.text();
-    
-    // Better markdown parsing: split by ## (question headers)
-    const questionSections = text.split(/\n(?=#{1,3}\s+\d+\.)/);
-    const questions = [];
-    
-    questionSections.forEach((section, index) => {
-        try {
-            const lines = section.split('\n').filter(l => l.trim());
-            if (lines.length < 2) return;
-            
-            // Extract question text from the header or first line
-            const headerLine = lines[0];
-            let question = headerLine.replace(/^#+\s*\d+\.\s*/, '').trim();
-            
-            // Remove any markdown code blocks or special formatting
-            question = question.replace(/\*\*/g, '').replace(/`/g, '').trim();
-            
-            if (!question) return;
-            
-            // Extract options - look for lines starting with - [ ]
-            const options = [];
-            let correctAnswer = null;
-            
-            for (let i = 1; i < lines.length; i++) {
-                const line = lines[i];
-                // Match [ ], [x], [X], etc.
-                const optionMatch = line.match(/^-\s*\[([xX\s]?)\]\s+(.+)/);
-                if (optionMatch) {
-                    const isCorrect = optionMatch[1].toLowerCase() === 'x';
-                    const answer = optionMatch[2].trim();
-                    
-                    // Skip if answer is too short or empty
-                    if (answer.length < 2) continue;
-                    
-                    options.push(answer);
-                    if (isCorrect && !correctAnswer) {
-                        correctAnswer = answer;
-                    }
-                }
+    try {
+        console.log('Fetching questions for skill:', skill);
+        
+        // Call backend endpoint instead of directly accessing GitHub (avoids CSP)
+        const response = await fetch(`/api/assessments/quiz-questions/${skill.toLowerCase()}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
             }
-            
-            // Only add if we have both question and options
-            if (question.length > 5 && options.length >= 2) {
-                questions.push({
-                    id: questions.length + 1,
-                    question,
-                    options,
-                    correctAnswer: correctAnswer || options[0],
-                    hint: `Think about the core concepts of ${skill}. Look for the most accurate answer.`,
-                    difficulty: 'medium'
-                });
+        });
+
+        if (!response.ok) {
+            throw new Error(`Failed to fetch questions: ${response.status} ${response.statusText}`);
+        }
+
+        const result = await response.json();
+        
+        if (!result.success || !result.data || !Array.isArray(result.data)) {
+            throw new Error('Invalid response format from server');
+        }
+
+        let questions = result.data;
+        console.log(`Fetched ${questions.length} questions for ${skill}`);
+
+        // Format questions with additional properties
+        questions = questions.map((q, idx) => ({
+            id: idx + 1,
+            question: q.question || '',
+            options: Array.isArray(q.options) ? q.options : [],
+            correctAnswer: q.correctAnswer || (Array.isArray(q.options) ? q.options[0] : ''),
+            hint: `Think about the core concepts of ${skill}. Look for the most accurate answer.`,
+            difficulty: 'medium'
+        }));
+
+        // Filter out invalid questions
+        questions = questions.filter(q => q.question && q.options && q.options.length >= 2);
+
+        // Integrate adaptive difficulty based on current performance
+        questions.forEach(q => {
+            if (quizGamification.points > 50) {
+                q.difficulty = 'hard';
+            } else if (quizGamification.points > 20) {
+                q.difficulty = 'medium';
+            } else {
+                q.difficulty = 'easy';
             }
-        } catch (e) {
-            console.log('Error parsing question section:', e);
-        }
-    });
-    
-    // If we got very few questions, try alternative parsing method
-    if (questions.length < 5) {
-        console.log('Standard parsing got', questions.length, 'questions. Trying alternative method...');
-        const altQuestions = parseQuestionsAlternative(text, skill);
-        if (altQuestions.length > questions.length) {
-            return altQuestions;
-        }
+        });
+
+        console.log(`Successfully processed ${questions.length} questions for ${skill}`);
+        return questions;
+    } catch (error) {
+        console.error('Error fetching quiz questions:', error);
+        throw error;
     }
-    
-    // Integrate adaptive difficulty based on current performance
-    questions.forEach(q => {
-        if (quizGamification.points > 50) {
-            q.difficulty = 'hard';
-        } else if (quizGamification.points > 20) {
-            q.difficulty = 'medium';
-        } else {
-            q.difficulty = 'easy';
-        }
-    });
-    
-    console.log(`Fetched ${questions.length} questions for ${skill}`);
-    return questions;
 }
 
 /**

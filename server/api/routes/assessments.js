@@ -948,4 +948,159 @@ router.post('/create-question', protect, authorize('admin', 'company'), async (r
   }
 });
 
+// @desc    Get quiz questions for a skill (proxy from GitHub)
+// @route   GET /api/assessments/quiz-questions/:skill
+// @access  Public
+router.get('/quiz-questions/:skill', async (req, res) => {
+  try {
+    const skill = req.params.skill;
+    
+    console.log('Fetching quiz questions for skill:', skill);
+    
+    // Map skill names to GitHub file paths
+    const skillToGitHubPath = {
+      'python': 'python/python-quiz.md',
+      'javascript': 'javascript/javascript-quiz.md',
+      'java': 'java/java-quiz.md',
+      'csharp': 'csharp/csharp-quiz.md',
+      'cpp': 'c%2B%2B/c%2B%2B-quiz.md',
+      'sql': 'sql/sql-quiz.md',
+      'html': 'html/html-quiz.md',
+      'css': 'css/css-quiz.md',
+      'react': 'react/react-quiz.md',
+      'vue': 'vue/vue-quiz.md',
+      'angular': 'angular/angular-quiz.md',
+      'nodejs': 'nodejs/nodejs-quiz.md',
+      'typescript': 'typescript/typescript-quiz.md',
+      'golang': 'go/go-quiz.md',
+      'rust': 'rust/rust-quiz.md',
+      'swift': 'swift/swift-quiz.md',
+      'kotlin': 'kotlin/kotlin-quiz.md',
+      'php': 'php/php-quiz.md',
+      'ruby': 'ruby/ruby-quiz.md',
+      'git': 'git/git-quiz.md',
+      'aws': 'aws/aws-quiz.md',
+      'docker': 'docker/docker-quiz.md',
+      'kubernetes': 'kubernetes/kubernetes-quiz.md',
+      'linux': 'linux/linux-quiz.md',
+      'networking': 'networking/networking-quiz.md',
+      'database': 'database/database-quiz.md',
+      'web-development': 'web/web-quiz.md',
+      'problem-solving': 'problem-solving/problem-solving-quiz.md'
+    };
+
+    // Get the correct GitHub path
+    const githubPath = skillToGitHubPath[skill.toLowerCase()];
+    
+    if (!githubPath) {
+      console.warn('Unknown skill:', skill);
+      return res.status(400).json({
+        success: false,
+        message: `Unknown skill: ${skill}`
+      });
+    }
+
+    // Fetch from GitHub (server-side, no CSP restrictions)
+    const githubUrl = `https://raw.githubusercontent.com/Ebazhanov/linkedin-skill-assessments-quizzes/main/${githubPath}`;
+    console.log('Fetching from GitHub URL:', githubUrl);
+    
+    const response = await fetch(githubUrl, {
+      method: 'GET',
+      headers: {
+        'Accept': 'text/plain',
+        'User-Agent': 'Node.js'
+      }
+    });
+
+    if (!response.ok) {
+      console.error('GitHub fetch failed:', response.status, response.statusText);
+      return res.status(response.status).json({
+        success: false,
+        message: `Failed to fetch questions from GitHub: ${response.statusText}`
+      });
+    }
+
+    const markdown = await response.text();
+    console.log('Fetched markdown, length:', markdown.length);
+
+    // Parse questions from markdown
+    const questions = parseQuestionsFromMarkdown(markdown);
+    console.log('Parsed questions count:', questions.length);
+
+    res.json({
+      success: true,
+      data: questions,
+      count: questions.length
+    });
+  } catch (error) {
+    console.error('Error fetching quiz questions:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching quiz questions',
+      error: error.message
+    });
+  }
+});
+
+// Helper function to parse questions from markdown
+function parseQuestionsFromMarkdown(markdown) {
+  const questions = [];
+  const lines = markdown.split('\n');
+  let i = 0;
+
+  while (i < lines.length) {
+    const line = lines[i].trim();
+
+    // Look for question pattern (#### or ###)
+    if (line.startsWith('####') || line.startsWith('###')) {
+      const questionText = line.replace(/^#+\s*/, '').trim();
+      
+      if (!questionText) {
+        i++;
+        continue;
+      }
+
+      const questionObj = {
+        question: questionText,
+        options: [],
+        correctAnswer: ''
+      };
+
+      i++;
+      let optionCount = 0;
+
+      // Parse options
+      while (i < lines.length && (lines[i].trim().startsWith('-') || lines[i].trim().startsWith('*'))) {
+        let optionText = lines[i].trim().replace(/^[-*]\s*/, '').trim();
+
+        if (optionText.startsWith('**') || optionText.startsWith('`')) {
+          // This might be a correct answer indicator
+          optionText = optionText.replace(/\*\*/g, '').replace(/`/g, '').trim();
+          questionObj.correctAnswer = optionText;
+        }
+
+        if (optionText) {
+          questionObj.options.push(optionText);
+        }
+
+        i++;
+        optionCount++;
+        if (optionCount >= 4) break; // Limit to 4 options per question
+      }
+
+      // Only add if we have enough data
+      if (questionObj.options.length >= 2 && questionObj.correctAnswer) {
+        questions.push(questionObj);
+      }
+
+      // Limit to reasonable number of questions
+      if (questions.length >= 50) break;
+    } else {
+      i++;
+    }
+  }
+
+  return questions;
+}
+
 module.exports = router;
