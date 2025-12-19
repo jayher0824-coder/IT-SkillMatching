@@ -91,6 +91,67 @@ const quizGamification = {
 };
 
 // ============================================
+// QUIZ STATE TRACKING
+// ============================================
+
+/**
+ * Tracks the current quiz session state
+ */
+const quizState = {
+    questions: [],
+    currentQuestionIndex: 0,
+    currentSkill: null,
+    answered: false,
+    containerId: null,
+
+    init(questions, skill, containerId) {
+        this.questions = questions;
+        this.currentQuestionIndex = 0;
+        this.currentSkill = skill;
+        this.answered = false;
+        this.containerId = containerId;
+        console.log('Quiz state initialized:', { skill, totalQuestions: questions.length });
+    },
+
+    getCurrentQuestion() {
+        return this.questions[this.currentQuestionIndex] || null;
+    },
+
+    nextQuestion() {
+        this.currentQuestionIndex++;
+        this.answered = false;
+        if (this.currentQuestionIndex >= this.questions.length) {
+            return false; // Quiz ended
+        }
+        return true;
+    },
+
+    markAnswered() {
+        this.answered = true;
+    },
+
+    getCurrentIndex() {
+        return this.currentQuestionIndex;
+    },
+
+    getDisplayIndex() {
+        return this.currentQuestionIndex + 1;
+    },
+
+    getTotalQuestions() {
+        return this.questions.length;
+    },
+
+    reset() {
+        this.questions = [];
+        this.currentQuestionIndex = 0;
+        this.currentSkill = null;
+        this.answered = false;
+        this.containerId = null;
+    }
+};
+
+// ============================================
 // UTILITY FUNCTIONS
 // ============================================
 
@@ -333,7 +394,7 @@ function parseQuestionsAlternative(text, skill) {
  * @param {string} skill
  * @param {string} containerId
  */
-async function showRandomSkillQuestion(skill, containerId) {
+async function showRandomSkillQuestion(skill, containerId, questionIndex = 0) {
     const container = document.getElementById(containerId);
     if (!container) {
         console.error('Quiz container not found:', containerId);
@@ -342,27 +403,59 @@ async function showRandomSkillQuestion(skill, containerId) {
     }
     
     console.log('showRandomSkillQuestion - Container found:', containerId, container);
-    container.innerHTML = '<div class="text-center py-12"><div class="inline-block"><div class="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mb-4"></div><p class="text-gray-600 dark:text-gray-300">Loading questions...</p></div></div>';
+    
+    // If this is the first question, initialize quiz state
+    if (questionIndex === 0) {
+        container.innerHTML = '<div class="text-center py-12"><div class="inline-block"><div class="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mb-4"></div><p class="text-gray-600 dark:text-gray-300">Loading questions...</p></div></div>';
+        
+        try {
+            console.log('Fetching questions for skill:', skill);
+            const questions = await fetchSkillQuestions(skill);
+            console.log('Questions received:', questions);
+            
+            if (!questions || !questions.length) {
+                console.warn('No questions found for skill:', skill);
+                container.innerHTML = `
+                    <div class="bg-yellow-50 dark:bg-yellow-900/20 border-2 border-yellow-300 dark:border-yellow-700 rounded-lg p-6 text-center">
+                        <p class="text-yellow-800 dark:text-yellow-300 font-semibold">⚠️ No Questions Found</p>
+                        <p class="text-yellow-700 dark:text-yellow-400 text-sm">No questions available for ${skill}</p>
+                        <button onclick="location.reload()" class="${BUTTON_STYLES.primaryClass} mt-4">🔄 Reload Page</button>
+                    </div>
+                `;
+                return;
+            }
+            
+            // Initialize quiz state with all questions
+            quizState.init(questions, skill, containerId);
+            
+            // Show first question
+            return showRandomSkillQuestion(skill, containerId, 0);
+        } catch (e) {
+            console.error('Error loading questions:', e);
+            handleQuizError(e, containerId);
+            return;
+        }
+    }
     
     try {
-        console.log('Fetching questions for skill:', skill);
-        const questions = await fetchSkillQuestions(skill);
-        console.log('Questions received:', questions);
-        
-        if (!questions || !questions.length) {
-            console.warn('No questions found for skill:', skill);
+        // Get current question from state
+        const q = quizState.getCurrentQuestion();
+        const currentIdx = quizState.getCurrentIndex();
+        const displayIdx = quizState.getDisplayIndex();
+        const totalQuestions = quizState.getTotalQuestions();
+        if (!q) {
             container.innerHTML = `
                 <div class="bg-yellow-50 dark:bg-yellow-900/20 border-2 border-yellow-300 dark:border-yellow-700 rounded-lg p-6 text-center">
-                    <p class="text-yellow-800 dark:text-yellow-300 font-semibold">⚠️ No Questions Found</p>
-                    <p class="text-yellow-700 dark:text-yellow-400 text-sm">No questions available for ${skill}</p>
-                    <button onclick="location.reload()" class="${BUTTON_STYLES.primaryClass} mt-4">🔄 Reload Page</button>
+                    <p class="text-yellow-800 dark:text-yellow-300 font-semibold">✅ Quiz Complete!</p>
+                    <p class="text-yellow-700 dark:text-yellow-400 text-sm mb-4">You've completed all ${totalQuestions} questions!</p>
+                    <p class="text-xl font-bold text-green-600 dark:text-green-400 mb-4">Final Score: ${quizGamification.points} Points</p>
+                    <button onclick="backToAssessment()" class="${BUTTON_STYLES.primaryClass}">🏠 Return to Assessment</button>
                 </div>
             `;
             return;
         }
         
-        const q = questions[Math.floor(Math.random() * questions.length)];
-        console.log('Selected question:', q);
+        console.log(`Selected question ${currentIdx + 1} of ${totalQuestions}:`, q);
         
         // Get category from container's dataset
         const categoryName = container.dataset.category || skill;
@@ -401,7 +494,7 @@ async function showRandomSkillQuestion(skill, containerId) {
                             <div class="flex justify-between items-start mb-4">
                                 <div>
                                     <h1 class="text-3xl font-bold text-gray-900 dark:text-white">${displayCategory} Quiz</h1>
-                                    <p class="text-sm text-gray-600 dark:text-gray-400 mt-2">Question ${q.id} • Difficulty: <span class="font-semibold text-green-600 dark:text-green-400">${q.difficulty.charAt(0).toUpperCase() + q.difficulty.slice(1)}</span></p>
+                                    <p class="text-sm text-gray-600 dark:text-gray-400 mt-2">Question <span class="font-bold text-green-600 dark:text-green-400">${displayIdx}</span> of <span class="font-bold text-green-600 dark:text-green-400">${totalQuestions}</span> • Difficulty: <span class="font-semibold text-green-600 dark:text-green-400">${q.difficulty?.charAt(0).toUpperCase() + q.difficulty?.slice(1) || 'Medium'}</span></p>
                                 </div>
                                 <div class="bg-gradient-to-br from-green-400 to-blue-500 text-white px-6 py-4 rounded-xl text-right shadow-lg">
                                     <div class="text-4xl font-bold">🏆 ${quizGamification.points}</div>
@@ -409,7 +502,7 @@ async function showRandomSkillQuestion(skill, containerId) {
                                 </div>
                             </div>
                             <div class="w-full bg-gray-300 dark:bg-gray-600 rounded-full h-3">
-                                <div class="bg-gradient-to-r from-green-400 to-green-600 h-3 rounded-full" style="width: 25%; transition: width 0.3s;"></div>
+                                <div class="bg-gradient-to-r from-green-400 to-green-600 h-3 rounded-full" style="width: ${(displayIdx / totalQuestions) * 100}%; transition: width 0.3s;"></div>
                             </div>
                         </div>
                         
@@ -429,13 +522,14 @@ async function showRandomSkillQuestion(skill, containerId) {
                         <!-- Answer Options -->
                         <div class="mb-8">
                             <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Choose the correct answer:</h3>
-                            <div class="space-y-3">
+                            <div class="space-y-3" id="answer-options-${currentIdx}">
         `;
         
         q.options.forEach((opt, idx) => {
             html += `
                 <button onclick="answerQuestion('${opt.replace(/'/g, "\\'")}', '${q.correctAnswer.replace(/'/g, "\\'")}', '${q.hint.replace(/'/g, "\\'")}')" 
-                    class="w-full p-4 text-left bg-white dark:bg-gray-700 border-2 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg hover:border-green-500 hover:bg-green-50 dark:hover:bg-green-900/20 hover:shadow-lg transition transform hover:scale-102 font-semibold text-base">
+                    data-option-id="option-${idx}"
+                    class="answer-option w-full p-4 text-left bg-white dark:bg-gray-700 border-2 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg hover:border-green-500 hover:bg-green-50 dark:hover:bg-green-900/20 hover:shadow-lg transition transform hover:scale-102 font-semibold text-base">
                     <span class="flex items-center">
                         <span class="mr-3 text-lg text-green-600 dark:text-green-400">⭕</span>
                         <span class="flex-1">${opt}</span>
@@ -448,11 +542,11 @@ async function showRandomSkillQuestion(skill, containerId) {
                             </div>
                         </div>
                         
+                        <!-- Feedback Area (Hidden by default) -->
+                        <div id="feedback-area-${currentIdx}" class="mb-8 hidden"></div>
+                        
                         <!-- Action Buttons -->
-                        <div class="flex gap-4 pt-6 border-t-2 border-gray-300 dark:border-gray-600">
-                            <button onclick="showRandomSkillQuestion('${skill}', '${containerId}')" class="${BUTTON_STYLES.primaryClass} flex-1 py-3">
-                                <i class="fas fa-forward-step mr-2"></i>Next Question
-                            </button>
+                        <div id="action-buttons-${currentIdx}" class="flex gap-4 pt-6 border-t-2 border-gray-300 dark:border-gray-600">
                             <button onclick="backToAssessment()" class="flex-1 py-3 px-6 bg-gray-500 dark:bg-gray-600 text-white font-semibold rounded-lg hover:bg-gray-600 dark:hover:bg-gray-700 transition">
                                 <i class="fas fa-times mr-2"></i>Exit Quiz
                             </button>
@@ -470,26 +564,31 @@ async function showRandomSkillQuestion(skill, containerId) {
         container.scrollIntoView({ behavior: 'smooth', block: 'start' });
         
     } catch (e) {
-        console.error('Error loading questions:', e);
+        console.error('Error in showRandomSkillQuestion:', e);
         console.error('Error stack:', e.stack);
-        console.error('Full error details:', JSON.stringify(e, Object.getOwnPropertyNames(e)));
-        
-        container.innerHTML = `
-            <div class="min-h-screen bg-red-50 dark:bg-red-900/20 flex items-center justify-center p-4">
-                <div class="bg-white dark:bg-gray-800 rounded-lg p-8 max-w-md text-center border-2 border-red-300 dark:border-red-700">
-                    <p class="text-4xl mb-4">⚠️</p>
-                    <p class="text-red-800 dark:text-red-300 font-semibold text-lg mb-2">Error Loading Questions</p>
-                    <p class="text-red-700 dark:text-red-400 text-sm mb-4">${e.message || 'Could not fetch questions for this category.'}</p>
-                    <p class="text-red-600 dark:text-red-500 text-xs mb-6 font-mono bg-red-100 dark:bg-red-900/30 p-4 rounded overflow-auto max-h-32">
-                        ${e.stack ? e.stack.split('\n').slice(0, 3).join('<br>') : e.toString()}
-                    </p>
-                    <button onclick="backToAssessment()" class="${BUTTON_STYLES.primaryClass} w-full">
-                        <i class="fas fa-arrow-left mr-2"></i>Back to Assessment
-                    </button>
-                </div>
-            </div>
-        `;
+        handleQuizError(e, containerId);
     }
+}
+
+function handleQuizError(e, containerId) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    
+    container.innerHTML = `
+        <div class="min-h-screen bg-red-50 dark:bg-red-900/20 flex items-center justify-center p-4">
+            <div class="bg-white dark:bg-gray-800 rounded-lg p-8 max-w-md text-center border-2 border-red-300 dark:border-red-700">
+                <p class="text-4xl mb-4">⚠️</p>
+                <p class="text-red-800 dark:text-red-300 font-semibold text-lg mb-2">Error Loading Questions</p>
+                <p class="text-red-700 dark:text-red-400 text-sm mb-4">${e.message || 'Could not fetch questions for this category.'}</p>
+                <p class="text-red-600 dark:text-red-500 text-xs mb-6 font-mono bg-red-100 dark:bg-red-900/30 p-4 rounded overflow-auto max-h-32">
+                    ${e.stack ? e.stack.split('\n').slice(0, 3).join('<br>') : e.toString()}
+                </p>
+                <button onclick="backToAssessment()" class="${BUTTON_STYLES.primaryClass} w-full">
+                    <i class="fas fa-arrow-left mr-2"></i>Back to Assessment
+                </button>
+            </div>
+        </div>
+    `;
 }
 
 function backToAssessment() {
@@ -513,19 +612,75 @@ function backToAssessment() {
 
 /**
  * Handles answer submission and updates gamification.
+ * Disables buttons and shows feedback inline without revealing answer.
  * @param {string} selectedAnswer - The answer selected by the user.
  * @param {string} correctAnswer - The correct answer.
  * @param {string} hint - The hint for this question.
  */
 function answerQuestion(selectedAnswer, correctAnswer, hint) {
     const isCorrect = selectedAnswer === correctAnswer;
+    const currentIdx = quizState.getCurrentIndex();
+    
+    // Mark as answered to prevent re-answering
+    quizState.markAnswered();
+    
+    // Disable all answer buttons
+    const answerButtons = document.querySelectorAll('.answer-option');
+    answerButtons.forEach(btn => {
+        btn.disabled = true;
+        btn.classList.add('opacity-50', 'cursor-not-allowed');
+        btn.style.pointerEvents = 'none';
+    });
+    
+    // Get feedback area
+    const feedbackArea = document.getElementById(`feedback-area-${currentIdx}`);
     
     if (isCorrect) {
         quizGamification.addPoints(10);
         updateGamificationDisplay();
-        alert(`✅ Correct! +10 Points!\n${quizGamification.displayStats()}`);
+        
+        // Show feedback with green background
+        feedbackArea.innerHTML = `
+            <div class="bg-green-50 dark:bg-green-900/20 border-2 border-green-400 dark:border-green-600 rounded-lg p-6 text-center">
+                <p class="text-2xl font-bold text-green-600 dark:text-green-400 mb-2">✅ Correct!</p>
+                <p class="text-lg text-green-700 dark:text-green-300 font-semibold">+10 Points!</p>
+                <p class="text-sm text-green-600 dark:text-green-400 mt-3">Moving to next question...</p>
+            </div>
+        `;
+        feedbackArea.classList.remove('hidden');
+        
+        // Auto-advance after 2 seconds
+        setTimeout(() => {
+            quizState.nextQuestion();
+            const currentQuestion = quizState.getCurrentQuestion();
+            if (currentQuestion) {
+                const skill = quizState.skill;
+                const containerId = quizState.containerId;
+                const nextIdx = quizState.getCurrentIndex();
+                showRandomSkillQuestion(skill, containerId, nextIdx);
+            }
+        }, 2000);
     } else {
-        alert(`❌ Incorrect.\nCorrect Answer: ${correctAnswer}\n💡 ${hint}\n${quizGamification.displayStats()}`);
+        // Show feedback with red background (NO ANSWER REVEAL)
+        feedbackArea.innerHTML = `
+            <div class="bg-red-50 dark:bg-red-900/20 border-2 border-red-400 dark:border-red-600 rounded-lg p-6 text-center">
+                <p class="text-2xl font-bold text-red-600 dark:text-red-400 mb-2">❌ Incorrect</p>
+                <p class="text-sm text-red-700 dark:text-red-300 mt-3">Moving to next question...</p>
+            </div>
+        `;
+        feedbackArea.classList.remove('hidden');
+        
+        // Auto-advance after 2 seconds (no penalty, just move on)
+        setTimeout(() => {
+            quizState.nextQuestion();
+            const currentQuestion = quizState.getCurrentQuestion();
+            if (currentQuestion) {
+                const skill = quizState.skill;
+                const containerId = quizState.containerId;
+                const nextIdx = quizState.getCurrentIndex();
+                showRandomSkillQuestion(skill, containerId, nextIdx);
+            }
+        }, 2000);
     }
 }
 
