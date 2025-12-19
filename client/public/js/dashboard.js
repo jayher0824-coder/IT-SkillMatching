@@ -6468,35 +6468,48 @@ async function loadAssessmentHistory() {
             return;
         }
         
-        historyContent.innerHTML = results.map(result => `
-            <div class="bg-white dark:bg-gray-700 rounded-lg p-4 mb-4 shadow">
-                <div class="flex justify-between items-start mb-2">
-                    <div class="flex-1">
-                        <h4 class="font-semibold text-gray-900 dark:text-white">${result.assessment?.title || 'Assessment'}</h4>
-                        <p class="text-sm text-gray-600 dark:text-gray-400">
-                            Completed: ${new Date(result.completedAt).toLocaleDateString()}
-                        </p>
-                    </div>
-                    <div class="text-right flex items-start gap-4">
-                        <div>
-                            <div class="text-2xl font-bold ${result.passed ? 'text-green-600' : 'text-red-600'}">
-                                ${result.percentage}%
+        historyContent.innerHTML = results.map(result => {
+            // Determine if this is a quiz result (no answers array or very few answers)
+            const isQuiz = !result.answers || result.answers.length === 0;
+            const resultTypeIcon = isQuiz ? '<i class="fas fa-graduation-cap text-purple-600 mr-2"></i>' : '<i class="fas fa-clipboard-list text-blue-600 mr-2"></i>';
+            const resultType = isQuiz ? 'Quiz' : 'Assessment';
+            
+            return `
+                <div class="bg-white dark:bg-gray-700 rounded-lg p-4 mb-4 shadow hover:shadow-lg transition">
+                    <div class="flex justify-between items-start mb-2">
+                        <div class="flex-1">
+                            <div class="flex items-center mb-1">
+                                ${resultTypeIcon}
+                                <h4 class="font-semibold text-gray-900 dark:text-white">${result.assessment?.title || 'Assessment'}</h4>
+                                <span class="ml-2 inline-block px-2 py-1 rounded text-xs font-semibold ${isQuiz ? 'bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-200' : 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-200'}">
+                                    ${resultType}
+                                </span>
                             </div>
-                            <span class="text-xs ${result.passed ? 'text-green-600' : 'text-red-600'}">
-                                ${result.passed ? 'Passed' : 'Failed'}
-                            </span>
+                            <p class="text-sm text-gray-600 dark:text-gray-400">
+                                Completed: ${new Date(result.completedAt).toLocaleDateString()} at ${new Date(result.completedAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                            </p>
                         </div>
-                        <button onclick="viewStudentAssessmentDetails('${result._id}')" 
-                            style="background-color: #56AE67; color: white; border: 2px solid #2d6b3c;"
-                            class="px-4 py-2 rounded-lg hover:bg-[#3d8b4f] dark:hover:bg-[#6bc481] transition font-semibold shadow-sm"
-                            onmouseover="this.style.backgroundColor='#3d8b4f'" 
-                            onmouseout="this.style.backgroundColor='#56AE67'">
-                            <i class="fas fa-eye mr-1"></i>View Details
-                        </button>
+                        <div class="text-right flex items-start gap-4">
+                            <div>
+                                <div class="text-2xl font-bold ${result.passed ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}">
+                                    ${result.percentage}%
+                                </div>
+                                <span class="text-xs ${result.passed ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'} font-semibold">
+                                    ${result.passed ? '✓ Passed' : '✗ Review'}
+                                </span>
+                            </div>
+                            <button onclick="viewStudentAssessmentDetails('${result._id}')" 
+                                style="background-color: #56AE67; color: white; border: 2px solid #2d6b3c;"
+                                class="px-4 py-2 rounded-lg hover:bg-[#3d8b4f] dark:hover:bg-[#6bc481] transition font-semibold shadow-sm"
+                                onmouseover="this.style.backgroundColor='#3d8b4f'" 
+                                onmouseout="this.style.backgroundColor='#56AE67'">
+                                <i class="fas fa-eye mr-1"></i>View Details
+                            </button>
+                        </div>
                     </div>
                 </div>
-            </div>
-        `).join('');
+            `;
+        }).join('');
         
     } catch (error) {
         console.error('Error loading assessment history:', error);
