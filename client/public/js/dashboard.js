@@ -337,19 +337,25 @@ async function showRandomSkillQuestion(skill, containerId) {
     const container = document.getElementById(containerId);
     if (!container) {
         console.error('Quiz container not found:', containerId);
+        alert('ERROR: Quiz container not found. ID=' + containerId);
         return;
     }
-    container.innerHTML = 'Loading...';
+    
+    console.log('showRandomSkillQuestion - Container found:', containerId, container);
+    container.innerHTML = '<div class="text-center py-12"><div class="inline-block"><div class="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mb-4"></div><p class="text-gray-600 dark:text-gray-300">Loading questions...</p></div></div>';
+    
     try {
         console.log('Fetching questions for skill:', skill);
         const questions = await fetchSkillQuestions(skill);
-        console.log('Questions received:', questions.length, questions);
+        console.log('Questions received:', questions);
         
         if (!questions || !questions.length) {
+            console.warn('No questions found for skill:', skill);
             container.innerHTML = `
                 <div class="bg-yellow-50 dark:bg-yellow-900/20 border-2 border-yellow-300 dark:border-yellow-700 rounded-lg p-6 text-center">
                     <p class="text-yellow-800 dark:text-yellow-300 font-semibold">⚠️ No Questions Found</p>
                     <p class="text-yellow-700 dark:text-yellow-400 text-sm">No questions available for ${skill}</p>
+                    <button onclick="location.reload()" class="${BUTTON_STYLES.primaryClass} mt-4">🔄 Reload Page</button>
                 </div>
             `;
             return;
@@ -378,12 +384,10 @@ async function showRandomSkillQuestion(skill, containerId) {
         };
         
         const displayCategory = categoryDisplayNames[categoryName] || categoryName;
-        const questionsAnswered = container.dataset.questionsAnswered || 0;
-        const questionsCorrect = container.dataset.questionsCorrect || 0;
         
         // Display question with gamification and feedback features
         let html = `
-            <div class="quiz-container bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 p-6 rounded-lg shadow-lg">
+            <div class="quiz-container bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 p-6 rounded-lg shadow-lg border-2 border-green-500">
                 <div class="mb-6 pb-4 border-b-2 border-gray-300 dark:border-gray-600">
                     <div class="flex justify-between items-start mb-3">
                         <div>
@@ -428,15 +432,28 @@ async function showRandomSkillQuestion(skill, containerId) {
                 </div>
             </div>
         `;
+        
+        console.log('Setting container innerHTML, length:', html.length);
         container.innerHTML = html;
+        console.log('Quiz rendered successfully');
+        
+        // Scroll to quiz
+        setTimeout(() => {
+            container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 100);
+        
     } catch (e) {
         console.error('Error loading questions:', e);
         console.error('Error stack:', e.stack);
+        console.error('Full error details:', JSON.stringify(e, Object.getOwnPropertyNames(e)));
+        
         container.innerHTML = `
             <div class="bg-red-50 dark:bg-red-900/20 border-2 border-red-300 dark:border-red-700 rounded-lg p-6 text-center">
                 <p class="text-red-800 dark:text-red-300 font-semibold mb-2">⚠️ Error Loading Questions</p>
                 <p class="text-red-700 dark:text-red-400 text-sm mb-4">${e.message || 'Could not fetch questions for this category.'}</p>
-                <p class="text-red-600 dark:text-red-500 text-xs mb-4 font-mono">${e.stack ? e.stack.split('\n')[0] : ''}</p>
+                <p class="text-red-600 dark:text-red-500 text-xs mb-4 font-mono bg-red-100 dark:bg-red-900/30 p-3 rounded overflow-auto max-h-32">
+                    ${e.stack ? e.stack.split('\n').slice(0, 3).join('<br>') : e.toString()}
+                </p>
                 <button onclick="location.reload()" class="${BUTTON_STYLES.primaryClass}">🔄 Reload Page</button>
             </div>
         `;
