@@ -428,8 +428,8 @@ async function showRandomSkillQuestion(skill, containerId, questionIndex = 0) {
             // Initialize quiz state with all questions
             quizState.init(questions, skill, containerId);
             
-            // Show first question
-            return showRandomSkillQuestion(skill, containerId, 0);
+            // Continue to display first question (don't recurse)
+            // Fall through to display the question
         } catch (e) {
             console.error('Error loading questions:', e);
             handleQuizError(e, containerId);
@@ -654,7 +654,7 @@ function answerQuestion(selectedAnswer, correctAnswer, hint) {
             quizState.nextQuestion();
             const currentQuestion = quizState.getCurrentQuestion();
             if (currentQuestion) {
-                const skill = quizState.skill;
+                const skill = quizState.currentSkill;
                 const containerId = quizState.containerId;
                 const nextIdx = quizState.getCurrentIndex();
                 showRandomSkillQuestion(skill, containerId, nextIdx);
@@ -675,7 +675,7 @@ function answerQuestion(selectedAnswer, correctAnswer, hint) {
             quizState.nextQuestion();
             const currentQuestion = quizState.getCurrentQuestion();
             if (currentQuestion) {
-                const skill = quizState.skill;
+                const skill = quizState.currentSkill;
                 const containerId = quizState.containerId;
                 const nextIdx = quizState.getCurrentIndex();
                 showRandomSkillQuestion(skill, containerId, nextIdx);
