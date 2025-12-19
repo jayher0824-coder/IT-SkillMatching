@@ -123,14 +123,37 @@ async function fetchSkillQuestions(skill) {
     const text = await res.text();
     // Parse markdown: questions start with 'Q' or a number, answers with '- ['
     const questionBlocks = text.split(/\n(?=\d+\.|Q\d+:)/g);
-    const questions = questionBlocks.map(block => {
+    const questions = questionBlocks.map((block, index) => {
         const lines = block.split('\n');
         const qLine = lines.find(l => /^\d+\.|^Q\d+:/.test(l));
         if (!qLine) return null;
         const question = qLine.replace(/^\d+\.|^Q\d+:/, '').trim();
         const options = lines.filter(l => /^- \[.?\]/.test(l)).map(l => l.replace(/^- \[.?\] ?/, '').trim());
-        return options.length ? { question, options } : null;
+        const correctAnswer = lines.find(l => /^- \[x\]/i.test(l));
+        
+        if (!options.length) return null;
+        
+        return {
+            id: index + 1,
+            question,
+            options,
+            correctAnswer: correctAnswer ? correctAnswer.replace(/^- \[x\] ?/i, '').trim() : options[0],
+            hint: `Consider the main concept being tested in this question about ${skill}.`,
+            difficulty: 'medium' // Will be adjusted based on user performance
+        };
     }).filter(Boolean);
+    
+    // Integrate adaptive difficulty based on current performance
+    questions.forEach(q => {
+        if (quizGamification.points > 50) {
+            q.difficulty = 'hard';
+        } else if (quizGamification.points > 20) {
+            q.difficulty = 'medium';
+        } else {
+            q.difficulty = 'easy';
+        }
+    });
+    
     return questions;
 }
 
