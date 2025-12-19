@@ -526,10 +526,16 @@ async function showRandomSkillQuestion(skill, containerId, questionIndex = 0) {
         `;
         
         q.options.forEach((opt, idx) => {
+            const selectedAnswer = opt.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+            const correctAnswer = q.correctAnswer.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+            const hint = q.hint.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+            
             html += `
-                <button onclick="answerQuestion('${opt.replace(/'/g, "\\'")}', '${q.correctAnswer.replace(/'/g, "\\'")}', '${q.hint.replace(/'/g, "\\'")}')" 
+                <button type="button" class="answer-option w-full p-4 text-left bg-white dark:bg-gray-700 border-2 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg hover:border-green-500 hover:bg-green-50 dark:hover:bg-green-900/20 hover:shadow-lg transition transform hover:scale-102 font-semibold text-base"
                     data-option-id="option-${idx}"
-                    class="answer-option w-full p-4 text-left bg-white dark:bg-gray-700 border-2 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg hover:border-green-500 hover:bg-green-50 dark:hover:bg-green-900/20 hover:shadow-lg transition transform hover:scale-102 font-semibold text-base">
+                    data-selected-answer="${selectedAnswer}"
+                    data-correct-answer="${correctAnswer}"
+                    data-hint="${hint}">
                     <span class="flex items-center">
                         <span class="mr-3 text-lg text-green-600 dark:text-green-400">⭕</span>
                         <span class="flex-1">${opt}</span>
@@ -559,6 +565,19 @@ async function showRandomSkillQuestion(skill, containerId, questionIndex = 0) {
         console.log('Setting container innerHTML, length:', html.length);
         container.innerHTML = html;
         console.log('Quiz rendered successfully');
+        
+        // Add event listeners to answer buttons
+        const answerButtons = document.querySelectorAll('.answer-option');
+        answerButtons.forEach(button => {
+            button.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                const selectedAnswer = this.getAttribute('data-selected-answer');
+                const correctAnswer = this.getAttribute('data-correct-answer');
+                const hint = this.getAttribute('data-hint');
+                answerQuestion(selectedAnswer, correctAnswer, hint);
+            });
+        });
         
         // Scroll to top
         container.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -593,21 +612,38 @@ function handleQuizError(e, containerId) {
 
 function backToAssessment() {
     console.log('Going back to assessment');
+    
+    // Hide quiz container
     const quizContainer = document.getElementById('skill-quiz-container');
     if (quizContainer) {
         quizContainer.innerHTML = '';
         quizContainer.classList.add('hidden');
     }
     
-    // Show the assessment section cards again
+    // Show assessment section
     const assessmentSection = document.getElementById('assessment-section');
     if (assessmentSection) {
-        assessmentSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        assessmentSection.classList.remove('hidden');
     }
+    
+    // Show the category grid cards again
+    const categoryCards = document.querySelectorAll('[data-category]');
+    categoryCards.forEach(card => card.classList.remove('hidden'));
     
     // Show the card grids
     const gridContainers = document.querySelectorAll('.grid-container');
     gridContainers.forEach(container => container.classList.remove('hidden'));
+    
+    // Show assessment header if it was hidden
+    const assessmentHeader = assessmentSection?.querySelector('div:first-child');
+    if (assessmentHeader) {
+        assessmentHeader.classList.remove('hidden');
+    }
+    
+    // Scroll to assessment section
+    if (assessmentSection) {
+        assessmentSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
 }
 
 /**
