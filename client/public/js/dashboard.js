@@ -79,12 +79,32 @@ function switchToSection(sectionName) {
     // Load section-specific data if needed
     if (sectionName === 'assessment') {
         loadAssessmentSection();
+        updateGamificationDisplay();
     } else if (sectionName === 'history') {
         loadAssessmentHistory();
     } else if (sectionName === 'career-paths') {
         loadCareerPaths();
     } else if (sectionName === 'skill-progress') {
         loadSkillProgress();
+    }
+}
+
+// ============================================
+// GAMIFICATION DISPLAY
+// ============================================
+
+/**
+ * Updates the gamification display showing points and level
+ */
+function updateGamificationDisplay() {
+    const pointsDisplay = document.getElementById('points-display');
+    const levelDisplay = document.getElementById('level-display');
+    
+    if (pointsDisplay) {
+        pointsDisplay.textContent = quizGamification.points;
+    }
+    if (levelDisplay) {
+        levelDisplay.textContent = quizGamification.level;
     }
 }
 
@@ -220,6 +240,7 @@ function answerQuestion(selectedAnswer, correctAnswer, hint) {
     
     if (isCorrect) {
         quizGamification.addPoints(10);
+        updateGamificationDisplay();
         alert(`✅ Correct! +10 Points!\n${quizGamification.displayStats()}`);
     } else {
         alert(`❌ Incorrect.\nCorrect Answer: ${correctAnswer}\n💡 ${hint}\n${quizGamification.displayStats()}`);
@@ -501,8 +522,17 @@ async function loadStudentDashboard() {
                     <!-- Assessment Section -->
                     <div id="assessment-section" class="section hidden p-8">
                         <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-                            <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-4">Skills Assessment</h2>
-                            <p class="text-gray-600 dark:text-gray-300 mb-6">Choose a skill category to assess your abilities and get better job matches.</p>
+                            <div class="flex justify-between items-center mb-6">
+                                <div>
+                                    <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Skills Assessment</h2>
+                                    <p class="text-gray-600 dark:text-gray-300 mt-2">Choose a skill category to assess your abilities and get better job matches.</p>
+                                </div>
+                                <div id="gamification-badge" class="bg-gradient-to-r from-green-400 to-blue-500 rounded-lg p-4 text-white text-center shadow-lg">
+                                    <div class="text-3xl font-bold">🏆</div>
+                                    <div class="text-sm font-semibold mt-2"><span id="points-display">0</span> Points</div>
+                                    <div class="text-sm font-semibold">Level <span id="level-display">1</span></div>
+                                </div>
+                            </div>
 
                             <!-- General Categories -->
                             <div class="mb-8">
