@@ -959,44 +959,58 @@ router.get('/quiz-questions/:skill', async (req, res) => {
     
     // Map skill names to GitHub file paths
     const skillToGitHubPath = {
+      // Languages
       'python': 'python/python-quiz.md',
       'javascript': 'javascript/javascript-quiz.md',
       'java': 'java/java-quiz.md',
-      'csharp': 'csharp/csharp-quiz.md',
+      'csharp': 'c-sharp/c-sharp-quiz.md',
       'cpp': 'c%2B%2B/c%2B%2B-quiz.md',
+      'c++': 'c%2B%2B/c%2B%2B-quiz.md',
       'sql': 'sql/sql-quiz.md',
       'html': 'html/html-quiz.md',
       'css': 'css/css-quiz.md',
-      'react': 'react/react-quiz.md',
-      'vue': 'vue/vue-quiz.md',
-      'angular': 'angular/angular-quiz.md',
-      'nodejs': 'nodejs/nodejs-quiz.md',
-      'typescript': 'typescript/typescript-quiz.md',
+      'php': 'php/php-quiz.md',
+      'ruby': 'ruby/ruby-quiz.md',
+      'go': 'go/go-quiz.md',
       'golang': 'go/go-quiz.md',
       'rust': 'rust/rust-quiz.md',
       'swift': 'swift/swift-quiz.md',
       'kotlin': 'kotlin/kotlin-quiz.md',
-      'php': 'php/php-quiz.md',
-      'ruby': 'ruby/ruby-quiz.md',
+      'typescript': 'typescript/typescript-quiz.md',
+      'r': 'r/r-quiz.md',
+      
+      // Frameworks and tools
+      'react': 'react/react-quiz.md',
+      'vue': 'vue/vue-quiz.md',
+      'angular': 'angular/angular-quiz.md',
+      'nodejs': 'node-js/node-js-quiz.md',
+      'node': 'node-js/node-js-quiz.md',
+      'node.js': 'node-js/node-js-quiz.md',
       'git': 'git/git-quiz.md',
-      'aws': 'aws/aws-quiz.md',
       'docker': 'docker/docker-quiz.md',
       'kubernetes': 'kubernetes/kubernetes-quiz.md',
+      'aws': 'aws/aws-quiz.md',
       'linux': 'linux/linux-quiz.md',
+      
+      // General categories - map to representative skills
       'networking': 'networking/networking-quiz.md',
-      'database': 'database/database-quiz.md',
-      'web-development': 'web/web-quiz.md',
-      'problem-solving': 'problem-solving/problem-solving-quiz.md'
+      'database': 'sql/sql-quiz.md',
+      'web-development': 'javascript/javascript-quiz.md',
+      'webdevelopment': 'javascript/javascript-quiz.md',
+      'problem-solving': 'java/java-quiz.md',
+      'problemsolving': 'java/java-quiz.md',
+      'programming': 'python/python-quiz.md'
     };
 
     // Get the correct GitHub path
-    const githubPath = skillToGitHubPath[skill.toLowerCase()];
+    const skillLower = skill.toLowerCase().trim();
+    const githubPath = skillToGitHubPath[skillLower];
     
     if (!githubPath) {
       console.warn('Unknown skill:', skill);
       return res.status(400).json({
         success: false,
-        message: `Unknown skill: ${skill}`
+        message: `Unknown skill: ${skill}. Supported skills: python, javascript, java, sql, react, docker, etc.`
       });
     }
 
@@ -1013,10 +1027,11 @@ router.get('/quiz-questions/:skill', async (req, res) => {
     });
 
     if (!response.ok) {
-      console.error('GitHub fetch failed:', response.status, response.statusText);
+      console.error('GitHub fetch failed:', response.status, response.statusText, 'URL:', githubUrl);
       return res.status(response.status).json({
         success: false,
-        message: `Failed to fetch questions from GitHub: ${response.statusText}`
+        message: `Failed to fetch questions from GitHub: ${response.statusText}`,
+        url: githubUrl
       });
     }
 
@@ -1026,6 +1041,14 @@ router.get('/quiz-questions/:skill', async (req, res) => {
     // Parse questions from markdown
     const questions = parseQuestionsFromMarkdown(markdown);
     console.log('Parsed questions count:', questions.length);
+
+    if (questions.length === 0) {
+      return res.status(200).json({
+        success: false,
+        message: 'No questions could be parsed from the markdown file',
+        data: []
+      });
+    }
 
     res.json({
       success: true,
@@ -1048,14 +1071,17 @@ function parseQuestionsFromMarkdown(markdown) {
   const lines = markdown.split('\n');
   let i = 0;
 
-  while (i < lines.length) {
+  while (i < lines.length && questions.length < 50) {
     const line = lines[i].trim();
 
-    // Look for question pattern (#### or ###)
-    if (line.startsWith('####') || line.startsWith('###')) {
-      const questionText = line.replace(/^#+\s*/, '').trim();
+    // Look for question pattern (#### or ### followed by number or text)
+    if ((line.startsWith('####') || line.startsWith('###')) && line.length > 4) {
+      let questionText = line.replace(/^#+\s*/, '').trim();
       
-      if (!questionText) {
+      // Remove leading numbers and dots (e.g., "1. Question text")
+      questionText = questionText.replace(/^\d+\.\s*/, '').trim();
+      
+      if (!questionText || questionText.length < 5) {
         i++;
         continue;
       }
@@ -1069,37 +1095,75 @@ function parseQuestionsFromMarkdown(markdown) {
       i++;
       let optionCount = 0;
 
-      // Parse options
-      while (i < lines.length && (lines[i].trim().startsWith('-') || lines[i].trim().startsWith('*'))) {
-        let optionText = lines[i].trim().replace(/^[-*]\s*/, '').trim();
-
-        if (optionText.startsWith('**') || optionText.startsWith('`')) {
-          // This might be a correct answer indicator
+      // Parse options - look for lines starting with - [ ] or * [ ] or - or *
+      while (i < lines.length) {
+        const optionLine = lines[i];
+        const trimmedOption = optionLine.trim();
+        
+        // Stop if we hit another question or section header
+        if (trimmedOption.startsWith('#') || (!trimmedOption.startsWith('-') && !trimmedOption.startsWith('*') && trimmedOption.length > 0)) {
+          break;
+        }
+        
+        // Parse checkbox format: - [ ] or - [x]
+        const checkboxMatch = trimmedOption.match(/^[-*]\s*\[([xX\s]?)\]\s+(.+)/);
+        if (checkboxMatch) {
+          const isCorrect = checkboxMatch[1].toLowerCase() === 'x';
+          let optionText = checkboxMatch[2].trim();
+          
+          // Clean up markdown formatting
+          optionText = optionText.replace(/\*\*/g, '').replace(/`/g, '').replace(/^-\s*/, '').trim();
+          
+          if (optionText && optionText.length > 0) {
+            questionObj.options.push(optionText);
+            if (isCorrect && !questionObj.correctAnswer) {
+              questionObj.correctAnswer = optionText;
+            }
+          }
+          optionCount++;
+        } 
+        // Parse simple bullet format: - text or * text
+        else if ((trimmedOption.startsWith('- ') || trimmedOption.startsWith('* ')) && trimmedOption.length > 2) {
+          let optionText = trimmedOption.substring(2).trim();
+          
+          // Check if this line is marked as correct (has ** or other marker)
+          const isCorrect = optionText.startsWith('**') || optionText.startsWith('`');
+          
+          // Clean up formatting
           optionText = optionText.replace(/\*\*/g, '').replace(/`/g, '').trim();
-          questionObj.correctAnswer = optionText;
+          
+          if (optionText && optionText.length > 0) {
+            questionObj.options.push(optionText);
+            if (isCorrect && !questionObj.correctAnswer) {
+              questionObj.correctAnswer = optionText;
+            }
+          }
+          optionCount++;
         }
-
-        if (optionText) {
-          questionObj.options.push(optionText);
-        }
-
+        
         i++;
-        optionCount++;
-        if (optionCount >= 4) break; // Limit to 4 options per question
+        if (optionCount >= 6) break; // Limit to 6 options per question
       }
 
-      // Only add if we have enough data
-      if (questionObj.options.length >= 2 && questionObj.correctAnswer) {
-        questions.push(questionObj);
+      // Only add if we have valid data
+      if (questionObj.options.length >= 2) {
+        // If no explicit correct answer, use first option as default
+        if (!questionObj.correctAnswer && questionObj.options.length > 0) {
+          questionObj.correctAnswer = questionObj.options[0];
+        }
+        
+        if (questionObj.correctAnswer) {
+          questions.push(questionObj);
+        }
       }
-
-      // Limit to reasonable number of questions
-      if (questions.length >= 50) break;
-    } else {
-      i++;
+      
+      continue;
     }
+    
+    i++;
   }
 
+  console.log(`Parsed ${questions.length} questions from markdown`);
   return questions;
 }
 

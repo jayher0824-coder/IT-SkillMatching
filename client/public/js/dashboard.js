@@ -335,18 +335,31 @@ function parseQuestionsAlternative(text, skill) {
  */
 async function showRandomSkillQuestion(skill, containerId) {
     const container = document.getElementById(containerId);
-    if (!container) return;
+    if (!container) {
+        console.error('Quiz container not found:', containerId);
+        return;
+    }
     container.innerHTML = 'Loading...';
     try {
+        console.log('Fetching questions for skill:', skill);
         const questions = await fetchSkillQuestions(skill);
-        if (!questions.length) {
-            container.innerHTML = 'No questions found.';
+        console.log('Questions received:', questions.length, questions);
+        
+        if (!questions || !questions.length) {
+            container.innerHTML = `
+                <div class="bg-yellow-50 dark:bg-yellow-900/20 border-2 border-yellow-300 dark:border-yellow-700 rounded-lg p-6 text-center">
+                    <p class="text-yellow-800 dark:text-yellow-300 font-semibold">⚠️ No Questions Found</p>
+                    <p class="text-yellow-700 dark:text-yellow-400 text-sm">No questions available for ${skill}</p>
+                </div>
+            `;
             return;
         }
-        const q = questions[Math.floor(Math.random() * questions.length)];
         
-        // Get category display name
-        const categoryName = container.parentElement?.dataset?.category || skill;
+        const q = questions[Math.floor(Math.random() * questions.length)];
+        console.log('Selected question:', q);
+        
+        // Get category from container's dataset
+        const categoryName = container.dataset.category || skill;
         const categoryDisplayNames = {
             'programming': 'Programming Fundamentals',
             'webDevelopment': 'Web Development',
@@ -418,10 +431,12 @@ async function showRandomSkillQuestion(skill, containerId) {
         container.innerHTML = html;
     } catch (e) {
         console.error('Error loading questions:', e);
+        console.error('Error stack:', e.stack);
         container.innerHTML = `
             <div class="bg-red-50 dark:bg-red-900/20 border-2 border-red-300 dark:border-red-700 rounded-lg p-6 text-center">
                 <p class="text-red-800 dark:text-red-300 font-semibold mb-2">⚠️ Error Loading Questions</p>
                 <p class="text-red-700 dark:text-red-400 text-sm mb-4">${e.message || 'Could not fetch questions for this category.'}</p>
+                <p class="text-red-600 dark:text-red-500 text-xs mb-4 font-mono">${e.stack ? e.stack.split('\n')[0] : ''}</p>
                 <button onclick="location.reload()" class="${BUTTON_STYLES.primaryClass}">🔄 Reload Page</button>
             </div>
         `;
