@@ -103,6 +103,8 @@ const quizState = {
     currentSkill: null,
     answered: false,
     containerId: null,
+    answers: [], // Track user answers
+    correctCount: 0, // Count correct answers
 
     init(questions, skill, containerId) {
         this.questions = questions;
@@ -110,11 +112,25 @@ const quizState = {
         this.currentSkill = skill;
         this.answered = false;
         this.containerId = containerId;
+        this.answers = [];
+        this.correctCount = 0;
         console.log('Quiz state initialized:', { skill, totalQuestions: questions.length });
     },
 
     getCurrentQuestion() {
         return this.questions[this.currentQuestionIndex] || null;
+    },
+
+    recordAnswer(selectedAnswer, correctAnswer, isCorrect) {
+        this.answers.push({
+            questionIndex: this.currentQuestionIndex,
+            selected: selectedAnswer,
+            correct: correctAnswer,
+            isCorrect: isCorrect
+        });
+        if (isCorrect) {
+            this.correctCount++;
+        }
     },
 
     nextQuestion() {
@@ -142,12 +158,22 @@ const quizState = {
         return this.questions.length;
     },
 
+    getScore() {
+        return {
+            correctCount: this.correctCount,
+            totalCount: this.questions.length,
+            percentage: Math.round((this.correctCount / this.questions.length) * 100)
+        };
+    },
+
     reset() {
         this.questions = [];
         this.currentQuestionIndex = 0;
         this.currentSkill = null;
         this.answered = false;
         this.containerId = null;
+        this.answers = [];
+        this.correctCount = 0;
     }
 };
 
@@ -657,6 +683,9 @@ function answerQuestion(selectedAnswer, correctAnswer, hint) {
     const isCorrect = selectedAnswer === correctAnswer;
     const currentIdx = quizState.getCurrentIndex();
     
+    // Record the answer for tracking
+    quizState.recordAnswer(selectedAnswer, correctAnswer, isCorrect);
+    
     // Mark as answered to prevent re-answering
     quizState.markAnswered();
     
@@ -687,13 +716,14 @@ function answerQuestion(selectedAnswer, correctAnswer, hint) {
         
         // Auto-advance after 2 seconds
         setTimeout(() => {
-            quizState.nextQuestion();
-            const currentQuestion = quizState.getCurrentQuestion();
-            if (currentQuestion) {
+            if (quizState.nextQuestion()) {
                 const skill = quizState.currentSkill;
                 const containerId = quizState.containerId;
                 const nextIdx = quizState.getCurrentIndex();
                 showRandomSkillQuestion(skill, containerId, nextIdx);
+            } else {
+                // Quiz completed
+                saveQuizResult();
             }
         }, 2000);
     } else {
@@ -708,16 +738,134 @@ function answerQuestion(selectedAnswer, correctAnswer, hint) {
         
         // Auto-advance after 2 seconds (no penalty, just move on)
         setTimeout(() => {
-            quizState.nextQuestion();
-            const currentQuestion = quizState.getCurrentQuestion();
-            if (currentQuestion) {
+            if (quizState.nextQuestion()) {
                 const skill = quizState.currentSkill;
                 const containerId = quizState.containerId;
                 const nextIdx = quizState.getCurrentIndex();
                 showRandomSkillQuestion(skill, containerId, nextIdx);
+            } else {
+                // Quiz completed
+                saveQuizResult();
             }
         }, 2000);
     }
+}
+
+/**
+ * Saves the quiz result to the backend
+ */
+async function saveQuizResult() {
+    try {
+        const score = quizState.getScore();
+        const skill = quizState.currentSkill;
+        
+        console.log('Saving quiz result:', score);
+        
+        // Save to backend
+        const response = await apiCall('/assessments/quiz/result', 'POST', {
+            skill: skill,
+            score: score.percentage,
+            totalQuestions: score.totalCount,
+            questionsCorrect: score.correctCount
+        });
+        
+        if (response.success) {
+            console.log('Quiz result saved successfully');
+            // Show completion screen with results
+            showQuizCompletion(score, skill);
+        }
+    } catch (error) {
+        console.error('Error saving quiz result:', error);
+        // Still show completion screen even if save fails
+        const score = quizState.getScore();
+        showQuizCompletion(score, quizState.currentSkill);
+    }
+}
+
+/**
+ * Displays the quiz completion screen with results
+ */
+function showQuizCompletion(score, skill) {
+    const container = document.getElementById(quizState.containerId);
+    if (!container) return;
+    
+    const passed = score.percentage >= 60;
+    
+    container.innerHTML = `
+        <div class="min-h-screen bg-gradient-to-br from-green-50 via-blue-50 to-indigo-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 p-4 md:p-8">
+            <div class="max-w-2xl mx-auto">
+                <!-- Quiz Container -->
+                <div class="quiz-container bg-white dark:bg-gray-800 p-8 rounded-xl shadow-2xl border-4 border-green-500">
+                    <!-- Success/Failure Header -->
+                    <div class="text-center mb-8">
+                        <div class="text-6xl mb-4">
+                            ${passed ? '🎉' : '📚'}
+                        </div>
+                        <h1 class="text-4xl font-bold text-gray-900 dark:text-white mb-2">
+                            ${passed ? 'Congratulations!' : 'Quiz Complete'}
+                        </h1>
+                        <p class="text-lg text-gray-600 dark:text-gray-400">
+                            ${passed ? 'Great job! You passed the quiz.' : 'You completed the quiz. Keep practicing!'}
+                        </p>
+                    </div>
+                    
+                    <!-- Score Display -->
+                    <div class="bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 rounded-lg p-8 mb-8">
+                        <div class="flex items-center justify-around">
+                            <div class="text-center">
+                                <div class="text-5xl font-bold text-green-600 dark:text-green-400 mb-2">
+                                    ${score.percentage}%
+                                </div>
+                                <p class="text-gray-600 dark:text-gray-400 font-semibold">Score</p>
+                            </div>
+                            <div class="border-l-2 border-gray-300 dark:border-gray-600"></div>
+                            <div class="text-center">
+                                <div class="text-5xl font-bold text-blue-600 dark:text-blue-400 mb-2">
+                                    ${score.correctCount}/${score.totalCount}
+                                </div>
+                                <p class="text-gray-600 dark:text-gray-400 font-semibold">Correct</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Skill and Status -->
+                    <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-6 mb-8">
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <p class="text-sm text-gray-600 dark:text-gray-400">Skill Assessed</p>
+                                <p class="text-xl font-bold text-gray-900 dark:text-white">${skill}</p>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-sm text-gray-600 dark:text-gray-400">Status</p>
+                                <span class="inline-block px-4 py-2 rounded-lg font-bold ${passed ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' : 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400'}">
+                                    ${passed ? '✅ Passed' : '⏳ Review'}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Gamification Points -->
+                    <div class="bg-gradient-to-r from-green-400 to-blue-500 text-white rounded-lg p-6 mb-8 text-center">
+                        <div class="text-3xl font-bold">🏆 +${score.correctCount * 10} Points Earned</div>
+                        <p class="text-green-100 mt-2">Your total points: ${quizGamification.points}</p>
+                    </div>
+                    
+                    <!-- Action Buttons -->
+                    <div class="flex gap-4">
+                        <button onclick="backToAssessment()" class="${BUTTON_STYLES.primaryClass} flex-1 py-3">
+                            <i class="fas fa-arrow-left mr-2"></i>Back to Assessment
+                        </button>
+                        <button onclick="loadAssessmentHistory()" class="flex-1 py-3 px-6 bg-blue-500 dark:bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-600 dark:hover:bg-blue-700 transition">
+                            <i class="fas fa-history mr-2"></i>View History
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Scroll to top
+    document.getElementById(quizState.containerId).scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 // ============================================

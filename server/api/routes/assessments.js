@@ -1167,4 +1167,85 @@ function parseQuestionsFromMarkdown(markdown) {
   return questions;
 }
 
+// @desc    Save quiz result (for new quiz system)
+// @route   POST /api/assessments/quiz/result
+// @access  Private (Students only)
+router.post('/quiz/result', protect, authorize('student'), async (req, res) => {
+  try {
+    const { skill, score, totalQuestions, questionsCorrect } = req.body;
+    
+    console.log('Saving quiz result:', {
+      userId: req.user._id,
+      skill,
+      score,
+      totalQuestions,
+      questionsCorrect
+    });
+
+    // Find the student profile
+    const student = await Student.findOne({ user: req.user._id });
+    
+    if (!student) {
+      return res.status(404).json({
+        success: false,
+        message: 'Student profile not found',
+      });
+    }
+
+    // Create or get a quiz assessment record
+    let assessment = await Assessment.findOne({ 
+      category: skill.toLowerCase(),
+      isActive: true 
+    });
+
+    // If no assessment exists for this skill, create a placeholder
+    if (!assessment) {
+      assessment = await Assessment.create({
+        title: `${skill} Quiz`,
+        description: `Quick quiz for ${skill} skills`,
+        category: skill.toLowerCase(),
+        isActive: true,
+        passingScore: 60,
+        questions: [],
+        timeLimit: 30
+      });
+    }
+
+    // Calculate percentage
+    const percentage = Math.round((questionsCorrect / totalQuestions) * 100);
+    const passed = percentage >= 60; // 60% passing score
+
+    // Create assessment result
+    const result = await AssessmentResult.create({
+      student: student._id,
+      assessment: assessment._id,
+      answers: [],
+      score: questionsCorrect,
+      percentage: percentage,
+      passed: passed,
+      timeSpent: 0,
+      startedAt: new Date(Date.now() - 5 * 60000), // 5 minutes ago (approximate)
+      completedAt: new Date(),
+      categoryScores: {
+        [skill.toLowerCase()]: percentage
+      }
+    });
+
+    // Populate the result before sending
+    await result.populate('assessment', 'title description category');
+
+    res.json({
+      success: true,
+      message: 'Quiz result saved',
+      data: result,
+    });
+  } catch (error) {
+    console.error('Error saving quiz result:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error',
+    });
+  }
+});
+
 module.exports = router;
