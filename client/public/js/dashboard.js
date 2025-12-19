@@ -133,7 +133,19 @@ async function fetchSkillQuestions(skill) {
         cpp: 'c++/c++-quiz.md',
         html: 'html/html-quiz.md',
         css: 'css/css-quiz.md',
-        // Add more as needed
+        sql: 'sql/sql-quiz.md',
+        php: 'php/php-quiz.md',
+        ruby: 'ruby/ruby-quiz.md',
+        go: 'go/go-quiz.md',
+        rust: 'rust/rust-quiz.md',
+        swift: 'swift/swift-quiz.md',
+        kotlin: 'kotlin/kotlin-quiz.md',
+        typescript: 'typescript/typescript-quiz.md',
+        r: 'r/r-quiz.md',
+        scala: 'scala/scala-quiz.md',
+        perl: 'perl/perl-quiz.md',
+        assembly: 'assembly/assembly-quiz.md',
+        matlab: 'matlab/matlab-quiz.md'
     };
     const file = skillMap[skill.toLowerCase()];
     if (!file) throw new Error('Skill not supported');
@@ -141,27 +153,71 @@ async function fetchSkillQuestions(skill) {
     const res = await fetch(url);
     if (!res.ok) throw new Error('Failed to fetch questions');
     const text = await res.text();
-    // Parse markdown: questions start with 'Q' or a number, answers with '- ['
-    const questionBlocks = text.split(/\n(?=\d+\.|Q\d+:)/g);
-    const questions = questionBlocks.map((block, index) => {
-        const lines = block.split('\n');
-        const qLine = lines.find(l => /^\d+\.|^Q\d+:/.test(l));
-        if (!qLine) return null;
-        const question = qLine.replace(/^\d+\.|^Q\d+:/, '').trim();
-        const options = lines.filter(l => /^- \[.?\]/.test(l)).map(l => l.replace(/^- \[.?\] ?/, '').trim());
-        const correctAnswer = lines.find(l => /^- \[x\]/i.test(l));
-        
-        if (!options.length) return null;
-        
-        return {
-            id: index + 1,
-            question,
-            options,
-            correctAnswer: correctAnswer ? correctAnswer.replace(/^- \[x\] ?/i, '').trim() : options[0],
-            hint: `Consider the main concept being tested in this question about ${skill}.`,
-            difficulty: 'medium' // Will be adjusted based on user performance
-        };
-    }).filter(Boolean);
+    
+    // Better markdown parsing: split by ## (question headers)
+    const questionSections = text.split(/\n(?=#{1,3}\s+\d+\.)/);
+    const questions = [];
+    
+    questionSections.forEach((section, index) => {
+        try {
+            const lines = section.split('\n').filter(l => l.trim());
+            if (lines.length < 2) return;
+            
+            // Extract question text from the header or first line
+            const headerLine = lines[0];
+            let question = headerLine.replace(/^#+\s*\d+\.\s*/, '').trim();
+            
+            // Remove any markdown code blocks or special formatting
+            question = question.replace(/\*\*/g, '').replace(/`/g, '').trim();
+            
+            if (!question) return;
+            
+            // Extract options - look for lines starting with - [ ]
+            const options = [];
+            let correctAnswer = null;
+            
+            for (let i = 1; i < lines.length; i++) {
+                const line = lines[i];
+                // Match [ ], [x], [X], etc.
+                const optionMatch = line.match(/^-\s*\[([xX\s]?)\]\s+(.+)/);
+                if (optionMatch) {
+                    const isCorrect = optionMatch[1].toLowerCase() === 'x';
+                    const answer = optionMatch[2].trim();
+                    
+                    // Skip if answer is too short or empty
+                    if (answer.length < 2) continue;
+                    
+                    options.push(answer);
+                    if (isCorrect && !correctAnswer) {
+                        correctAnswer = answer;
+                    }
+                }
+            }
+            
+            // Only add if we have both question and options
+            if (question.length > 5 && options.length >= 2) {
+                questions.push({
+                    id: questions.length + 1,
+                    question,
+                    options,
+                    correctAnswer: correctAnswer || options[0],
+                    hint: `Think about the core concepts of ${skill}. Look for the most accurate answer.`,
+                    difficulty: 'medium'
+                });
+            }
+        } catch (e) {
+            console.log('Error parsing question section:', e);
+        }
+    });
+    
+    // If we got very few questions, try alternative parsing method
+    if (questions.length < 5) {
+        console.log('Standard parsing got', questions.length, 'questions. Trying alternative method...');
+        const altQuestions = parseQuestionsAlternative(text, skill);
+        if (altQuestions.length > questions.length) {
+            return altQuestions;
+        }
+    }
     
     // Integrate adaptive difficulty based on current performance
     questions.forEach(q => {
@@ -171,6 +227,65 @@ async function fetchSkillQuestions(skill) {
             q.difficulty = 'medium';
         } else {
             q.difficulty = 'easy';
+        }
+    });
+    
+    console.log(`Fetched ${questions.length} questions for ${skill}`);
+    return questions;
+}
+
+/**
+ * Alternative parsing method for questions
+ */
+function parseQuestionsAlternative(text, skill) {
+    const questions = [];
+    
+    // Split by numbered questions or Q markers
+    const parts = text.split(/\n\d+\.\s+/);
+    
+    parts.forEach((part, index) => {
+        try {
+            if (part.length < 20) return;
+            
+            const lines = part.split('\n');
+            let question = lines[0].trim();
+            
+            // Clean question
+            question = question.replace(/\*\*/g, '').replace(/`/g, '').trim();
+            
+            if (!question || question.length < 5) return;
+            
+            const options = [];
+            let correctAnswer = null;
+            
+            for (let i = 1; i < lines.length; i++) {
+                const line = lines[i].trim();
+                const optionMatch = line.match(/^\[([xX\s]?)\]\s+(.+)/);
+                if (optionMatch) {
+                    const isCorrect = optionMatch[1].toLowerCase() === 'x';
+                    const answer = optionMatch[2].trim();
+                    
+                    if (answer.length < 2) continue;
+                    
+                    options.push(answer);
+                    if (isCorrect && !correctAnswer) {
+                        correctAnswer = answer;
+                    }
+                }
+            }
+            
+            if (question.length > 5 && options.length >= 2) {
+                questions.push({
+                    id: questions.length + 1,
+                    question,
+                    options,
+                    correctAnswer: correctAnswer || options[0],
+                    hint: `Consider what this question is asking about ${skill}.`,
+                    difficulty: 'medium'
+                });
+            }
+        } catch (e) {
+            console.log('Error in alternative parsing:', e);
         }
     });
     
@@ -6570,6 +6685,13 @@ async function loadCareerPaths() {
         }
 
         careerPathsContent.innerHTML = `
+            <div class="mb-8">
+                <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-4">Career Growth Potential</h3>
+                <div class="bg-white dark:bg-gray-800 rounded-lg p-6 shadow">
+                    <canvas id="careerGrowthChart" height="80"></canvas>
+                </div>
+            </div>
+            
             <div class="grid md:grid-cols-2 gap-6">
                 ${careerPaths.map(path => `
                     <div class="bg-gradient-to-br from-${path.color}-50 to-${path.color}-100 dark:from-${path.color}-900/20 dark:to-${path.color}-800/20 rounded-lg p-6 border-2 border-${path.color}-200 dark:border-${path.color}-800 hover:shadow-lg transition">
@@ -6632,6 +6754,11 @@ async function loadCareerPaths() {
                 `).join('')}
             </div>
         `;
+        
+        // Load and initialize the chart after content is added
+        setTimeout(() => {
+            initializeCareerGrowthChart(careerPaths);
+        }, 100);
 
     } catch (error) {
         console.error('Error loading career paths:', error);
@@ -6736,6 +6863,108 @@ function generateCareerRecommendations(profile, categoryScores) {
             skillGap
         };
     }).filter(path => path.matchScore > 0).sort((a, b) => b.matchScore - a.matchScore);
+}
+
+/**
+ * Initialize career growth chart
+ */
+function initializeCareerGrowthChart(careerPaths) {
+    const canvas = document.getElementById('careerGrowthChart');
+    if (!canvas) return;
+    
+    try {
+        // Check if Chart.js is loaded
+        if (typeof Chart === 'undefined') {
+            // If Chart.js is not available, use a simple SVG-based visualization
+            drawSimpleCareerChart(canvas, careerPaths);
+            return;
+        }
+        
+        const ctx = canvas.getContext('2d');
+        const colors = ['#56AE67', '#3B82F6', '#8B5CF6', '#EC4899', '#F59E0B'];
+        
+        new Chart(ctx, {
+            type: 'radar',
+            data: {
+                labels: careerPaths.slice(0, 5).map(path => path.title),
+                datasets: [{
+                    label: 'Match Score',
+                    data: careerPaths.slice(0, 5).map(path => path.matchScore),
+                    borderColor: '#56AE67',
+                    backgroundColor: 'rgba(86, 174, 103, 0.1)',
+                    pointBackgroundColor: '#56AE67',
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2,
+                    pointRadius: 6,
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    r: {
+                        beginAtZero: true,
+                        max: 100,
+                        ticks: {
+                            stepSize: 20
+                        }
+                    }
+                }
+            }
+        });
+    } catch (e) {
+        console.log('Chart initialization error:', e);
+        drawSimpleCareerChart(canvas, careerPaths);
+    }
+}
+
+/**
+ * Draw simple career progression chart if Chart.js unavailable
+ */
+function drawSimpleCareerChart(canvas, careerPaths) {
+    const container = canvas.parentElement;
+    const svg = `
+        <svg width="100%" height="400" viewBox="0 0 600 250" style="max-width: 100%;">
+            <!-- Grid lines -->
+            <line x1="60" y1="200" x2="580" y2="200" stroke="#ddd" stroke-width="1"/>
+            <line x1="60" y1="150" x2="580" y2="150" stroke="#ddd" stroke-width="1" stroke-dasharray="5,5"/>
+            <line x1="60" y1="100" x2="580" y2="100" stroke="#ddd" stroke-width="1" stroke-dasharray="5,5"/>
+            <line x1="60" y1="50" x2="580" y2="50" stroke="#ddd" stroke-width="1" stroke-dasharray="5,5"/>
+            
+            <!-- Axes -->
+            <line x1="60" y1="30" x2="60" y2="210" stroke="#333" stroke-width="2"/>
+            <line x1="60" y1="210" x2="580" y2="210" stroke="#333" stroke-width="2"/>
+            
+            <!-- Y-axis labels -->
+            <text x="50" y="215" font-size="12" text-anchor="end">0</text>
+            <text x="50" y="165" font-size="12" text-anchor="end">25</text>
+            <text x="50" y="115" font-size="12" text-anchor="end">50</text>
+            <text x="50" y="65" font-size="12" text-anchor="end">75</text>
+            <text x="50" y="15" font-size="12" text-anchor="end">100</text>
+            
+            <!-- Career path bars -->
+            ${careerPaths.slice(0, 4).map((path, idx) => {
+                const x = 100 + idx * 120;
+                const height = (path.matchScore / 100) * 160;
+                const colors = ['#56AE67', '#3B82F6', '#8B5CF6', '#EC4899'];
+                return `
+                    <g>
+                        <rect x="${x}" y="${210 - height}" width="80" height="${height}" fill="${colors[idx]}" opacity="0.8"/>
+                        <text x="${x + 40}" y="230" font-size="12" text-anchor="middle" font-weight="bold">${path.title.split(' ')[0]}</text>
+                        <text x="${x + 40}" y="${200 - height - 5}" font-size="12" text-anchor="middle" font-weight="bold">${path.matchScore}%</text>
+                    </g>
+                `;
+            }).join('')}
+        </svg>
+    `;
+    
+    container.innerHTML = svg;
 }
 
 // ============================================
