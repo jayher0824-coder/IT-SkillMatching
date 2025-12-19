@@ -387,48 +387,77 @@ async function showRandomSkillQuestion(skill, containerId) {
         
         // Display question with gamification and feedback features
         let html = `
-            <div class="quiz-container bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 p-6 rounded-lg shadow-lg border-2 border-green-500">
-                <div class="mb-6 pb-4 border-b-2 border-gray-300 dark:border-gray-600">
-                    <div class="flex justify-between items-start mb-3">
-                        <div>
-                            <h2 class="text-xl font-bold text-gray-800 dark:text-white">${displayCategory} Quiz</h2>
-                            <p class="text-sm text-gray-600 dark:text-gray-400">Question ${q.id} • Difficulty: <span class="font-semibold">${q.difficulty.charAt(0).toUpperCase() + q.difficulty.slice(1)}</span></p>
+            <div class="min-h-screen bg-gradient-to-br from-green-50 via-blue-50 to-indigo-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 p-4 md:p-8">
+                <div class="max-w-2xl mx-auto">
+                    <!-- Back Button -->
+                    <button onclick="backToAssessment()" class="mb-6 flex items-center text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 transition font-semibold">
+                        <i class="fas fa-arrow-left mr-2"></i>
+                        Back to Assessment
+                    </button>
+                    
+                    <!-- Quiz Container -->
+                    <div class="quiz-container bg-white dark:bg-gray-800 p-8 rounded-xl shadow-2xl border-4 border-green-500">
+                        <div class="mb-8 pb-6 border-b-2 border-gray-300 dark:border-gray-600">
+                            <div class="flex justify-between items-start mb-4">
+                                <div>
+                                    <h1 class="text-3xl font-bold text-gray-900 dark:text-white">${displayCategory} Quiz</h1>
+                                    <p class="text-sm text-gray-600 dark:text-gray-400 mt-2">Question ${q.id} • Difficulty: <span class="font-semibold text-green-600 dark:text-green-400">${q.difficulty.charAt(0).toUpperCase() + q.difficulty.slice(1)}</span></p>
+                                </div>
+                                <div class="bg-gradient-to-br from-green-400 to-blue-500 text-white px-6 py-4 rounded-xl text-right shadow-lg">
+                                    <div class="text-4xl font-bold">🏆 ${quizGamification.points}</div>
+                                    <div class="text-sm font-semibold mt-2">Level ${quizGamification.level}</div>
+                                </div>
+                            </div>
+                            <div class="w-full bg-gray-300 dark:bg-gray-600 rounded-full h-3">
+                                <div class="bg-gradient-to-r from-green-400 to-green-600 h-3 rounded-full" style="width: 25%; transition: width 0.3s;"></div>
+                            </div>
                         </div>
-                        <div class="bg-gradient-to-br from-green-400 to-blue-500 text-white px-4 py-2 rounded-lg text-right">
-                            <div class="text-2xl font-bold">🏆 ${quizGamification.points}</div>
-                            <div class="text-xs font-semibold">Level ${quizGamification.level}</div>
+                        
+                        <!-- Question -->
+                        <div class="mb-8">
+                            <p class="text-2xl font-bold text-gray-900 dark:text-white mb-6 p-6 bg-green-50 dark:bg-green-900/20 rounded-lg border-l-4 border-green-500">${q.question}</p>
+                            
+                            <!-- Hint -->
+                            <div class="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500 rounded-lg">
+                                <p class="text-blue-800 dark:text-blue-300 flex items-start">
+                                    <span class="mr-3 text-xl">💡</span>
+                                    <span class="text-base">${q.hint}</span>
+                                </p>
+                            </div>
                         </div>
-                    </div>
-                    <div class="w-full bg-gray-300 dark:bg-gray-600 rounded-full h-2">
-                        <div class="bg-green-500 h-2 rounded-full" style="width: 25%; transition: width 0.3s;"></div>
-                    </div>
-                </div>
-                
-                <p class="text-lg font-semibold text-gray-900 dark:text-white mb-6 p-4 bg-white dark:bg-gray-800 rounded border-l-4 border-green-500">${q.question}</p>
-                
-                <div class="mb-6">
-                    <p class="text-sm text-blue-700 dark:text-blue-300 mb-4 p-3 bg-blue-50 dark:bg-blue-900/30 rounded flex items-start">
-                        <span class="mr-2">💡</span>
-                        <span>${q.hint}</span>
-                    </p>
-                    <div class="space-y-2">
+                        
+                        <!-- Answer Options -->
+                        <div class="mb-8">
+                            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Choose the correct answer:</h3>
+                            <div class="space-y-3">
         `;
         
         q.options.forEach((opt, idx) => {
-            html += `<button onclick="answerQuestion('${opt.replace(/'/g, "\\'")}', '${q.correctAnswer.replace(/'/g, "\\'")}', '${q.hint.replace(/'/g, "\\'")}')" class="${BUTTON_STYLES.primaryClass} w-full text-left p-4 mb-2 hover:shadow-md transition transform hover:scale-105">
-                <span class="flex items-center">
-                    <span class="mr-3 text-lg">⭕</span>
-                    ${opt}
-                </span>
-            </button>`;
+            html += `
+                <button onclick="answerQuestion('${opt.replace(/'/g, "\\'")}', '${q.correctAnswer.replace(/'/g, "\\'")}', '${q.hint.replace(/'/g, "\\'")}')" 
+                    class="w-full p-4 text-left bg-white dark:bg-gray-700 border-2 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg hover:border-green-500 hover:bg-green-50 dark:hover:bg-green-900/20 hover:shadow-lg transition transform hover:scale-102 font-semibold text-base">
+                    <span class="flex items-center">
+                        <span class="mr-3 text-lg text-green-600 dark:text-green-400">⭕</span>
+                        <span class="flex-1">${opt}</span>
+                    </span>
+                </button>
+            `;
         });
         
         html += `
+                            </div>
+                        </div>
+                        
+                        <!-- Action Buttons -->
+                        <div class="flex gap-4 pt-6 border-t-2 border-gray-300 dark:border-gray-600">
+                            <button onclick="showRandomSkillQuestion('${skill}', '${containerId}')" class="${BUTTON_STYLES.primaryClass} flex-1 py-3">
+                                <i class="fas fa-forward-step mr-2"></i>Next Question
+                            </button>
+                            <button onclick="backToAssessment()" class="flex-1 py-3 px-6 bg-gray-500 dark:bg-gray-600 text-white font-semibold rounded-lg hover:bg-gray-600 dark:hover:bg-gray-700 transition">
+                                <i class="fas fa-times mr-2"></i>Exit Quiz
+                            </button>
+                        </div>
                     </div>
-                </div>
-                
-                <div class="flex gap-3">
-                    <button onclick="showRandomSkillQuestion('${skill}', '${containerId}')" class="${BUTTON_STYLES.primaryClass} flex-1">🔄 Next Question</button>
                 </div>
             </div>
         `;
@@ -437,10 +466,8 @@ async function showRandomSkillQuestion(skill, containerId) {
         container.innerHTML = html;
         console.log('Quiz rendered successfully');
         
-        // Scroll to quiz
-        setTimeout(() => {
-            container.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }, 100);
+        // Scroll to top
+        container.scrollIntoView({ behavior: 'smooth', block: 'start' });
         
     } catch (e) {
         console.error('Error loading questions:', e);
@@ -448,16 +475,40 @@ async function showRandomSkillQuestion(skill, containerId) {
         console.error('Full error details:', JSON.stringify(e, Object.getOwnPropertyNames(e)));
         
         container.innerHTML = `
-            <div class="bg-red-50 dark:bg-red-900/20 border-2 border-red-300 dark:border-red-700 rounded-lg p-6 text-center">
-                <p class="text-red-800 dark:text-red-300 font-semibold mb-2">⚠️ Error Loading Questions</p>
-                <p class="text-red-700 dark:text-red-400 text-sm mb-4">${e.message || 'Could not fetch questions for this category.'}</p>
-                <p class="text-red-600 dark:text-red-500 text-xs mb-4 font-mono bg-red-100 dark:bg-red-900/30 p-3 rounded overflow-auto max-h-32">
-                    ${e.stack ? e.stack.split('\n').slice(0, 3).join('<br>') : e.toString()}
-                </p>
-                <button onclick="location.reload()" class="${BUTTON_STYLES.primaryClass}">🔄 Reload Page</button>
+            <div class="min-h-screen bg-red-50 dark:bg-red-900/20 flex items-center justify-center p-4">
+                <div class="bg-white dark:bg-gray-800 rounded-lg p-8 max-w-md text-center border-2 border-red-300 dark:border-red-700">
+                    <p class="text-4xl mb-4">⚠️</p>
+                    <p class="text-red-800 dark:text-red-300 font-semibold text-lg mb-2">Error Loading Questions</p>
+                    <p class="text-red-700 dark:text-red-400 text-sm mb-4">${e.message || 'Could not fetch questions for this category.'}</p>
+                    <p class="text-red-600 dark:text-red-500 text-xs mb-6 font-mono bg-red-100 dark:bg-red-900/30 p-4 rounded overflow-auto max-h-32">
+                        ${e.stack ? e.stack.split('\n').slice(0, 3).join('<br>') : e.toString()}
+                    </p>
+                    <button onclick="backToAssessment()" class="${BUTTON_STYLES.primaryClass} w-full">
+                        <i class="fas fa-arrow-left mr-2"></i>Back to Assessment
+                    </button>
+                </div>
             </div>
         `;
     }
+}
+
+function backToAssessment() {
+    console.log('Going back to assessment');
+    const quizContainer = document.getElementById('skill-quiz-container');
+    if (quizContainer) {
+        quizContainer.innerHTML = '';
+        quizContainer.classList.add('hidden');
+    }
+    
+    // Show the assessment section cards again
+    const assessmentSection = document.getElementById('assessment-section');
+    if (assessmentSection) {
+        assessmentSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+    
+    // Show the card grids
+    const gridContainers = document.querySelectorAll('.grid-container');
+    gridContainers.forEach(container => container.classList.remove('hidden'));
 }
 
 /**
@@ -5242,6 +5293,17 @@ function startCategoryAssessment(category) {
     assessmentSection.classList.remove('hidden');
     console.log('Assessment section shown');
     
+    // Hide the card grids so quiz shows on full page
+    const gridContainers = document.querySelectorAll('.grid-container');
+    console.log('Hiding grid containers, count:', gridContainers.length);
+    gridContainers.forEach(container => container.classList.add('hidden'));
+    
+    // Hide the gamification badge and title area
+    const assessmentHeader = assessmentSection.querySelector('div:first-child');
+    if (assessmentHeader && assessmentHeader.querySelector('h2')) {
+        assessmentHeader.classList.add('hidden');
+    }
+    
     // Scroll to assessment section
     setTimeout(() => assessmentSection.scrollIntoView({ behavior: 'smooth' }), 100);
     
@@ -5253,16 +5315,9 @@ function startCategoryAssessment(category) {
         console.log('Creating new quiz container');
         const container = document.createElement('div');
         container.id = 'skill-quiz-container';
-        container.className = 'mt-6 p-6 bg-white dark:bg-gray-800 rounded-lg border-2 border-green-500';
+        container.className = 'mt-0 p-0';
         
-        // Find where to insert the quiz container - after the gamification badge
-        const existingContent = assessmentSection.querySelector('.grid-container');
-        if (existingContent) {
-            // Insert before the first grid-container
-            existingContent.parentElement.insertBefore(container, existingContent);
-        } else {
-            assessmentSection.appendChild(container);
-        }
+        assessmentSection.appendChild(container);
         quizContainer = container;
     } else {
         // Clear previous quiz content
