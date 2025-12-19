@@ -272,17 +272,21 @@ function switchToSection(sectionName) {
 
 /**
  * Updates the gamification display showing points and level
+ * Also saves points to backend
  */
 function updateGamificationDisplay() {
     const pointsDisplay = document.getElementById('points-display');
     const levelDisplay = document.getElementById('level-display');
-    
+
     if (pointsDisplay) {
         pointsDisplay.textContent = quizGamification.points;
     }
     if (levelDisplay) {
         levelDisplay.textContent = quizGamification.level;
     }
+
+    // Save points to backend
+    saveGamificationPoints();
 }
 
 // ============================================

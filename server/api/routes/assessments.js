@@ -1248,4 +1248,47 @@ router.post('/quiz/result', protect, authorize('student'), async (req, res) => {
   }
 });
 
+// @route   GET /api/gamification/points
+// @access  Private (Students only)
+router.get('/gamification/points', protect, authorize('student'), async (req, res) => {
+    try {
+        const student = await Student.findOne({ user: req.user._id });
+        if (!student) {
+            return res.status(404).json({ success: false, message: 'Student profile not found' });
+        }
+
+        res.json({
+            success: true,
+            data: {
+                points: student.gamificationPoints || 0,
+                level: student.gamificationLevel || 1
+            }
+        });
+    } catch (error) {
+        console.error('Error fetching gamification points:', error);
+        res.status(500).json({ success: false, message: 'Server error' });
+    }
+});
+
+// @route   POST /api/gamification/points
+// @access  Private (Students only)
+router.post('/gamification/points', protect, authorize('student'), async (req, res) => {
+    try {
+        const { points, level } = req.body;
+        const student = await Student.findOne({ user: req.user._id });
+        if (!student) {
+            return res.status(404).json({ success: false, message: 'Student profile not found' });
+        }
+
+        student.gamificationPoints = points;
+        student.gamificationLevel = level;
+        await student.save();
+
+        res.json({ success: true, message: 'Gamification points updated' });
+    } catch (error) {
+        console.error('Error saving gamification points:', error);
+        res.status(500).json({ success: false, message: 'Server error' });
+    }
+});
+
 module.exports = router;
