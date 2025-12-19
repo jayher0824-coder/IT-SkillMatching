@@ -804,32 +804,32 @@ function showQuizCompletion(score, skill) {
                         <h1 class="text-4xl font-bold text-gray-900 dark:text-white mb-2">
                             ${passed ? 'Congratulations!' : 'Quiz Complete'}
                         </h1>
-                        <p class="text-lg text-gray-600 dark:text-gray-400">
+                        <p class="text-lg text-gray-700 dark:text-gray-300">
                             ${passed ? 'Great job! You passed the quiz.' : 'You completed the quiz. Keep practicing!'}
                         </p>
                     </div>
                     
                     <!-- Score Display -->
-                    <div class="bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 rounded-lg p-8 mb-8">
+                    <div class="bg-gradient-to-r from-green-50 to-blue-50 dark:from-gray-700 dark:to-gray-700 rounded-lg p-8 mb-8 border dark:border-gray-600">
                         <div class="flex items-center justify-around">
                             <div class="text-center">
-                                <div class="text-5xl font-bold text-green-600 dark:text-green-400 mb-2">
+                                <div class="text-5xl font-bold text-green-600 dark:text-green-300 mb-2">
                                     ${score.percentage}%
                                 </div>
-                                <p class="text-gray-600 dark:text-gray-400 font-semibold">Score</p>
+                                <p class="text-gray-700 dark:text-gray-300 font-semibold">Score</p>
                             </div>
-                            <div class="border-l-2 border-gray-300 dark:border-gray-600"></div>
+                            <div class="border-l-2 border-gray-300 dark:border-gray-500"></div>
                             <div class="text-center">
-                                <div class="text-5xl font-bold text-blue-600 dark:text-blue-400 mb-2">
+                                <div class="text-5xl font-bold text-blue-600 dark:text-blue-300 mb-2">
                                     ${score.correctCount}/${score.totalCount}
                                 </div>
-                                <p class="text-gray-600 dark:text-gray-400 font-semibold">Correct</p>
+                                <p class="text-gray-700 dark:text-gray-300 font-semibold">Correct</p>
                             </div>
                         </div>
                     </div>
                     
                     <!-- Skill and Status -->
-                    <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-6 mb-8">
+                    <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-6 mb-8 border dark:border-gray-600">
                         <div class="flex justify-between items-center">
                             <div>
                                 <p class="text-sm text-gray-600 dark:text-gray-400">Skill Assessed</p>
@@ -837,7 +837,7 @@ function showQuizCompletion(score, skill) {
                             </div>
                             <div class="text-right">
                                 <p class="text-sm text-gray-600 dark:text-gray-400">Status</p>
-                                <span class="inline-block px-4 py-2 rounded-lg font-bold ${passed ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' : 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400'}">
+                                <span class="inline-block px-4 py-2 rounded-lg font-bold ${passed ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300' : 'bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300'}">
                                     ${passed ? '✅ Passed' : '⏳ Review'}
                                 </span>
                             </div>
@@ -845,17 +845,17 @@ function showQuizCompletion(score, skill) {
                     </div>
                     
                     <!-- Gamification Points -->
-                    <div class="bg-gradient-to-r from-green-400 to-blue-500 text-white rounded-lg p-6 mb-8 text-center">
+                    <div class="bg-gradient-to-r from-green-400 to-blue-500 text-white rounded-lg p-6 mb-8 text-center shadow-lg">
                         <div class="text-3xl font-bold">🏆 +${score.correctCount * 10} Points Earned</div>
-                        <p class="text-green-100 mt-2">Your total points: ${quizGamification.points}</p>
+                        <p class="text-white mt-2 font-semibold">Your total points: ${quizGamification.points}</p>
                     </div>
                     
                     <!-- Action Buttons -->
                     <div class="flex gap-4">
-                        <button onclick="backToAssessment()" class="${BUTTON_STYLES.primaryClass} flex-1 py-3">
+                        <button onclick="backToAssessment()" class="flex-1 py-3 px-6 bg-teal-600 dark:bg-teal-500 hover:bg-teal-700 dark:hover:bg-teal-600 text-white font-bold rounded-lg transition duration-200 shadow-md border-2 border-teal-700 dark:border-teal-400">
                             <i class="fas fa-arrow-left mr-2"></i>Back to Assessment
                         </button>
-                        <button onclick="loadAssessmentHistory()" class="flex-1 py-3 px-6 bg-blue-500 dark:bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-600 dark:hover:bg-blue-700 transition">
+                        <button onclick="loadAssessmentHistory()" class="flex-1 py-3 px-6 bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-600 text-white font-bold rounded-lg transition duration-200 shadow-md border-2 border-blue-700 dark:border-blue-400">
                             <i class="fas fa-history mr-2"></i>View History
                         </button>
                     </div>
