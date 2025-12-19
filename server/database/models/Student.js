@@ -180,6 +180,20 @@ const studentSchema = new mongoose.Schema({
       ref: 'CustomAssessmentSubmission',
     },
   }],
+  gamification: {
+    points: {
+      type: Number,
+      default: 0,
+    },
+    level: {
+      type: Number,
+      default: 1,
+    },
+    badges: [{
+      type: String,
+      enum: ['Level 1 Achieved!', 'Level 2 Achieved!', 'Level 3 Achieved!', '10 Questions Completed', '50 Questions Completed'],
+    }],
+  },
   createdAt: {
     type: Date,
     default: Date.now,

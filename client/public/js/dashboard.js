@@ -150,15 +150,56 @@ async function showRandomSkillQuestion(skill, containerId) {
             return;
         }
         const q = questions[Math.floor(Math.random() * questions.length)];
-        let html = `<div class="mb-2 font-semibold">${q.question}</div><ul class="mb-2">`;
-        q.options.forEach(opt => {
-            html += `<li class="mb-1"><input type="radio" name="skill-q" /> ${opt}</li>`;
+        
+        // Display question with gamification and feedback features
+        let html = `
+            <div class="quiz-container bg-gradient-to-r from-green-50 to-blue-50 p-6 rounded-lg shadow-lg">
+                <div class="mb-4">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-2xl font-bold text-gray-800">Question ${q.id}</h3>
+                        <span class="px-3 py-1 bg-blue-500 text-white rounded-full text-sm font-semibold">Difficulty: ${q.difficulty}</span>
+                    </div>
+                    <div class="flex justify-between mb-4 text-sm">
+                        <span class="${BUTTON_STYLES.primaryClass} px-3 py-1 rounded">🏆 Points: ${quizGamification.points}</span>
+                        <span class="${BUTTON_STYLES.primaryClass} px-3 py-1 rounded">⭐ Level: ${quizGamification.level}</span>
+                    </div>
+                </div>
+                <p class="text-lg font-semibold text-gray-900 mb-6 p-4 bg-white rounded border-l-4 border-green-500">${q.question}</p>
+                <div class="mb-6">
+                    <p class="text-sm text-gray-600 mb-3 italic">💡 Hint: ${q.hint}</p>
+                    <div class="space-y-2">
+        `;
+        
+        q.options.forEach((opt, idx) => {
+            html += `<button onclick="answerQuestion('${opt}', '${q.correctAnswer}', '${q.hint}')" class="${BUTTON_STYLES.primaryClass} w-full text-left p-3 mb-2 hover:shadow-md">✓ ${opt}</button>`;
         });
-        html += '</ul>';
-        html += `<button onclick="showRandomSkillQuestion('${skill}', '${containerId}')" class="${BUTTON_STYLES.primaryClass}">Next Random Question</button>`;
+        
+        html += `
+                    </div>
+                </div>
+                <button onclick="showRandomSkillQuestion('${skill}', '${containerId}')" class="${BUTTON_STYLES.primaryClass} w-full mt-4">🔄 Next Random Question</button>
+            </div>
+        `;
         container.innerHTML = html;
     } catch (e) {
         container.innerHTML = 'Error loading questions.';
+    }
+}
+
+/**
+ * Handles answer submission and updates gamification.
+ * @param {string} selectedAnswer - The answer selected by the user.
+ * @param {string} correctAnswer - The correct answer.
+ * @param {string} hint - The hint for this question.
+ */
+function answerQuestion(selectedAnswer, correctAnswer, hint) {
+    const isCorrect = selectedAnswer === correctAnswer;
+    
+    if (isCorrect) {
+        quizGamification.addPoints(10);
+        alert(`✅ Correct! +10 Points!\n${quizGamification.displayStats()}`);
+    } else {
+        alert(`❌ Incorrect.\nCorrect Answer: ${correctAnswer}\n💡 ${hint}\n${quizGamification.displayStats()}`);
     }
 }
 
@@ -6675,6 +6716,7 @@ function checkAnswer(selectedAnswer, correctAnswer, hint) {
 window.provideFeedback = provideFeedback;
 window.provideHint = provideHint;
 window.checkAnswer = checkAnswer;
+window.answerQuestion = answerQuestion;
 
 // ============================================
 // SKILLS PROGRESS TRACKING

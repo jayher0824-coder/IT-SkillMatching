@@ -972,4 +972,81 @@ router.get('/retake-requests', protect, authorize('student'), async (req, res) =
   }
 });
 
+// @desc    Update gamification stats (points, levels, badges)
+// @route   PUT /api/students/gamification
+// @access  Private (Students only)
+router.put('/gamification', protect, authorize('student'), async (req, res) => {
+  try {
+    const { points, badge } = req.body;
+    
+    const student = await Student.findOne({ user: req.user._id });
+    
+    if (!student) {
+      return res.status(404).json({
+        success: false,
+        message: 'Student profile not found',
+      });
+    }
+    
+    if (points && points > 0) {
+      student.gamification.points += points;
+      
+      // Check for level up
+      const levelThreshold = student.gamification.level * 100;
+      if (student.gamification.points >= levelThreshold) {
+        student.gamification.level++;
+        const levelBadge = `Level ${student.gamification.level} Achieved!`;
+        if (!student.gamification.badges.includes(levelBadge)) {
+          student.gamification.badges.push(levelBadge);
+        }
+      }
+    }
+    
+    if (badge && !student.gamification.badges.includes(badge)) {
+      student.gamification.badges.push(badge);
+    }
+    
+    await student.save();
+    
+    res.json({
+      success: true,
+      message: 'Gamification stats updated',
+      data: student.gamification,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error',
+    });
+  }
+});
+
+// @desc    Get gamification stats
+// @route   GET /api/students/gamification
+// @access  Private (Students only)
+router.get('/gamification', protect, authorize('student'), async (req, res) => {
+  try {
+    const student = await Student.findOne({ user: req.user._id });
+    
+    if (!student) {
+      return res.status(404).json({
+        success: false,
+        message: 'Student profile not found',
+      });
+    }
+    
+    res.json({
+      success: true,
+      data: student.gamification,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error',
+    });
+  }
+});
+
 module.exports = router;
