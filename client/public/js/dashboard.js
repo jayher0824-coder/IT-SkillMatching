@@ -1,6 +1,96 @@
 // Dashboard functions
 
 // ============================================
+// GAMIFICATION SYSTEM - Initialize first
+// ============================================
+
+/**
+ * Global gamification system for all quizzes
+ */
+const quizGamification = {
+    points: 0,
+    level: 1,
+    badges: [],
+
+    async addPoints(points) {
+        this.points += points;
+        this.checkLevelUp();
+        
+        // Sync with backend
+        try {
+            const token = sessionStorage.getItem('authToken');
+            if (token) {
+                await fetch('/api/students/gamification', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ points })
+                });
+            }
+        } catch (e) {
+            console.log('Note: Gamification sync skipped (offline or API error)');
+        }
+    },
+
+    checkLevelUp() {
+        const levelThreshold = this.level * 100;
+        if (this.points >= levelThreshold) {
+            this.level++;
+            const levelBadge = `Level ${this.level} Achieved!`;
+            this.badges.push(levelBadge);
+            this.saveBadgeToBackend(levelBadge);
+        }
+    },
+
+    async saveBadgeToBackend(badge) {
+        try {
+            const token = sessionStorage.getItem('authToken');
+            if (token) {
+                await fetch('/api/students/gamification', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ badge })
+                });
+            }
+        } catch (e) {
+            console.log('Note: Badge save skipped (offline or API error)');
+        }
+    },
+
+    async loadFromBackend() {
+        try {
+            const token = sessionStorage.getItem('authToken');
+            if (token) {
+                const response = await fetch('/api/students/gamification', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        this.points = data.data.points || 0;
+                        this.level = data.data.level || 1;
+                        this.badges = data.data.badges || [];
+                    }
+                }
+            }
+        } catch (e) {
+            console.log('Note: Gamification load skipped (offline or API error)');
+        }
+    },
+
+    displayStats() {
+        return `Points: ${this.points}, Level: ${this.level}, Badges: ${this.badges.join(', ')}`;
+    }
+};
+
+// ============================================
 // UTILITY FUNCTIONS
 // ============================================
 
@@ -5279,17 +5369,17 @@ function attachAssessmentCardListeners() {
             const category = this.classList[1]; // Get the second class (programming, database, etc.)
             console.log('Assessment card clicked:', category);
             
-            // Delegate to the centralized assessment starter to avoid duplicated state
-            // and conflicting global navigation implementations.
+            // Use the new gamified quiz system
             if (!authToken) {
                 showToast('Please log in to start the assessment.', 'warning');
                 showLoginModal('student');
                 return;
             }
             try {
-                await startAssessment(category);
+                // Call the new gamified system instead of old assessment.js
+                startCategoryAssessment(category);
             } catch (err) {
-                console.error('Failed to start assessment via centralized starter', err);
+                console.error('Failed to start assessment', err);
                 showToast('Failed to start assessment. Please try again.', 'error');
             }
         });
