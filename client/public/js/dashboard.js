@@ -6587,6 +6587,96 @@ function generateCareerRecommendations(profile, categoryScores) {
 }
 
 // ============================================
+// SCENARIO-BASED AND MULTI-STEP QUESTIONS
+// ============================================
+
+/**
+ * Generates a scenario-based question.
+ * @returns {Object} A question object with a scenario and steps.
+ */
+function generateScenarioQuestion() {
+    return {
+        scenario: "You are debugging a web application that crashes when a user submits a form.",
+        steps: [
+            "Identify the error in the provided code snippet.",
+            "Choose the correct fix from the options.",
+            "Test the fix to ensure the issue is resolved."
+        ],
+        question: "What is the root cause of the crash?",
+        options: ["Syntax error", "Null pointer exception", "Infinite loop", "Database connection error"],
+        correctAnswer: "Null pointer exception"
+    };
+}
+
+/**
+ * Displays a scenario-based question in the quiz container.
+ * @param {string} containerId - The ID of the container to display the question.
+ */
+function displayScenarioQuestion(containerId) {
+    const question = generateScenarioQuestion();
+    const container = document.getElementById(containerId);
+
+    if (container) {
+        container.innerHTML = `
+            <h3>Scenario:</h3>
+            <p>${question.scenario}</p>
+            <h4>Steps:</h4>
+            <ol>
+                ${question.steps.map(step => `<li>${step}</li>`).join('')}
+            </ol>
+            <h4>Question:</h4>
+            <p>${question.question}</p>
+            <ul>
+                ${question.options.map((option, index) => `<li><button onclick="checkAnswer(${index})">${option}</button></li>`).join('')}
+            </ul>
+        `;
+    }
+}
+
+// Attach to global scope for testing
+window.displayScenarioQuestion = displayScenarioQuestion;
+
+// ============================================
+// FEEDBACK AND HINTS
+// ============================================
+
+/**
+ * Provides feedback for a given answer.
+ * @param {boolean} isCorrect - Whether the answer is correct.
+ * @param {string} correctAnswer - The correct answer for the question.
+ */
+function provideFeedback(isCorrect, correctAnswer) {
+    if (isCorrect) {
+        alert("Correct! Great job!");
+    } else {
+        alert(`Incorrect. The correct answer is: ${correctAnswer}`);
+    }
+}
+
+/**
+ * Provides a hint for a question.
+ * @param {string} hint - The hint to display.
+ */
+function provideHint(hint) {
+    alert(`Hint: ${hint}`);
+}
+
+// Example usage
+function checkAnswer(selectedAnswer, correctAnswer, hint) {
+    const isCorrect = selectedAnswer === correctAnswer;
+    provideFeedback(isCorrect, correctAnswer);
+
+    if (!isCorrect) {
+        provideHint(hint);
+    }
+}
+
+// Attach to global scope for testing
+window.provideFeedback = provideFeedback;
+window.provideHint = provideHint;
+window.checkAnswer = checkAnswer;
+
+// ============================================
 // SKILLS PROGRESS TRACKING
 // ============================================
 
