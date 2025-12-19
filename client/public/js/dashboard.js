@@ -5208,30 +5208,55 @@ function startCategoryAssessment(category) {
     // Determine which skill to use for fetching questions
     const skillToFetch = categoryToSkill[category] || category;
     
+    console.log('startCategoryAssessment called:', { category, skillToFetch });
+    
     // Hide all sections and show assessment section with skill quiz
-    document.querySelectorAll('.section').forEach(section => section.classList.add('hidden'));
+    const sections = document.querySelectorAll('.section');
+    console.log('Hiding sections, count:', sections.length);
+    sections.forEach(section => section.classList.add('hidden'));
+    
     const assessmentSection = document.getElementById('assessment-section');
-    if (assessmentSection) {
-        assessmentSection.classList.remove('hidden');
+    if (!assessmentSection) {
+        console.error('Assessment section not found in DOM');
+        showToast('Error: Assessment section not found. Please refresh the page.', 'error');
+        return;
     }
+    
+    assessmentSection.classList.remove('hidden');
+    console.log('Assessment section shown');
+    
+    // Scroll to assessment section
+    setTimeout(() => assessmentSection.scrollIntoView({ behavior: 'smooth' }), 100);
     
     showToast(`Loading ${skillNames[category]} Quiz...`, 'info');
     
     // Create a quiz container if it doesn't exist
     let quizContainer = document.getElementById('skill-quiz-container');
     if (!quizContainer) {
+        console.log('Creating new quiz container');
         const container = document.createElement('div');
         container.id = 'skill-quiz-container';
-        container.className = 'mt-6 p-6 bg-white dark:bg-gray-800 rounded-lg';
-        if (assessmentSection) {
+        container.className = 'mt-6 p-6 bg-white dark:bg-gray-800 rounded-lg border-2 border-green-500';
+        
+        // Find where to insert the quiz container - after the gamification badge
+        const existingContent = assessmentSection.querySelector('.grid-container');
+        if (existingContent) {
+            // Insert before the first grid-container
+            existingContent.parentElement.insertBefore(container, existingContent);
+        } else {
             assessmentSection.appendChild(container);
         }
         quizContainer = container;
+    } else {
+        // Clear previous quiz content
+        quizContainer.innerHTML = '';
+        quizContainer.classList.remove('hidden');
     }
     
     // Store the original category for reference
     quizContainer.dataset.category = category;
     
+    console.log('Loading quiz questions for:', skillToFetch);
     // Load and display the skill quiz with gamification
     showRandomSkillQuestion(skillToFetch, 'skill-quiz-container');
 }
