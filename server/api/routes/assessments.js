@@ -343,6 +343,8 @@ router.post('/:id/submit', protect, authorize('student'), async (req, res) => {
       passed
     });
     
+    console.log('Saving assessment result with completedAt:', new Date());
+    
     const result = await AssessmentResult.create({
       student: student._id,
       assessment: assessmentId,

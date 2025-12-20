@@ -661,8 +661,9 @@ function handleQuizError(e, containerId) {
                 <p class="text-red-600 dark:text-red-500 text-xs mb-6 font-mono bg-red-100 dark:bg-red-900/30 p-4 rounded overflow-auto max-h-32">
                     ${e.stack ? e.stack.split('\n').slice(0, 3).join('<br>') : e.toString()}
                 </p>
-                <button onclick="backToAssessment()" class="${BUTTON_STYLES.primaryClass} w-full">
-                    <i class="fas fa-arrow-left mr-2"></i>Back to Assessment
+                <button onclick="backToAssessment()" class="mb-6 flex items-center text-green-600 hover:text-green-700 transition font-semibold bg-white border border-gray-300 rounded-md px-4 py-2 shadow-md">
+                    <i class="fas fa-arrow-left mr-2"></i>
+                    Back to Assessment
                 </button>
             </div>
         </div>
