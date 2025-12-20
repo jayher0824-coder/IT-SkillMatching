@@ -951,121 +951,53 @@ router.post('/create-question', protect, authorize('admin', 'company'), async (r
 // @desc    Get quiz questions for a skill (proxy from GitHub)
 // @route   GET /api/assessments/quiz-questions/:skill
 // @access  Public
-router.get('/quiz-questions/:skill', async (req, res) => {
-  try {
-    const skill = req.params.skill;
-    
-    console.log('Fetching quiz questions for skill:', skill);
-    
-    // Map skill names to GitHub file paths
-    const skillToGitHubPath = {
-      // Languages
-      'python': 'python/python-quiz.md',
-      'javascript': 'javascript/javascript-quiz.md',
-      'java': 'java/java-quiz.md',
-      'csharp': 'c-sharp/c-sharp-quiz.md',
-      'cpp': 'c%2B%2B/c%2B%2B-quiz.md',
-      'c++': 'c%2B%2B/c%2B%2B-quiz.md',
-      'sql': 'sql/sql-quiz.md',
-      'html': 'html/html-quiz.md',
-      'css': 'css/css-quiz.md',
-      'php': 'php/php-quiz.md',
-      'ruby': 'ruby/ruby-quiz.md',
-      'go': 'go/go-quiz.md',
-      'golang': 'go/go-quiz.md',
-      'rust': 'rust/rust-quiz.md',
-      'swift': 'swift/swift-quiz.md',
-      'kotlin': 'kotlin/kotlin-quiz.md',
-      'typescript': 'typescript/typescript-quiz.md',
-      'r': 'r/r-quiz.md',
-      
-      // Frameworks and tools
-      'react': 'react/react-quiz.md',
-      'vue': 'vue/vue-quiz.md',
-      'angular': 'angular/angular-quiz.md',
-      'nodejs': 'node-js/node-js-quiz.md',
-      'node': 'node-js/node-js-quiz.md',
-      'node.js': 'node-js/node-js-quiz.md',
-      'git': 'git/git-quiz.md',
-      'docker': 'docker/docker-quiz.md',
-      'kubernetes': 'kubernetes/kubernetes-quiz.md',
-      'aws': 'aws/aws-quiz.md',
-      'linux': 'linux/linux-quiz.md',
-      
-      // General categories - map to representative skills
-      'networking': 'networking/networking-quiz.md',
-      'database': 'sql/sql-quiz.md',
-      'web-development': 'html/html-quiz.md',
-      'webdevelopment': 'html/html-quiz.md',
-      'problem-solving': 'problem-solving/problem-solving-quiz.md',
-      'problemsolving': 'problem-solving/problem-solving-quiz.md',
-      'programming': 'programming/programming-quiz.md'
-    };
+router.get('/quiz-questions/:skill', protect, async (req, res) => {
+  const { skill } = req.params;
 
-    // Get the correct GitHub path
-    const skillLower = skill.toLowerCase().trim();
-    const githubPath = skillToGitHubPath[skillLower];
-    
-    console.log('Requested skill:', skill);
-    console.log('Mapped GitHub path:', githubPath);
-    
-    if (!githubPath) {
-      console.warn('Unknown skill:', skill);
-      return res.status(400).json({
-        success: false,
-        message: `Unknown skill: ${skill}. Supported skills: python, javascript, java, sql, react, docker, etc.`
-      });
-    }
+  const skillToQuestions = {
+    Python: [
+      {
+        question: "What is the output of print(2 ** 3)?",
+        options: ["6", "8", "9", "None"],
+        correctAnswer: "8",
+      },
+      {
+        question: "Which keyword is used to define a function in Python?",
+        options: ["func", "def", "function", "lambda"],
+        correctAnswer: "def",
+      },
+    ],
+    JavaScript: [
+      {
+        question: "What is the result of '5' + 3 in JavaScript?",
+        options: ["8", "53", "Error", "None"],
+        correctAnswer: "53",
+      },
+      {
+        question: "Which method is used to parse a JSON string?",
+        options: ["JSON.parse()", "JSON.stringify()", "JSON.decode()", "JSON.read()"],
+        correctAnswer: "JSON.parse()",
+      },
+    ],
+    // Add more categories as needed
+  };
 
-    // Fetch from GitHub (server-side, no CSP restrictions)
-    const githubUrl = `https://raw.githubusercontent.com/Ebazhanov/linkedin-skill-assessments-quizzes/main/${githubPath}`;
-    console.log('Fetching from GitHub URL:', githubUrl);
-    
-    const response = await fetch(githubUrl, {
-      method: 'GET',
-      headers: {
-        'Accept': 'text/plain',
-        'User-Agent': 'Node.js'
-      }
-    });
-
-    if (!response.ok) {
-      console.error('GitHub fetch failed:', response.status, response.statusText, 'URL:', githubUrl);
-      return res.status(response.status).json({
-        success: false,
-        message: `Failed to fetch questions from GitHub: ${response.statusText}`,
-        url: githubUrl
-      });
-    }
-
-    const markdown = await response.text();
-    console.log('Fetched markdown, length:', markdown.length);
-
-    // Parse questions from markdown
-    const questions = parseQuestionsFromMarkdown(markdown);
-    console.log('Parsed questions count:', questions.length);
-
-    if (questions.length === 0) {
-      return res.status(200).json({
-        success: false,
-        message: 'No questions could be parsed from the markdown file',
-        data: []
-      });
-    }
-
-    res.json({
-      success: true,
-      data: questions,
-      count: questions.length
-    });
-  } catch (error) {
-    console.error('Error fetching quiz questions:', error);
-    res.status(500).json({
+  if (!skillToQuestions[skill]) {
+    return res.status(404).json({
       success: false,
-      message: 'Error fetching quiz questions',
-      error: error.message
+      message: `No questions found for skill: ${skill}`,
     });
   }
+
+  const questions = skillToQuestions[skill].map((q) => ({
+    ...q,
+    correctAnswer: undefined, // Remove correct answers from client response
+  }));
+
+  res.json({
+    success: true,
+    data: questions,
+  });
 });
 
 // Helper function to parse questions from markdown
