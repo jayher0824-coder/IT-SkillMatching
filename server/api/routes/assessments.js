@@ -995,11 +995,11 @@ router.get('/quiz-questions/:skill', async (req, res) => {
       // General categories - map to representative skills
       'networking': 'networking/networking-quiz.md',
       'database': 'sql/sql-quiz.md',
-      'web-development': 'javascript/javascript-quiz.md',
-      'webdevelopment': 'javascript/javascript-quiz.md',
-      'problem-solving': 'java/java-quiz.md',
-      'problemsolving': 'java/java-quiz.md',
-      'programming': 'python/python-quiz.md'
+      'web-development': 'html/html-quiz.md',
+      'webdevelopment': 'html/html-quiz.md',
+      'problem-solving': 'problem-solving/problem-solving-quiz.md',
+      'problemsolving': 'problem-solving/problem-solving-quiz.md',
+      'programming': 'programming/programming-quiz.md'
     };
 
     // Get the correct GitHub path
