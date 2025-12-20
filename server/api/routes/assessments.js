@@ -955,7 +955,7 @@ router.get('/quiz-questions/:skill', protect, async (req, res) => {
   const { skill } = req.params;
 
   const skillToQuestions = {
-    Python: [
+    python: [
       {
         question: "What is the output of print(2 ** 3)?",
         options: ["6", "8", "9", "None"],
@@ -967,7 +967,7 @@ router.get('/quiz-questions/:skill', protect, async (req, res) => {
         correctAnswer: "def",
       },
     ],
-    JavaScript: [
+    javascript: [
       {
         question: "What is the result of '5' + 3 in JavaScript?",
         options: ["8", "53", "Error", "None"],
@@ -979,17 +979,103 @@ router.get('/quiz-questions/:skill', protect, async (req, res) => {
         correctAnswer: "JSON.parse()",
       },
     ],
-    // Add more categories as needed
+    java: [
+      {
+        question: "What is the correct syntax to declare a string in Java?",
+        options: ["String name;", "string name;", "str name;", "char[] name;"],
+        correctAnswer: "String name;",
+      },
+      {
+        question: "Which of the following is NOT a Java access modifier?",
+        options: ["public", "private", "protected", "global"],
+        correctAnswer: "global",
+      },
+    ],
+    html: [
+      {
+        question: "What does HTML stand for?",
+        options: ["Hypertext Markup Language", "High Tech Modern Language", "Home Tool Markup Language", "Hyperlinks and Text Markup Language"],
+        correctAnswer: "Hypertext Markup Language",
+      },
+      {
+        question: "Which tag is used to define a paragraph in HTML?",
+        options: ["<p>", "<paragraph>", "<para>", "<pg>"],
+        correctAnswer: "<p>",
+      },
+    ],
+    css: [
+      {
+        question: "What does CSS stand for?",
+        options: ["Cascading Style Sheets", "Computer Style Sheets", "Colorful Style Sheets", "Creative Style Sheets"],
+        correctAnswer: "Cascading Style Sheets",
+      },
+      {
+        question: "Which property is used to change the text color?",
+        options: ["color", "text-color", "font-color", "text-style"],
+        correctAnswer: "color",
+      },
+    ],
+    sql: [
+      {
+        question: "What does SQL stand for?",
+        options: ["Structured Query Language", "Simple Query Language", "Standard Query Language", "System Query Language"],
+        correctAnswer: "Structured Query Language",
+      },
+      {
+        question: "Which SQL keyword is used to filter records?",
+        options: ["WHERE", "FILTER", "FIND", "SEARCH"],
+        correctAnswer: "WHERE",
+      },
+    ],
+    react: [
+      {
+        question: "What is a React component?",
+        options: ["A JavaScript class or function", "A CSS file", "An HTML element", "A database query"],
+        correctAnswer: "A JavaScript class or function",
+      },
+      {
+        question: "What is the state in React?",
+        options: ["A JavaScript object that holds data", "A CSS property", "An HTML attribute", "A server configuration"],
+        correctAnswer: "A JavaScript object that holds data",
+      },
+    ],
+    angular: [
+      {
+        question: "What is Angular?",
+        options: ["A TypeScript-based framework", "A CSS library", "A server technology", "A database"],
+        correctAnswer: "A TypeScript-based framework",
+      },
+      {
+        question: "What is dependency injection in Angular?",
+        options: ["A design pattern for providing dependencies", "A method to inject CSS", "A database query", "A server request"],
+        correctAnswer: "A design pattern for providing dependencies",
+      },
+    ],
+    docker: [
+      {
+        question: "What is Docker?",
+        options: ["A containerization platform", "A programming language", "A web server", "A database system"],
+        correctAnswer: "A containerization platform",
+      },
+      {
+        question: "What is a Docker image?",
+        options: ["A lightweight, standalone executable package", "A photograph", "A server config", "A backup file"],
+        correctAnswer: "A lightweight, standalone executable package",
+      },
+    ],
   };
 
-  if (!skillToQuestions[skill]) {
+  // Normalize skill to lowercase for matching
+  const normalizedSkill = skill.toLowerCase();
+
+  if (!skillToQuestions[normalizedSkill]) {
     return res.status(404).json({
       success: false,
       message: `No questions found for skill: ${skill}`,
     });
   }
 
-  const questions = skillToQuestions[skill].map((q) => ({
+  const questions = skillToQuestions[normalizedSkill].map((q) => ({
     ...q,
     correctAnswer: undefined, // Remove correct answers from client response
   }));
