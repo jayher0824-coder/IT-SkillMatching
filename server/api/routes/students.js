@@ -987,6 +987,15 @@ router.put('/gamification', protect, authorize('student'), async (req, res) => {
         message: 'Student profile not found',
       });
     }
+
+    // Ensure gamification field is initialized
+    if (!student.gamification) {
+      student.gamification = {
+        points: 0,
+        level: 1,
+        badges: []
+      };
+    }
     
     if (points && points > 0) {
       student.gamification.points += points;

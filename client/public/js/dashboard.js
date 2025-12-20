@@ -293,6 +293,34 @@ function updateGamificationDisplay() {
 // STUDENT DASHBOARD
 // ============================================
 
+/**
+ * Saves gamification points to the backend
+ */
+async function saveGamificationPoints() {
+    try {
+        const response = await fetch('/api/students/gamification', {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                points: quizGamification.points,
+            }),
+        });
+
+        if (!response.ok) {
+            throw new Error(`Failed to save gamification points: ${response.status} ${response.statusText}`);
+        }
+
+        const result = await response.json();
+        if (!result.success) {
+            console.error('Failed to save gamification points:', result.message);
+        }
+    } catch (error) {
+        console.error('Error saving gamification points:', error);
+    }
+}
+
 // Student Dashboard
 // The actual loadStudentDashboard function is defined after the helper functions below
 
