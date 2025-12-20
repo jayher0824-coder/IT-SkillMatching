@@ -32,3 +32,9 @@ services:
         sync: false
       - key: EMAIL_PASSWORD
         sync: false
+  - name: it-skill-matching
+    type: web
+    env: node
+    buildCommand: npm install
+    startCommand: npm start
+    autoDeployOnPush: true

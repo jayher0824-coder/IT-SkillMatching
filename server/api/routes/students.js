@@ -1014,6 +1014,8 @@ router.put('/gamification', protect, authorize('student'), async (req, res) => {
     if (badge && !student.gamification.badges.includes(badge)) {
       student.gamification.badges.push(badge);
     }
+
+    console.log('Gamification stats before save:', student.gamification);
     
     await student.save();
     
