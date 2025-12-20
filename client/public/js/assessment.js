@@ -1033,3 +1033,32 @@ setTimeout(() => {
         console.log('✓ Assessment navigation functions loaded successfully');
     }
 }, 100);
+
+// View student assessment details - show correct/incorrect answers for each question
+async function viewStudentAssessmentDetails(assessmentId) {
+    try {
+        const response = await apiCall(`/assessments/results/${assessmentId}`);
+        const result = response.data;
+
+        const detailsContent = document.getElementById('details-content');
+        if (!detailsContent) return;
+
+        detailsContent.innerHTML = result.answers.map((answer, index) => {
+            const isCorrect = answer.isCorrect ? '✓ Correct' : '✗ Incorrect';
+            const correctClass = answer.isCorrect ? 'text-green-600' : 'text-red-600';
+
+            return `
+                <div class="p-4 mb-4 border rounded-lg ${correctClass}">
+                    <h4 class="font-semibold">Question ${index + 1}: ${answer.question}</h4>
+                    <p>Your Answer: ${answer.userAnswer}</p>
+                    <p>Correct Answer: ${answer.correctAnswer}</p>
+                    <p class="font-bold ${correctClass}">${isCorrect}</p>
+                </div>
+            `;
+        }).join('');
+
+    } catch (error) {
+        console.error('Error fetching assessment details:', error);
+        showToast('Failed to load assessment details. Please try again.', 'error');
+    }
+}
