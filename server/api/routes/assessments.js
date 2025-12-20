@@ -1006,6 +1006,9 @@ router.get('/quiz-questions/:skill', async (req, res) => {
     const skillLower = skill.toLowerCase().trim();
     const githubPath = skillToGitHubPath[skillLower];
     
+    console.log('Requested skill:', skill);
+    console.log('Mapped GitHub path:', githubPath);
+    
     if (!githubPath) {
       console.warn('Unknown skill:', skill);
       return res.status(400).json({
