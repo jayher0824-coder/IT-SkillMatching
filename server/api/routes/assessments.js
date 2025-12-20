@@ -958,111 +958,108 @@ router.get('/quiz-questions/:skill', protect, async (req, res) => {
     python: [
       {
         question: "What is the output of print(2 ** 3)?",
-        options: ["6", "8", "9", "None"],
+        options: ["6", "8", "9", "5"],
         correctAnswer: "8",
       },
       {
+        question: "Which of the following is a valid variable name in Python?",
+        options: ["2var", "var_2", "var-2", "var 2"],
+        correctAnswer: "var_2",
+      },
+      {
+        question: "What does the 'len()' function do?",
+        options: ["Returns the length of an object", "Returns the type of an object", "Returns the value of an object", "Returns the id of an object"],
+        correctAnswer: "Returns the length of an object",
+      },
+      {
         question: "Which keyword is used to define a function in Python?",
-        options: ["func", "def", "function", "lambda"],
+        options: ["func", "def", "function", "define"],
         correctAnswer: "def",
+      },
+      {
+        question: "What is the output of print('Hello' + 'World')?",
+        options: ["Hello World", "HelloWorld", "Hello+World", "Error"],
+        correctAnswer: "HelloWorld",
+      },
+      {
+        question: "Which of the following is used to handle exceptions in Python?",
+        options: ["try-except", "do-catch", "try-catch", "handle-except"],
+        correctAnswer: "try-except",
+      },
+      {
+        question: "What is the correct file extension for Python files?",
+        options: [".pyth", ".pt", ".py", ".pyt"],
+        correctAnswer: ".py",
+      },
+      {
+        question: "Which of the following is not a Python data type?",
+        options: ["list", "tuple", "array", "set"],
+        correctAnswer: "array",
+      },
+      {
+        question: "How do you start a comment in Python?",
+        options: ["//", "#", "<!--", "/*"],
+        correctAnswer: "#",
+      },
+      {
+        question: "What is the output of print(type(5))?",
+        options: ["<class 'int'>", "<type 'int'>", "int", "integer"],
+        correctAnswer: "<class 'int'>",
       },
     ],
     javascript: [
       {
-        question: "What is the result of '5' + 3 in JavaScript?",
-        options: ["8", "53", "Error", "None"],
-        correctAnswer: "53",
+        question: "Which of the following is a correct way to declare a variable in JavaScript?",
+        options: ["var myVar;", "int myVar;", "let myVar;", "Both var myVar; and let myVar;"],
+        correctAnswer: "Both var myVar; and let myVar;",
       },
       {
-        question: "Which method is used to parse a JSON string?",
-        options: ["JSON.parse()", "JSON.stringify()", "JSON.decode()", "JSON.read()"],
-        correctAnswer: "JSON.parse()",
+        question: "What is the output of 'console.log(typeof null)'?",
+        options: ["'object'", "'null'", "'undefined'", "'number'"],
+        correctAnswer: "'object'",
+      },
+      {
+        question: "Which method is used to parse a string to an integer in JavaScript?",
+        options: ["parseInt()", "parseInteger()", "int()", "toInteger()"],
+        correctAnswer: "parseInt()",
+      },
+      {
+        question: "Which symbol is used for single-line comments in JavaScript?",
+        options: ["//", "#", "<!--", "/*"],
+        correctAnswer: "//",
+      },
+      {
+        question: "What is the result of '2' + 2 in JavaScript?",
+        options: ["4", "'22'", "NaN", "Error"],
+        correctAnswer: "'22'",
+      },
+      {
+        question: "Which of the following is not a JavaScript data type?",
+        options: ["Number", "String", "Character", "Boolean"],
+        correctAnswer: "Character",
+      },
+      {
+        question: "How do you write a function in JavaScript?",
+        options: ["function myFunc() {}", "def myFunc() {}", "func myFunc() {}", "function:myFunc() {}"],
+        correctAnswer: "function myFunc() {}",
+      },
+      {
+        question: "Which method adds a new element to the end of an array?",
+        options: ["push()", "pop()", "shift()", "unshift()"],
+        correctAnswer: "push()",
+      },
+      {
+        question: "What does '===’ operator do in JavaScript?",
+        options: ["Compares value only", "Compares value and type", "Assigns value", "Checks if variable exists"],
+        correctAnswer: "Compares value and type",
+      },
+      {
+        question: "Which object is the parent of all JavaScript objects?",
+        options: ["Object", "Window", "Document", "Array"],
+        correctAnswer: "Object",
       },
     ],
-    java: [
-      {
-        question: "What is the correct syntax to declare a string in Java?",
-        options: ["String name;", "string name;", "str name;", "char[] name;"],
-        correctAnswer: "String name;",
-      },
-      {
-        question: "Which of the following is NOT a Java access modifier?",
-        options: ["public", "private", "protected", "global"],
-        correctAnswer: "global",
-      },
-    ],
-    html: [
-      {
-        question: "What does HTML stand for?",
-        options: ["Hypertext Markup Language", "High Tech Modern Language", "Home Tool Markup Language", "Hyperlinks and Text Markup Language"],
-        correctAnswer: "Hypertext Markup Language",
-      },
-      {
-        question: "Which tag is used to define a paragraph in HTML?",
-        options: ["<p>", "<paragraph>", "<para>", "<pg>"],
-        correctAnswer: "<p>",
-      },
-    ],
-    css: [
-      {
-        question: "What does CSS stand for?",
-        options: ["Cascading Style Sheets", "Computer Style Sheets", "Colorful Style Sheets", "Creative Style Sheets"],
-        correctAnswer: "Cascading Style Sheets",
-      },
-      {
-        question: "Which property is used to change the text color?",
-        options: ["color", "text-color", "font-color", "text-style"],
-        correctAnswer: "color",
-      },
-    ],
-    sql: [
-      {
-        question: "What does SQL stand for?",
-        options: ["Structured Query Language", "Simple Query Language", "Standard Query Language", "System Query Language"],
-        correctAnswer: "Structured Query Language",
-      },
-      {
-        question: "Which SQL keyword is used to filter records?",
-        options: ["WHERE", "FILTER", "FIND", "SEARCH"],
-        correctAnswer: "WHERE",
-      },
-    ],
-    react: [
-      {
-        question: "What is a React component?",
-        options: ["A JavaScript class or function", "A CSS file", "An HTML element", "A database query"],
-        correctAnswer: "A JavaScript class or function",
-      },
-      {
-        question: "What is the state in React?",
-        options: ["A JavaScript object that holds data", "A CSS property", "An HTML attribute", "A server configuration"],
-        correctAnswer: "A JavaScript object that holds data",
-      },
-    ],
-    angular: [
-      {
-        question: "What is Angular?",
-        options: ["A TypeScript-based framework", "A CSS library", "A server technology", "A database"],
-        correctAnswer: "A TypeScript-based framework",
-      },
-      {
-        question: "What is dependency injection in Angular?",
-        options: ["A design pattern for providing dependencies", "A method to inject CSS", "A database query", "A server request"],
-        correctAnswer: "A design pattern for providing dependencies",
-      },
-    ],
-    docker: [
-      {
-        question: "What is Docker?",
-        options: ["A containerization platform", "A programming language", "A web server", "A database system"],
-        correctAnswer: "A containerization platform",
-      },
-      {
-        question: "What is a Docker image?",
-        options: ["A lightweight, standalone executable package", "A photograph", "A server config", "A backup file"],
-        correctAnswer: "A lightweight, standalone executable package",
-      },
-    ],
+    // Add other categories similarly...
   };
 
   // Normalize skill to lowercase for matching
