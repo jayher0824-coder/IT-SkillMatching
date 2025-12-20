@@ -1059,7 +1059,42 @@ router.get('/quiz-questions/:skill', protect, async (req, res) => {
         correctAnswer: "Object",
       },
     ],
-    // Add other categories similarly...
+    java: [
+      {
+        question: "What is the size of an int in Java?",
+        options: ["4 bytes", "8 bytes", "2 bytes", "Depends on the system"],
+        correctAnswer: "4 bytes",
+      },
+      {
+        question: "Which keyword is used to inherit a class in Java?",
+        options: ["extends", "implements", "inherits", "super"],
+        correctAnswer: "extends",
+      },
+    ],
+    html: [
+      {
+        question: "What does HTML stand for?",
+        options: ["HyperText Markup Language", "HyperText Markdown Language", "HighText Machine Language", "None of the above"],
+        correctAnswer: "HyperText Markup Language",
+      },
+      {
+        question: "Which HTML tag is used to define an unordered list?",
+        options: ["<ul>", "<ol>", "<li>", "<list>"],
+        correctAnswer: "<ul>",
+      },
+    ],
+    css: [
+      {
+        question: "What does CSS stand for?",
+        options: ["Cascading Style Sheets", "Colorful Style Sheets", "Computer Style Sheets", "Creative Style Sheets"],
+        correctAnswer: "Cascading Style Sheets",
+      },
+      {
+        question: "Which property is used to change the background color in CSS?",
+        options: ["background-color", "color", "bgcolor", "background"],
+        correctAnswer: "background-color",
+      },
+    ],
   };
 
   // Normalize skill to lowercase for matching
