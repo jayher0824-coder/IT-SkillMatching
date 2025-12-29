@@ -1071,13 +1071,6 @@ router.get('/quiz-questions/:skill', protect, async (req, res) => {
       ]
     }
   };
-        
-        return res.json({
-          success: true,
-          count: 1,
-          data: [categoryAssessment],
-        });
-      }
       
       // Found a direct category match - return it without correct answers
       const assessmentObj = assessment.toObject();
