@@ -105,8 +105,9 @@ const quizState = {
     containerId: null,
     answers: [], // Track user answers
     correctCount: 0, // Count correct answers
+    difficulty: 'medium', // Store difficulty level
 
-    init(questions, skill, containerId) {
+    init(questions, skill, containerId, difficulty = 'medium') {
         this.questions = questions;
         this.currentQuestionIndex = 0;
         this.currentSkill = skill;
@@ -114,7 +115,8 @@ const quizState = {
         this.containerId = containerId;
         this.answers = [];
         this.correctCount = 0;
-        console.log('Quiz state initialized:', { skill, totalQuestions: questions.length });
+        this.difficulty = difficulty;
+        console.log('Quiz state initialized:', { skill, totalQuestions: questions.length, difficulty });
     },
 
     getCurrentQuestion() {
@@ -174,6 +176,7 @@ const quizState = {
         this.containerId = null;
         this.answers = [];
         this.correctCount = 0;
+        this.difficulty = 'medium';
     }
 };
 
@@ -332,12 +335,13 @@ async function saveGamificationPoints() {
  * @param {string} skill - e.g. 'python', 'javascript', 'java'
  * @returns {Promise<Array>} Array of question objects
  */
-async function fetchSkillQuestions(skill) {
+async function fetchSkillQuestions(skill, difficulty = 'medium') {
     try {
-        console.log('Fetching questions for skill:', skill);
+        console.log('Fetching questions for skill:', skill, 'difficulty:', difficulty);
         
-        // Call backend endpoint instead of directly accessing GitHub (avoids CSP)
-        const response = await fetch(`/api/assessments/quiz-questions/${skill.toLowerCase()}`, {
+        // Call backend endpoint with difficulty parameter
+        const difficultyParam = difficulty ? `?difficulty=${difficulty}` : '';
+        const response = await fetch(`/api/assessments/quiz-questions/${skill.toLowerCase()}${difficultyParam}`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
@@ -452,8 +456,10 @@ function parseQuestionsAlternative(text, skill) {
  * Display a random question from a selected skill
  * @param {string} skill
  * @param {string} containerId
+ * @param {number} questionIndex
+ * @param {string} difficulty - 'easy', 'medium', or 'hard'
  */
-async function showRandomSkillQuestion(skill, containerId, questionIndex = 0) {
+async function showRandomSkillQuestion(skill, containerId, questionIndex = 0, difficulty = 'medium') {
     const container = document.getElementById(containerId);
     if (!container) {
         console.error('Quiz container not found:', containerId);
@@ -468,8 +474,8 @@ async function showRandomSkillQuestion(skill, containerId, questionIndex = 0) {
         container.innerHTML = '<div class="text-center py-12"><div class="inline-block"><div class="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mb-4"></div><p class="text-gray-600 dark:text-gray-300">Loading questions...</p></div></div>';
         
         try {
-            console.log('Fetching questions for skill:', skill);
-            const questions = await fetchSkillQuestions(skill);
+            console.log('Fetching questions for skill:', skill, 'difficulty:', difficulty);
+            const questions = await fetchSkillQuestions(skill, difficulty);
             console.log('Questions received:', questions);
             
             if (!questions || !questions.length) {
@@ -484,8 +490,8 @@ async function showRandomSkillQuestion(skill, containerId, questionIndex = 0) {
                 return;
             }
             
-            // Initialize quiz state with all questions
-            quizState.init(questions, skill, containerId);
+            // Initialize quiz state with all questions and difficulty
+            quizState.init(questions, skill, containerId, difficulty);
             
             // Continue to display first question (don't recurse)
             // Fall through to display the question
@@ -754,7 +760,8 @@ function answerQuestion(selectedAnswer, correctAnswer, hint) {
                 const skill = quizState.currentSkill;
                 const containerId = quizState.containerId;
                 const nextIdx = quizState.getCurrentIndex();
-                showRandomSkillQuestion(skill, containerId, nextIdx);
+                const difficulty = quizState.difficulty || 'medium';
+                showRandomSkillQuestion(skill, containerId, nextIdx, difficulty);
             } else {
                 // Quiz completed
                 saveQuizResult();
@@ -776,7 +783,8 @@ function answerQuestion(selectedAnswer, correctAnswer, hint) {
                 const skill = quizState.currentSkill;
                 const containerId = quizState.containerId;
                 const nextIdx = quizState.getCurrentIndex();
-                showRandomSkillQuestion(skill, containerId, nextIdx);
+                const difficulty = quizState.difficulty || 'medium';
+                showRandomSkillQuestion(skill, containerId, nextIdx, difficulty);
             } else {
                 // Quiz completed
                 saveQuizResult();
@@ -5651,6 +5659,93 @@ function startCategoryAssessment(category) {
     
     console.log('startCategoryAssessment called:', { category, skillToFetch });
     
+    // Show difficulty selection modal
+    showDifficultySelector(skillToFetch, skillNames[category], category);
+}
+
+// Show difficulty selector modal before starting quiz
+function showDifficultySelector(skillToFetch, skillName, category) {
+    // Create a modal overlay
+    const modalOverlay = document.createElement('div');
+    modalOverlay.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+    modalOverlay.id = 'difficulty-selector-modal';
+    
+    const modalContent = document.createElement('div');
+    modalContent.className = 'bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8 max-w-md w-full';
+    
+    modalContent.innerHTML = `
+        <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-4">Select Difficulty Level</h2>
+        <p class="text-gray-600 dark:text-gray-300 mb-6">Choose a difficulty level for the <strong>${skillName}</strong> quiz:</p>
+        
+        <div class="space-y-3">
+            <button onclick="proceedWithQuiz('${skillToFetch}', 'easy', '${category}')" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 px-4 rounded-lg transition">
+                <span class="text-lg">🟢 Easy</span>
+                <p class="text-sm mt-1">Beginner level - Basic concepts and fundamentals</p>
+            </button>
+            
+            <button onclick="proceedWithQuiz('${skillToFetch}', 'medium', '${category}')" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-semibold py-3 px-4 rounded-lg transition">
+                <span class="text-lg">🟡 Medium</span>
+                <p class="text-sm mt-1">Intermediate level - Practical application and problem-solving</p>
+            </button>
+            
+            <button onclick="proceedWithQuiz('${skillToFetch}', 'hard', '${category}')" class="w-full bg-red-500 hover:bg-red-600 text-white font-semibold py-3 px-4 rounded-lg transition">
+                <span class="text-lg">🔴 Hard</span>
+                <p class="text-sm mt-1">Advanced level - Complex scenarios and edge cases</p>
+            </button>
+        </div>
+        
+        <button onclick="closeDifficultySelector()" class="w-full mt-6 bg-gray-400 hover:bg-gray-500 text-white font-semibold py-2 px-4 rounded-lg transition">
+            Cancel
+        </button>
+    `;
+    
+    modalOverlay.appendChild(modalContent);
+    document.body.appendChild(modalOverlay);
+}
+
+// Close the difficulty selector modal
+function closeDifficultySelector() {
+    const modal = document.getElementById('difficulty-selector-modal');
+    if (modal) {
+        modal.remove();
+    }
+}
+
+// Proceed with quiz after difficulty selection
+function proceedWithQuiz(skillToFetch, difficulty, category) {
+    closeDifficultySelector();
+    
+    const skillNames = {
+        'python': 'Python',
+        'java': 'Java',
+        'javascript': 'JavaScript',
+        'typescript': 'TypeScript',
+        'csharp': 'C#',
+        'cpp': 'C++',
+        'c': 'C',
+        'php': 'PHP',
+        'ruby': 'Ruby',
+        'go': 'Go',
+        'rust': 'Rust',
+        'swift': 'Swift',
+        'kotlin': 'Kotlin',
+        'objectivec': 'Objective-C',
+        'r': 'R',
+        'scala': 'Scala',
+        'perl': 'Perl',
+        'visualbasic': 'Visual Basic',
+        'assembly': 'Assembly',
+        'matlab': 'MATLAB',
+        'html': 'HTML',
+        'css': 'CSS',
+        'sql': 'SQL',
+        'programming': 'Programming Fundamentals',
+        'webDevelopment': 'Web Development',
+        'networking': 'Networking',
+        'problemSolving': 'Problem Solving',
+        'database': 'Database Management'
+    };
+    
     // Hide all sections and show assessment section with skill quiz
     const sections = document.querySelectorAll('.section');
     console.log('Hiding sections, count:', sections.length);
@@ -5680,7 +5775,7 @@ function startCategoryAssessment(category) {
     // Scroll to assessment section
     setTimeout(() => assessmentSection.scrollIntoView({ behavior: 'smooth' }), 100);
     
-    showToast(`Loading ${skillNames[category]} Quiz...`, 'info');
+    showToast(`Loading ${skillNames[category] || category} Quiz (${difficulty.toUpperCase()})...`, 'info');
     
     // Create a quiz container if it doesn't exist
     let quizContainer = document.getElementById('skill-quiz-container');
@@ -5698,12 +5793,13 @@ function startCategoryAssessment(category) {
         quizContainer.classList.remove('hidden');
     }
     
-    // Store the original category for reference
+    // Store the original category and difficulty for reference
     quizContainer.dataset.category = category;
+    quizContainer.dataset.difficulty = difficulty;
     
-    console.log('Loading quiz questions for:', skillToFetch);
-    // Load and display the skill quiz with gamification
-    showRandomSkillQuestion(skillToFetch, 'skill-quiz-container');
+    console.log('Loading quiz questions for:', skillToFetch, 'with difficulty:', difficulty);
+    // Load and display the skill quiz with gamification and selected difficulty
+    showRandomSkillQuestion(skillToFetch, 'skill-quiz-container', 0, difficulty);
 }
 
 // Ensure loadAssessmentSection exists (dashboard button calls this)
