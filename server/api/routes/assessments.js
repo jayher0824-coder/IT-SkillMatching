@@ -2306,4 +2306,5 @@ router.post('/gamification/points', protect, authorize('student'), async (req, r
 
 
 // ...existing code...
+}
 module.exports = router;
