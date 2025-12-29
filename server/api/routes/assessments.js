@@ -1071,23 +1071,6 @@ router.get('/quiz-questions/:skill', protect, async (req, res) => {
       ]
     }
   };
-    const assessment = await Assessment.findOne({ isActive: true })
-      .sort({ createdAt: -1 })
-      .select('-questions.correctAnswer');
-    
-    res.json({
-      success: true,
-      count: assessment ? 1 : 0,
-      data: assessment ? [assessment] : [],
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({
-      success: false,
-      message: 'Server error',
-    });
-  }
-});
 
 // @desc    Get assessment statistics
 // @route   GET /api/assessments/stats
