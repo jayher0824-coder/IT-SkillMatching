@@ -1069,7 +1069,8 @@ router.get('/quiz-questions/:skill', protect, async (req, res) => {
         { question: "What is the purpose of 'overflow' property in CSS?", options: ["Controls what happens when content overflows", "Adds overflow effect", "Removes overflow", "Changes overflow color"], correctAnswer: "Controls what happens when content overflows", difficulty: "hard" },
         { question: "What is a CSS media query?", options: ["Applies styles based on device characteristics", "Queries the CSS rules", "A type of selector", "A CSS function"], correctAnswer: "Applies styles based on device characteristics", difficulty: "hard" }
       ]
-    }  };
+    }
+  };
         
         return res.json({
           success: true,
