@@ -1071,23 +1071,6 @@ router.get('/quiz-questions/:skill', protect, async (req, res) => {
       ]
     }
   };
-      
-      // Found a direct category match - return it without correct answers
-      const assessmentObj = assessment.toObject();
-      assessmentObj.questions = assessmentObj.questions.map(q => {
-        const qCopy = { ...q };
-        delete qCopy.correctAnswer;
-        return qCopy;
-      });
-      
-      return res.json({
-        success: true,
-        count: 1,
-        data: [assessmentObj],
-      });
-    }
-    
-    // If no category, return the general assessment with all questions
     const assessment = await Assessment.findOne({ isActive: true })
       .sort({ createdAt: -1 })
       .select('-questions.correctAnswer');
