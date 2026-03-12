@@ -5616,8 +5616,54 @@ function startCategoryAssessment(category) {
     showDifficultySelector(skillToFetch, skillNames[category], category);
 }
 
+function getDifficultyUnlockState() {
+    const currentLevel = Number(quizGamification.level || 1);
+
+    return {
+        easy: {
+            unlocked: true,
+            requiredLevel: 1,
+            label: 'Easy',
+            description: 'Beginner level - Basic concepts and fundamentals'
+        },
+        medium: {
+            unlocked: currentLevel >= 2,
+            requiredLevel: 2,
+            label: 'Medium',
+            description: 'Intermediate level - Practical application and problem-solving'
+        },
+        hard: {
+            unlocked: currentLevel >= 3,
+            requiredLevel: 3,
+            label: 'Hard',
+            description: 'Advanced level - Complex scenarios and edge cases'
+        }
+    };
+}
+
 // Show difficulty selector modal before starting quiz
 function showDifficultySelector(skillToFetch, skillName, category) {
+    const unlocks = getDifficultyUnlockState();
+    const level = Number(quizGamification.level || 1);
+
+    const difficultyButton = (difficultyKey, colorClass, emoji) => {
+        const entry = unlocks[difficultyKey];
+        const isLocked = !entry.unlocked;
+        const lockText = isLocked ? `🔒 Unlocks at Level ${entry.requiredLevel}` : '✅ Unlocked';
+
+        return `
+            <button
+                onclick="proceedWithQuiz('${skillToFetch}', '${difficultyKey}', '${category}')"
+                ${isLocked ? 'disabled' : ''}
+                class="w-full ${colorClass} text-white font-semibold py-3 px-4 rounded-lg transition ${isLocked ? 'opacity-50 cursor-not-allowed' : 'hover:brightness-110'}"
+            >
+                <span class="text-lg">${emoji} ${entry.label}</span>
+                <p class="text-sm mt-1">${entry.description}</p>
+                <p class="text-xs mt-2">${lockText}</p>
+            </button>
+        `;
+    };
+
     // Create a modal overlay
     const modalOverlay = document.createElement('div');
     modalOverlay.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
@@ -5629,22 +5675,12 @@ function showDifficultySelector(skillToFetch, skillName, category) {
     modalContent.innerHTML = `
         <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-4">Select Difficulty Level</h2>
         <p class="text-gray-600 dark:text-gray-300 mb-6">Choose a difficulty level for the <strong>${skillName}</strong> quiz:</p>
+        <p class="text-sm text-blue-700 dark:text-blue-300 mb-4">Your EXP Level: <strong>${level}</strong> (${quizGamification.points || 0} points)</p>
         
         <div class="space-y-3">
-            <button onclick="proceedWithQuiz('${skillToFetch}', 'easy', '${category}')" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 px-4 rounded-lg transition">
-                <span class="text-lg">🟢 Easy</span>
-                <p class="text-sm mt-1">Beginner level - Basic concepts and fundamentals</p>
-            </button>
-            
-            <button onclick="proceedWithQuiz('${skillToFetch}', 'medium', '${category}')" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-semibold py-3 px-4 rounded-lg transition">
-                <span class="text-lg">🟡 Medium</span>
-                <p class="text-sm mt-1">Intermediate level - Practical application and problem-solving</p>
-            </button>
-            
-            <button onclick="proceedWithQuiz('${skillToFetch}', 'hard', '${category}')" class="w-full bg-red-500 hover:bg-red-600 text-white font-semibold py-3 px-4 rounded-lg transition">
-                <span class="text-lg">🔴 Hard</span>
-                <p class="text-sm mt-1">Advanced level - Complex scenarios and edge cases</p>
-            </button>
+            ${difficultyButton('easy', 'bg-blue-500', '🟢')}
+            ${difficultyButton('medium', 'bg-amber-500', '🟡')}
+            ${difficultyButton('hard', 'bg-red-500', '🔴')}
         </div>
         
         <button onclick="closeDifficultySelector()" class="w-full mt-6 bg-gray-400 hover:bg-gray-500 text-white font-semibold py-2 px-4 rounded-lg transition">
@@ -5666,6 +5702,15 @@ function closeDifficultySelector() {
 
 // Proceed with quiz after difficulty selection
 function proceedWithQuiz(skillToFetch, difficulty, category) {
+    const unlocks = getDifficultyUnlockState();
+    const rule = unlocks[difficulty];
+
+    if (!rule || !rule.unlocked) {
+        const requiredLevel = rule?.requiredLevel || 1;
+        showToast(`This difficulty unlocks at Level ${requiredLevel}. Keep earning points to level up.`, 'warning');
+        return;
+    }
+
     closeDifficultySelector();
     
     const skillNames = {
