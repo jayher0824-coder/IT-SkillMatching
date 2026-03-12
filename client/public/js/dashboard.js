@@ -5646,7 +5646,7 @@ function showDifficultySelector(skillToFetch, skillName, category) {
     const unlocks = getDifficultyUnlockState();
     const level = Number(quizGamification.level || 1);
 
-    const difficultyButton = (difficultyKey, colorClass, emoji) => {
+    const difficultyButton = (difficultyKey, colorStyle, emoji) => {
         const entry = unlocks[difficultyKey];
         const isLocked = !entry.unlocked;
         const lockText = isLocked ? `🔒 Unlocks at Level ${entry.requiredLevel}` : '✅ Unlocked';
@@ -5655,7 +5655,8 @@ function showDifficultySelector(skillToFetch, skillName, category) {
             <button
                 onclick="proceedWithQuiz('${skillToFetch}', '${difficultyKey}', '${category}')"
                 ${isLocked ? 'disabled' : ''}
-                class="w-full ${colorClass} text-white font-semibold py-3 px-4 rounded-lg transition ${isLocked ? 'opacity-50 cursor-not-allowed' : 'hover:brightness-110'}"
+                style="background:${colorStyle}; color:#ffffff;"
+                class="w-full text-white font-semibold py-3 px-4 rounded-lg transition ${isLocked ? 'opacity-50 cursor-not-allowed' : 'hover:brightness-110'}"
             >
                 <span class="text-lg">${emoji} ${entry.label}</span>
                 <p class="text-sm mt-1">${entry.description}</p>
@@ -5678,9 +5679,9 @@ function showDifficultySelector(skillToFetch, skillName, category) {
         <p class="text-sm text-blue-700 dark:text-blue-300 mb-4">Your EXP Level: <strong>${level}</strong> (${quizGamification.points || 0} points)</p>
         
         <div class="space-y-3">
-            ${difficultyButton('easy', 'bg-blue-500', '🟢')}
-            ${difficultyButton('medium', 'bg-amber-500', '🟡')}
-            ${difficultyButton('hard', 'bg-red-500', '🔴')}
+            ${difficultyButton('easy', 'linear-gradient(135deg, #3b82f6, #2563eb)', '🟢')}
+            ${difficultyButton('medium', 'linear-gradient(135deg, #f59e0b, #d97706)', '🟡')}
+            ${difficultyButton('hard', 'linear-gradient(135deg, #ef4444, #dc2626)', '🔴')}
         </div>
         
         <button onclick="closeDifficultySelector()" class="w-full mt-6 bg-gray-400 hover:bg-gray-500 text-white font-semibold py-2 px-4 rounded-lg transition">

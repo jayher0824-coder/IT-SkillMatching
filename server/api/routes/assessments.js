@@ -1242,6 +1242,162 @@ router.get('/quiz-questions/:skill', protect, async (req, res) => {
     'html', 'css', 'sql'
   ]);
 
+  const starterLanguageBanks = {
+    typescript: {
+      easy: [
+        { question: 'What is TypeScript primarily?', options: ['A typed superset of JavaScript', 'A CSS framework', 'A database engine', 'A mobile OS'], correctAnswer: 'A typed superset of JavaScript', difficulty: 'easy' },
+        { question: 'Which file extension is commonly used for TypeScript files?', options: ['.ts', '.type', '.tsx only', '.tjs'], correctAnswer: '.ts', difficulty: 'easy' },
+        { question: 'What keyword defines an interface in TypeScript?', options: ['interface', 'typeclass', 'contract', 'shape'], correctAnswer: 'interface', difficulty: 'easy' },
+        { question: 'What does the `any` type allow?', options: ['Disables type checking for that value', 'Strictest type safety', 'Only numbers', 'Only strings'], correctAnswer: 'Disables type checking for that value', difficulty: 'easy' },
+        { question: 'Which tool compiles TypeScript to JavaScript?', options: ['tsc', 'npm', 'babel-core only', 'node'], correctAnswer: 'tsc', difficulty: 'easy' }
+      ]
+    },
+    csharp: {
+      easy: [
+        { question: 'Which company created C#?', options: ['Microsoft', 'Oracle', 'Google', 'Apple'], correctAnswer: 'Microsoft', difficulty: 'easy' },
+        { question: 'Which framework is commonly associated with C# web apps?', options: ['ASP.NET', 'Django', 'Rails', 'Laravel'], correctAnswer: 'ASP.NET', difficulty: 'easy' },
+        { question: 'What keyword declares a class in C#?', options: ['class', 'Class', 'struct', 'object'], correctAnswer: 'class', difficulty: 'easy' },
+        { question: 'What is the entry-point method in a C# console app?', options: ['Main', 'Start', 'Run', 'Execute'], correctAnswer: 'Main', difficulty: 'easy' },
+        { question: 'What symbol starts a single-line comment in C#?', options: ['//', '#', '<!--', ';'], correctAnswer: '//', difficulty: 'easy' }
+      ]
+    },
+    cpp: {
+      easy: [
+        { question: 'Which header is commonly used for standard input/output in modern C++?', options: ['<iostream>', '<stdio.h>', '<conio.h>', '<stream>'], correctAnswer: '<iostream>', difficulty: 'easy' },
+        { question: 'What namespace is often used for standard library symbols?', options: ['std', 'cpp', 'global', 'core'], correctAnswer: 'std', difficulty: 'easy' },
+        { question: 'Which keyword creates an object dynamically in C++?', options: ['new', 'malloc', 'alloc', 'create'], correctAnswer: 'new', difficulty: 'easy' },
+        { question: 'Which operator accesses members through a pointer?', options: ['->', '.', '::', '&'], correctAnswer: '->', difficulty: 'easy' },
+        { question: 'What does STL stand for?', options: ['Standard Template Library', 'System Type Library', 'Simple Template Logic', 'Standard Type Language'], correctAnswer: 'Standard Template Library', difficulty: 'easy' }
+      ]
+    },
+    c: {
+      easy: [
+        { question: 'Which function prints output in C?', options: ['printf', 'print', 'echo', 'cout'], correctAnswer: 'printf', difficulty: 'easy' },
+        { question: 'Which header contains `printf` declaration?', options: ['<stdio.h>', '<stdlib.h>', '<string.h>', '<math.h>'], correctAnswer: '<stdio.h>', difficulty: 'easy' },
+        { question: 'What is used to terminate most C statements?', options: [';', '.', ':', ','], correctAnswer: ';', difficulty: 'easy' },
+        { question: 'Which keyword defines a constant value in C?', options: ['const', 'let', 'final', 'static'], correctAnswer: 'const', difficulty: 'easy' },
+        { question: 'What does `%d` represent in `printf`?', options: ['Integer placeholder', 'Float placeholder', 'String placeholder', 'Character placeholder'], correctAnswer: 'Integer placeholder', difficulty: 'easy' }
+      ]
+    },
+    php: {
+      easy: [
+        { question: 'What symbol starts a variable in PHP?', options: ['$', '#', '@', '&'], correctAnswer: '$', difficulty: 'easy' },
+        { question: 'Which tags are commonly used to open/close PHP code?', options: ['<?php ... ?>', '<php> ... </php>', '{{ ... }}', '<% ... %>'], correctAnswer: '<?php ... ?>', difficulty: 'easy' },
+        { question: 'Which function outputs text in PHP?', options: ['echo', 'printline', 'console.log', 'puts'], correctAnswer: 'echo', difficulty: 'easy' },
+        { question: 'Which superglobal contains form/query input?', options: ['$_GET and $_POST', '$_FORM', '$REQUEST', '$INPUT'], correctAnswer: '$_GET and $_POST', difficulty: 'easy' },
+        { question: 'Which framework is popular in PHP?', options: ['Laravel', 'Spring', 'Flask', 'Express'], correctAnswer: 'Laravel', difficulty: 'easy' }
+      ]
+    },
+    ruby: {
+      easy: [
+        { question: 'Which command outputs text in Ruby?', options: ['puts', 'echo', 'printline', 'console.log'], correctAnswer: 'puts', difficulty: 'easy' },
+        { question: 'Which framework is most associated with Ruby?', options: ['Ruby on Rails', 'Django', 'ASP.NET', 'Spring'], correctAnswer: 'Ruby on Rails', difficulty: 'easy' },
+        { question: 'What symbol starts an instance variable in Ruby?', options: ['@', '$', '#', '%'], correctAnswer: '@', difficulty: 'easy' },
+        { question: 'How do you define a method in Ruby?', options: ['def method_name ... end', 'function method_name {}', 'fn method_name {}', 'method method_name'], correctAnswer: 'def method_name ... end', difficulty: 'easy' },
+        { question: 'Which block delimiter is common in Ruby?', options: ['do ... end', '{ ... }', '<block> ... </block>', 'begin ... stop'], correctAnswer: 'do ... end', difficulty: 'easy' }
+      ]
+    },
+    go: {
+      easy: [
+        { question: 'Who developed the Go language?', options: ['Google', 'Microsoft', 'Oracle', 'Meta'], correctAnswer: 'Google', difficulty: 'easy' },
+        { question: 'What keyword declares a function in Go?', options: ['func', 'function', 'fn', 'def'], correctAnswer: 'func', difficulty: 'easy' },
+        { question: 'Which command initializes a new Go module?', options: ['go mod init', 'go init', 'go module new', 'gomod create'], correctAnswer: 'go mod init', difficulty: 'easy' },
+        { question: 'What keyword starts a goroutine?', options: ['go', 'async', 'thread', 'spawn'], correctAnswer: 'go', difficulty: 'easy' },
+        { question: 'Which package provides formatted I/O functions in Go?', options: ['fmt', 'io', 'bufio', 'print'], correctAnswer: 'fmt', difficulty: 'easy' }
+      ]
+    },
+    swift: {
+      easy: [
+        { question: 'Which company created Swift?', options: ['Apple', 'Google', 'Microsoft', 'IBM'], correctAnswer: 'Apple', difficulty: 'easy' },
+        { question: 'Which keyword declares a constant in Swift?', options: ['let', 'var', 'const', 'final'], correctAnswer: 'let', difficulty: 'easy' },
+        { question: 'Which keyword declares a variable in Swift?', options: ['var', 'let', 'mutable', 'value'], correctAnswer: 'var', difficulty: 'easy' },
+        { question: 'What is optional unwrapping in Swift used for?', options: ['Safely accessing values that may be nil', 'Encrypting data', 'Compiling faster', 'Creating arrays'], correctAnswer: 'Safely accessing values that may be nil', difficulty: 'easy' },
+        { question: 'Which framework is used for modern UI in Swift apps?', options: ['SwiftUI', 'UIKitX', 'React Native', 'Flutter'], correctAnswer: 'SwiftUI', difficulty: 'easy' }
+      ]
+    },
+    kotlin: {
+      easy: [
+        { question: 'Kotlin is officially supported for Android development by which company?', options: ['Google', 'Apple', 'Microsoft', 'Oracle'], correctAnswer: 'Google', difficulty: 'easy' },
+        { question: 'Which keyword declares an immutable variable in Kotlin?', options: ['val', 'var', 'let', 'const'], correctAnswer: 'val', difficulty: 'easy' },
+        { question: 'Which keyword declares a mutable variable in Kotlin?', options: ['var', 'val', 'mutable', 'set'], correctAnswer: 'var', difficulty: 'easy' },
+        { question: 'What feature helps prevent null pointer errors in Kotlin?', options: ['Null safety', 'Pointers', 'Macros', 'Preprocessing'], correctAnswer: 'Null safety', difficulty: 'easy' },
+        { question: 'Which function is common as entry point in Kotlin?', options: ['main', 'start', 'run', 'launch'], correctAnswer: 'main', difficulty: 'easy' }
+      ]
+    },
+    objectivec: {
+      easy: [
+        { question: 'Objective-C is primarily used on which platforms?', options: ['Apple platforms', 'Android only', 'Windows only', 'Linux kernel'], correctAnswer: 'Apple platforms', difficulty: 'easy' },
+        { question: 'Which syntax is common for Objective-C message sending?', options: ['[object message]', 'object.message()', 'object->message()', 'object:message()'], correctAnswer: '[object message]', difficulty: 'easy' },
+        { question: 'What file extension is commonly used for Objective-C implementation files?', options: ['.m', '.objc', '.oc', '.mmx'], correctAnswer: '.m', difficulty: 'easy' },
+        { question: 'Which symbol denotes a pointer in Objective-C declarations?', options: ['*', '&', '@', '#'], correctAnswer: '*', difficulty: 'easy' },
+        { question: 'Which language largely succeeded Objective-C for modern iOS apps?', options: ['Swift', 'Java', 'Kotlin', 'Dart'], correctAnswer: 'Swift', difficulty: 'easy' }
+      ]
+    },
+    r: {
+      easy: [
+        { question: 'R is most commonly used for?', options: ['Statistics and data analysis', 'Mobile OS development', 'Game engines', 'Network routing'], correctAnswer: 'Statistics and data analysis', difficulty: 'easy' },
+        { question: 'Which assignment operator is commonly used in R?', options: ['<-', '=', ':=', '=>'], correctAnswer: '<-', difficulty: 'easy' },
+        { question: 'Which function displays the first rows of a data frame in R?', options: ['head()', 'top()', 'show()', 'rows()'], correctAnswer: 'head()', difficulty: 'easy' },
+        { question: 'Which package ecosystem is central to modern R data workflows?', options: ['tidyverse', 'spring', 'numpy', 'linq'], correctAnswer: 'tidyverse', difficulty: 'easy' },
+        { question: 'What does `summary()` usually provide in R?', options: ['Descriptive statistics overview', 'Code compilation', 'UI rendering', 'Thread synchronization'], correctAnswer: 'Descriptive statistics overview', difficulty: 'easy' }
+      ]
+    },
+    scala: {
+      easy: [
+        { question: 'Scala runs on which virtual machine?', options: ['JVM', 'CLR', 'V8', 'BEAM'], correctAnswer: 'JVM', difficulty: 'easy' },
+        { question: 'Scala supports which paradigm strongly?', options: ['Object-oriented and functional', 'Only procedural', 'Only declarative', 'Only logic programming'], correctAnswer: 'Object-oriented and functional', difficulty: 'easy' },
+        { question: 'Which keyword defines an immutable value in Scala?', options: ['val', 'var', 'let', 'const'], correctAnswer: 'val', difficulty: 'easy' },
+        { question: 'Which keyword defines a mutable variable in Scala?', options: ['var', 'val', 'mutable', 'set'], correctAnswer: 'var', difficulty: 'easy' },
+        { question: 'Which ecosystem uses Scala heavily for distributed data processing?', options: ['Apache Spark', 'ASP.NET', 'Django', 'Rails'], correctAnswer: 'Apache Spark', difficulty: 'easy' }
+      ]
+    },
+    perl: {
+      easy: [
+        { question: 'Perl is historically known for being strong at?', options: ['Text processing', 'Mobile UI design', '3D rendering', 'Kernel drivers only'], correctAnswer: 'Text processing', difficulty: 'easy' },
+        { question: 'Which symbol prefixes scalar variables in Perl?', options: ['$', '@', '%', '&'], correctAnswer: '$', difficulty: 'easy' },
+        { question: 'Which symbol prefixes array variables in Perl?', options: ['@', '$', '#', '%'], correctAnswer: '@', difficulty: 'easy' },
+        { question: 'Which line is commonly used as Perl shebang on Unix-like systems?', options: ['#!/usr/bin/perl', '#!/bin/bash', '#!/usr/bin/python', '#!/usr/bin/node'], correctAnswer: '#!/usr/bin/perl', difficulty: 'easy' },
+        { question: 'What command is commonly used to print in Perl?', options: ['print', 'echo', 'puts', 'cout'], correctAnswer: 'print', difficulty: 'easy' }
+      ]
+    },
+    visualbasic: {
+      easy: [
+        { question: 'Visual Basic .NET primarily runs on which framework?', options: ['.NET', 'JVM', 'Node.js', 'Ruby VM'], correctAnswer: '.NET', difficulty: 'easy' },
+        { question: 'Which keyword starts a procedure in VB?', options: ['Sub', 'Func', 'def', 'proc'], correctAnswer: 'Sub', difficulty: 'easy' },
+        { question: 'Which keyword declares a variable in VB?', options: ['Dim', 'Var', 'Let', 'Set'], correctAnswer: 'Dim', difficulty: 'easy' },
+        { question: 'Which statement outputs text to console in VB.NET?', options: ['Console.WriteLine', 'print', 'echo', 'puts'], correctAnswer: 'Console.WriteLine', difficulty: 'easy' },
+        { question: 'Which keyword ends an `If` block in VB?', options: ['End If', 'endif', 'fi', 'close if'], correctAnswer: 'End If', difficulty: 'easy' }
+      ]
+    },
+    assembly: {
+      easy: [
+        { question: 'Assembly language is considered which level?', options: ['Low-level', 'High-level', 'Markup', 'Scripting only'], correctAnswer: 'Low-level', difficulty: 'easy' },
+        { question: 'What does an assembler do?', options: ['Translates assembly to machine code', 'Runs web servers', 'Designs UI', 'Optimizes databases'], correctAnswer: 'Translates assembly to machine code', difficulty: 'easy' },
+        { question: 'Registers in assembly are generally used for?', options: ['Fast temporary storage', 'Permanent file storage', 'Network addresses', 'Database schemas'], correctAnswer: 'Fast temporary storage', difficulty: 'easy' },
+        { question: 'Which instruction type typically moves data between registers/memory?', options: ['MOV', 'JMP', 'CMP', 'RET'], correctAnswer: 'MOV', difficulty: 'easy' },
+        { question: 'What does `JMP` commonly represent?', options: ['Jump to another instruction address', 'Multiply values', 'Read JSON', 'Create function'], correctAnswer: 'Jump to another instruction address', difficulty: 'easy' }
+      ]
+    },
+    matlab: {
+      easy: [
+        { question: 'MATLAB is widely used for?', options: ['Numerical computing', 'Kernel development', 'Web CSS styling', 'Only mobile apps'], correctAnswer: 'Numerical computing', difficulty: 'easy' },
+        { question: 'What does MATLAB stand for?', options: ['Matrix Laboratory', 'Math Logic Table', 'Machine Lab Tool', 'Matrix Logic Toolkit'], correctAnswer: 'Matrix Laboratory', difficulty: 'easy' },
+        { question: 'What symbol starts a comment in MATLAB?', options: ['%', '#', '//', '<!--'], correctAnswer: '%', difficulty: 'easy' },
+        { question: 'Which keyword is used to define a function in MATLAB?', options: ['function', 'def', 'fn', 'proc'], correctAnswer: 'function', difficulty: 'easy' },
+        { question: 'MATLAB arrays are indexed starting at?', options: ['1', '0', '-1', 'Depends on OS'], correctAnswer: '1', difficulty: 'easy' }
+      ]
+    },
+    sql: {
+      easy: [
+        { question: 'Which SQL statement retrieves rows from a table?', options: ['SELECT', 'INSERT', 'UPDATE', 'DELETE'], correctAnswer: 'SELECT', difficulty: 'easy' },
+        { question: 'Which clause filters rows in a query?', options: ['WHERE', 'ORDER BY', 'GROUP BY', 'HAVING'], correctAnswer: 'WHERE', difficulty: 'easy' },
+        { question: 'Which command adds new rows to a table?', options: ['INSERT', 'CREATE', 'DROP', 'ALTER'], correctAnswer: 'INSERT', difficulty: 'easy' },
+        { question: 'Which key uniquely identifies each row?', options: ['Primary key', 'Foreign key', 'Index key', 'Group key'], correctAnswer: 'Primary key', difficulty: 'easy' },
+        { question: 'Which keyword sorts results?', options: ['ORDER BY', 'SORT', 'GROUP BY', 'RANK BY'], correctAnswer: 'ORDER BY', difficulty: 'easy' }
+      ]
+    }
+  };
+
   const universalProgrammingFallback = {
     easy: [
       { question: 'Which data structure uses LIFO order?', options: ['Stack', 'Queue', 'Array', 'Graph'], correctAnswer: 'Stack', difficulty: 'easy' },
@@ -1286,6 +1442,10 @@ router.get('/quiz-questions/:skill', protect, async (req, res) => {
       medium: uniqueByQuestion(merged.medium),
       hard: uniqueByQuestion(merged.hard),
     };
+  }
+
+  if (!resolvedBank.easy.length && !resolvedBank.medium.length && !resolvedBank.hard.length && strictLanguageSkills.has(normalizedSkill) && starterLanguageBanks[normalizedSkill]) {
+    resolvedBank = normalizeBank(starterLanguageBanks[normalizedSkill]);
   }
 
   if (!resolvedBank.easy.length && !resolvedBank.medium.length && !resolvedBank.hard.length && strictLanguageSkills.has(normalizedSkill)) {
