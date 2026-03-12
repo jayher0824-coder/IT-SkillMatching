@@ -1186,39 +1186,12 @@ async function loadStudentDashboard() {
                             <div class="flex justify-between items-center mb-6">
                                 <div>
                                     <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Skills Assessment</h2>
-                                    <p class="text-gray-600 dark:text-gray-300 mt-2">Choose a skill category to assess your abilities and get better job matches.</p>
+                                    <p class="text-gray-600 dark:text-gray-300 mt-2">Choose a programming language to assess your abilities and get better job matches.</p>
                                 </div>
                                 <div id="gamification-badge" class="bg-gradient-to-r from-green-400 to-blue-500 rounded-lg p-4 text-white text-center shadow-lg">
                                     <div class="text-3xl font-bold">🏆</div>
                                     <div class="text-sm font-semibold mt-2"><span id="points-display">0</span> Points</div>
                                     <div class="text-sm font-semibold">Level <span id="level-display">1</span></div>
-                                </div>
-                            </div>
-
-                            <!-- General Categories -->
-                            <div class="mb-8">
-                                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">General Skills</h3>
-                                <div class="grid-container">
-                                    <div class="grid-item programming" onclick="startCategoryAssessment('programming')">
-                                        <i class="fas fa-code"></i>
-                                        <h3>Programming</h3>
-                                        <p>Core programming concepts, algorithms, data structures.</p>
-                                    </div>
-                                    <div class="grid-item webDevelopment" onclick="startCategoryAssessment('webDevelopment')">
-                                        <i class="fas fa-globe"></i>
-                                        <h3>Web Development</h3>
-                                        <p>Frontend and backend web technologies, frameworks.</p>
-                                    </div>
-                                    <div class="grid-item networking" onclick="startCategoryAssessment('networking')">
-                                        <i class="fas fa-network-wired"></i>
-                                        <h3>Networking</h3>
-                                        <p>Network protocols, security, cloud computing.</p>
-                                    </div>
-                                    <div class="grid-item problemSolving" onclick="startCategoryAssessment('problemSolving')">
-                                        <i class="fas fa-brain"></i>
-                                        <h3>Problem Solving</h3>
-                                        <p>Logical thinking, analytical skills, debugging.</p>
-                                    </div>
                                 </div>
                             </div>
 
@@ -1329,31 +1302,9 @@ async function loadStudentDashboard() {
                                 </div>
                             </div>
 
-                            <!-- Web Technologies -->
-                            <div class="mb-8">
-                                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Web Technologies & Database</h3>
-                                <div class="grid-container">
-                                    <div class="grid-item html" onclick="startCategoryAssessment('html')">
-                                        <i class="fab fa-html5"></i>
-                                        <h3>HTML</h3>
-                                        <p>HTML5, semantic markup, web structure.</p>
-                                    </div>
-                                    <div class="grid-item css" onclick="startCategoryAssessment('css')">
-                                        <i class="fab fa-css3-alt"></i>
-                                        <h3>CSS</h3>
-                                        <p>CSS3, Flexbox, Grid, responsive design.</p>
-                                    </div>
-                                    <div class="grid-item sql" onclick="startCategoryAssessment('sql')">
-                                        <i class="fas fa-database"></i>
-                                        <h3>SQL</h3>
-                                        <p>SQL queries, database operations, optimization.</p>
-                                    </div>
-                                </div>
-                            </div>
-
                             <div class="mt-8 text-center">
                                 <p class="text-sm text-gray-500 dark:text-gray-400">
-                                    Complete assessments in multiple categories to build a comprehensive skill profile!
+                                    Complete language assessments to build your programming skill profile.
                                 </p>
                             </div>
                         </div>
