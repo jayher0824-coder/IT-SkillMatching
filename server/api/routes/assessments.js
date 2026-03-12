@@ -1153,7 +1153,7 @@ router.get('/quiz-questions/:skill', protect, async (req, res) => {
     });
   };
 
-  const getQuestionKey = (q) => `${normalizedSkill}|${normalizedDifficulty || 'all'}|${String(q?.question || '').toLowerCase().trim()}`;
+  const getQuestionKey = (q) => `${normalizedSkill}|${String(q?.question || '').toLowerCase().trim()}`;
 
   // Category aliases ensure questions remain connected to their subject area.
   const skillAliases = {
@@ -1459,29 +1459,27 @@ router.get('/quiz-questions/:skill', protect, async (req, res) => {
     resolvedBank = normalizeBank(universalProgrammingFallback);
   }
 
-  let questionPool = normalizedDifficulty
-    ? resolvedBank[normalizedDifficulty]
-    : [...resolvedBank.easy, ...resolvedBank.medium, ...resolvedBank.hard];
+  const primaryPool = uniqueByQuestion(
+    normalizedDifficulty
+      ? resolvedBank[normalizedDifficulty]
+      : [...resolvedBank.easy, ...resolvedBank.medium, ...resolvedBank.hard]
+  );
 
-  questionPool = uniqueByQuestion(questionPool);
+  const allSkillQuestions = uniqueByQuestion([
+    ...resolvedBank.easy,
+    ...resolvedBank.medium,
+    ...resolvedBank.hard,
+  ]);
 
-  if (questionPool.length === 0) {
-    questionPool = uniqueByQuestion([
-      ...resolvedBank.easy,
-      ...resolvedBank.medium,
-      ...resolvedBank.hard,
-    ]);
-
-    if (questionPool.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: `No questions found for skill: ${skill} with difficulty: ${difficulty || 'all'}`,
-      });
-    }
+  if (allSkillQuestions.length === 0) {
+    return res.status(404).json({
+      success: false,
+      message: `No questions found for skill: ${skill} with difficulty: ${difficulty || 'all'}`,
+    });
   }
 
-  const takeCount = Math.min(QUESTIONS_PER_QUIZ, questionPool.length);
-  const memoryBucket = `${normalizedSkill}:${normalizedDifficulty || 'all'}`;
+  const takeCount = Math.min(QUESTIONS_PER_QUIZ, allSkillQuestions.length);
+  const memoryBucket = `${normalizedSkill}:all`;
 
   // Serve unseen questions first, then cycle once pool is exhausted.
   let recentQuestionKeys = [];
@@ -1491,14 +1489,27 @@ router.get('/quiz-questions/:skill', protect, async (req, res) => {
   }
   const recentSet = new Set(recentQuestionKeys);
 
-  let unseenPool = questionPool.filter((q) => !recentSet.has(getQuestionKey(q)));
-  if (unseenPool.length < takeCount) {
-    // Reset cycle for this bucket when all questions have been consumed.
-    unseenPool = questionPool;
-    recentQuestionKeys = [];
+  const unseenPrimary = primaryPool.filter((q) => !recentSet.has(getQuestionKey(q)));
+  const unseenAnyDifficulty = allSkillQuestions.filter((q) => !recentSet.has(getQuestionKey(q)));
+
+  let selectedQuestions = [];
+  if (unseenPrimary.length > 0) {
+    selectedQuestions = shuffle(unseenPrimary).slice(0, takeCount);
   }
 
-  const selectedQuestions = shuffle(unseenPool).slice(0, takeCount);
+  if (selectedQuestions.length < takeCount) {
+    const alreadySelected = new Set(selectedQuestions.map(getQuestionKey));
+    const filler = shuffle(unseenAnyDifficulty.filter((q) => !alreadySelected.has(getQuestionKey(q))))
+      .slice(0, takeCount - selectedQuestions.length);
+    selectedQuestions = [...selectedQuestions, ...filler];
+  }
+
+  if (selectedQuestions.length === 0) {
+    return res.status(409).json({
+      success: false,
+      message: `No new questions left for ${skill}. Add more questions to this language to keep retakes unique.`,
+    });
+  }
 
   if (memoryOwner) {
     const selectedKeys = selectedQuestions.map(getQuestionKey);
@@ -1520,12 +1531,16 @@ router.get('/quiz-questions/:skill', protect, async (req, res) => {
     await memoryOwner.save();
   }
 
-  const safeQuestions = selectedQuestions.map((q) => ({
-    question: q.question,
-    options: q.options,
-    difficulty: q.difficulty || normalizedDifficulty || 'medium',
-    correctAnswer: undefined,
-  }));
+  const safeQuestions = selectedQuestions.map((q) => {
+    const options = Array.isArray(q.options) ? [...q.options] : [];
+    const shuffledOptions = shuffle(options);
+    return {
+      question: q.question,
+      options: shuffledOptions,
+      difficulty: q.difficulty || normalizedDifficulty || 'medium',
+      correctAnswer: q.correctAnswer,
+    };
+  });
 
   res.json({
     success: true,

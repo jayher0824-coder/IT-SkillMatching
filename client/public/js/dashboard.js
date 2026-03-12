@@ -384,13 +384,15 @@ async function fetchSkillQuestions(skill, difficulty = 'medium') {
             id: idx + 1,
             question: q.question || '',
             options: Array.isArray(q.options) ? q.options : [],
-            correctAnswer: q.correctAnswer || (Array.isArray(q.options) ? q.options[0] : ''),
+            correctAnswer: q.correctAnswer || '',
             hint: `Think about the core concepts of ${skill}. Look for the most accurate answer.`,
             difficulty: q.difficulty || difficulty || 'medium'
         }));
 
         // Filter out invalid questions
-        questions = questions.filter(q => q.question && q.options && q.options.length >= 2);
+        questions = questions.filter(
+            q => q.question && q.options && q.options.length >= 2 && q.correctAnswer && q.options.includes(q.correctAnswer)
+        );
 
         console.log(`Successfully processed ${questions.length} questions for ${skill}`);
         return questions;
