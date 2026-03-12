@@ -344,6 +344,7 @@ async function saveGamificationPoints() {
 async function fetchSkillQuestions(skill, difficulty = 'medium') {
     try {
         console.log('Fetching questions for skill:', skill, 'difficulty:', difficulty);
+        const authToken = sessionStorage.getItem('authToken') || localStorage.getItem('token');
         
         // Call backend endpoint with difficulty parameter
         const difficultyParam = difficulty ? `?difficulty=${difficulty}` : '';
@@ -351,12 +352,22 @@ async function fetchSkillQuestions(skill, difficulty = 'medium') {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
+                'Authorization': authToken ? `Bearer ${authToken}` : ''
             }
         });
 
         if (!response.ok) {
-            throw new Error(`Failed to fetch questions: ${response.status} ${response.statusText}`);
+            let serverMessage = '';
+            try {
+                const errorPayload = await response.json();
+                serverMessage = errorPayload?.message || '';
+            } catch (_e) {
+                // Ignore non-JSON error bodies.
+            }
+
+            const error = new Error(serverMessage || `Failed to fetch questions: ${response.status} ${response.statusText}`);
+            error.status = response.status;
+            throw error;
         }
 
         const result = await response.json();
@@ -659,9 +670,7 @@ function handleQuizError(e, containerId) {
                 <p class="text-4xl mb-4">⚠️</p>
                 <p class="text-red-800 dark:text-red-300 font-semibold text-lg mb-2">Error Loading Questions</p>
                 <p class="text-red-700 dark:text-red-400 text-sm mb-4">${e.message || 'Could not fetch questions for this category.'}</p>
-                <p class="text-red-600 dark:text-red-500 text-xs mb-6 font-mono bg-red-100 dark:bg-red-900/30 p-4 rounded overflow-auto max-h-32">
-                    ${e.stack ? e.stack.split('\n').slice(0, 3).join('<br>') : e.toString()}
-                </p>
+                ${e.status === 422 ? '<p class="text-gray-600 dark:text-gray-300 text-xs mb-6">This language currently needs its own dedicated question bank. Please choose another language for now or add new questions in the backend.</p>' : ''}
                 <button onclick="backToAssessment()" class="mb-6 flex items-center text-green-600 hover:text-green-700 transition font-semibold bg-white border border-gray-300 rounded-md px-4 py-2 shadow-md">
                     <i class="fas fa-arrow-left mr-2"></i>
                     Back to Assessment

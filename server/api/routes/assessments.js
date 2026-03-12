@@ -1053,7 +1053,31 @@ router.get('/quiz-questions/:skill', protect, async (req, res) => {
         { question: "What is the difference between 'throw' and 'throws' in Java?", options: ["No difference", "throw declares exceptions, throws throws them", "throws declares exceptions, throw throws them", "throw is for methods, throws for classes"], correctAnswer: "throws declares exceptions, throw throws them", difficulty: "hard" },
         { question: "What is the purpose of 'finally' block in Java?", options: ["Executes after try-catch", "Handles exceptions", "Defines finally method", "Closes resources"], correctAnswer: "Executes after try-catch", difficulty: "hard" }
       ]
-    },    html: {
+    },
+    rust: {
+      easy: [
+        { question: 'What command creates a new Rust project?', options: ['cargo new', 'rust new', 'rustc init', 'cargo init-project'], correctAnswer: 'cargo new', difficulty: 'easy' },
+        { question: 'Which keyword declares an immutable variable in Rust?', options: ['let', 'var', 'const', 'mut'], correctAnswer: 'let', difficulty: 'easy' },
+        { question: 'How do you make a Rust variable mutable?', options: ['let mut x = 1;', 'mut let x = 1;', 'var mut x = 1;', 'x := mut 1'], correctAnswer: 'let mut x = 1;', difficulty: 'easy' },
+        { question: 'Which macro prints text to the console in Rust?', options: ['println!', 'print()', 'echo!', 'console.log!'], correctAnswer: 'println!', difficulty: 'easy' },
+        { question: 'What file is the default Rust entry point in a binary project?', options: ['src/main.rs', 'main.rust', 'src/index.rs', 'app.rs'], correctAnswer: 'src/main.rs', difficulty: 'easy' }
+      ],
+      medium: [
+        { question: 'What does ownership in Rust primarily help prevent?', options: ['Memory safety bugs like use-after-free', 'Syntax errors', 'Network latency', 'Database deadlocks'], correctAnswer: 'Memory safety bugs like use-after-free', difficulty: 'medium' },
+        { question: 'What keyword is used to define a function in Rust?', options: ['fn', 'function', 'def', 'func'], correctAnswer: 'fn', difficulty: 'medium' },
+        { question: 'What is the purpose of borrowing in Rust?', options: ['Access data without taking ownership', 'Duplicate all variables', 'Compile faster', 'Disable lifetimes'], correctAnswer: 'Access data without taking ownership', difficulty: 'medium' },
+        { question: 'Which symbol represents a shared reference in Rust?', options: ['&', '*', '@', '#'], correctAnswer: '&', difficulty: 'medium' },
+        { question: 'Which enum is commonly used for error handling in Rust?', options: ['Result<T, E>', 'Option<T>', 'Error<T>', 'Try<T>'], correctAnswer: 'Result<T, E>', difficulty: 'medium' }
+      ],
+      hard: [
+        { question: 'What does the lifetime annotation syntax look like in Rust?', options: ["'a", '`a', ':a', '&a'], correctAnswer: "'a", difficulty: 'hard' },
+        { question: 'What trait enables formatting with {:?} in Rust?', options: ['Debug', 'Display', 'Clone', 'Default'], correctAnswer: 'Debug', difficulty: 'hard' },
+        { question: 'What does the ? operator do on a Result in Rust?', options: ['Propagates error early if Err', 'Converts to Option always', 'Panics on success', 'Ignores the error'], correctAnswer: 'Propagates error early if Err', difficulty: 'hard' },
+        { question: 'When should unsafe Rust be used?', options: ['Only when required for operations the compiler cannot verify safely', 'For all loops', 'To avoid ownership rules everywhere', 'Never under any condition'], correctAnswer: 'Only when required for operations the compiler cannot verify safely', difficulty: 'hard' },
+        { question: 'Which collection type in Rust stores key-value pairs?', options: ['HashMap', 'Vec', 'HashSet', 'LinkedList'], correctAnswer: 'HashMap', difficulty: 'hard' }
+      ]
+    },
+    html: {
       easy: [
         { question: "What does HTML stand for?", options: ["HyperText Markup Language", "HyperText Markdown Language", "HighText Machine Language", "None of the above"], correctAnswer: "HyperText Markup Language", difficulty: "easy" },
         { question: "Which tag is used to define a paragraph in HTML?", options: ["<p>", "<paragraph>", "<para>", "<text>"], correctAnswer: "<p>", difficulty: "easy" },
@@ -1212,29 +1236,11 @@ router.get('/quiz-questions/:skill', protect, async (req, res) => {
     }
   };
 
-  // Map language-specific cards to closest available question banks.
-  const languageFallbackAliases = {
-    typescript: ['javascript'],
-    csharp: ['java', 'javascript'],
-    cpp: ['java', 'python'],
-    c: ['cpp', 'python'],
-    php: ['javascript', 'python'],
-    ruby: ['python', 'javascript'],
-    go: ['java', 'python'],
-    rust: ['cpp', 'python'],
-    swift: ['java', 'javascript'],
-    kotlin: ['java', 'javascript'],
-    objectivec: ['swift', 'cpp', 'java'],
-    r: ['python'],
-    scala: ['java'],
-    perl: ['python'],
-    visualbasic: ['java', 'javascript'],
-    assembly: ['cpp', 'c'],
-    matlab: ['python'],
-    sql: ['database'],
-    html: ['javascript'],
-    css: ['javascript']
-  };
+  const strictLanguageSkills = new Set([
+    'python', 'java', 'javascript', 'typescript', 'csharp', 'cpp', 'c', 'php', 'ruby', 'go',
+    'rust', 'swift', 'kotlin', 'objectivec', 'r', 'scala', 'perl', 'visualbasic', 'assembly', 'matlab',
+    'html', 'css', 'sql'
+  ]);
 
   const universalProgrammingFallback = {
     easy: [
@@ -1282,22 +1288,11 @@ router.get('/quiz-questions/:skill', protect, async (req, res) => {
     };
   }
 
-  if (!resolvedBank.easy.length && !resolvedBank.medium.length && !resolvedBank.hard.length && languageFallbackAliases[normalizedSkill]) {
-    const merged = { easy: [], medium: [], hard: [] };
-    languageFallbackAliases[normalizedSkill].forEach((aliasSkill) => {
-      const aliasBank = normalizeBank(skillToQuestions[aliasSkill]);
-      const aliasCategoryBank = normalizeBank(categoryQuestionBanks[aliasSkill]);
-
-      merged.easy.push(...aliasBank.easy, ...aliasCategoryBank.easy);
-      merged.medium.push(...aliasBank.medium, ...aliasCategoryBank.medium);
-      merged.hard.push(...aliasBank.hard, ...aliasCategoryBank.hard);
+  if (!resolvedBank.easy.length && !resolvedBank.medium.length && !resolvedBank.hard.length && strictLanguageSkills.has(normalizedSkill)) {
+    return res.status(422).json({
+      success: false,
+      message: `No dedicated ${normalizedSkill} questions are available yet. Please add a language-specific question bank before enabling this quiz.`,
     });
-
-    resolvedBank = {
-      easy: uniqueByQuestion(merged.easy),
-      medium: uniqueByQuestion(merged.medium),
-      hard: uniqueByQuestion(merged.hard),
-    };
   }
 
   if (!resolvedBank.easy.length && !resolvedBank.medium.length && !resolvedBank.hard.length) {
