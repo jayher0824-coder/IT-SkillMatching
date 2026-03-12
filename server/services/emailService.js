@@ -305,7 +305,7 @@ const sendEmail = async (to, template) => {
     // Use Resend API
     if (emailClient.type === 'resend') {
       const result = await emailClient.client.emails.send({
-        from: 'IT OJT Platform <onboarding@resend.dev>', // Use your verified domain later
+        from: process.env.RESEND_FROM_EMAIL || 'IT OJT Platform <onboarding@resend.dev>',
         to: to,
         subject: template.subject,
         html: template.html

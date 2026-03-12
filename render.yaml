@@ -26,6 +26,10 @@ services:
         value: 5242880
       - key: CORS_ORIGIN
         sync: false
+      - key: RESEND_API_KEY
+        sync: false
+      - key: RESEND_FROM_EMAIL
+        sync: false
       - key: EMAIL_SERVICE
         value: gmail
       - key: EMAIL_USER
