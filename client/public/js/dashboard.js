@@ -6042,12 +6042,17 @@ window.submitAssessmentAnswers = async function() {
     try {
         window.isSubmitting = true;
         showToast('Submitting assessment...', 'info');
+
+        const startedAt = window.assessmentStartTime
+            ? new Date(window.assessmentStartTime).toISOString()
+            : new Date().toISOString();
+        window.assessmentStartTime = startedAt;
         
         const response = await apiCall(`/assessments/${window.currentAssessment._id}/submit`, {
             method: 'POST',
             body: JSON.stringify({
                 answers: window.userAnswers,
-                startedAt: window.assessmentStartTime
+                startedAt
             })
         });
         
@@ -6575,8 +6580,35 @@ async function loadAssessmentHistory() {
     if (!historyContent) return;
     
     try {
-        const response = await apiCall('/assessments/results/me');
-        const results = response.data || [];
+        const [standardResponse, customResponse] = await Promise.all([
+            apiCall('/assessments/results/me').catch(() => ({ success: false, data: [] })),
+            apiCall('/custom-assessments/submissions/me').catch(() => ({ success: false, data: [] }))
+        ]);
+
+        const standardResults = Array.isArray(standardResponse.data) ? standardResponse.data : [];
+        const customResultsRaw = Array.isArray(customResponse.data) ? customResponse.data : [];
+
+        const customResults = customResultsRaw.map((submission) => ({
+            _id: submission._id,
+            assessment: {
+                title: submission.assessment?.title || submission.job?.title || 'Custom Assessment',
+                category: 'custom'
+            },
+            answers: submission.answers || [],
+            score: submission.score || 0,
+            percentage: submission.percentage || 0,
+            passed: !!submission.passed,
+            completedAt: submission.submittedAt,
+            historyType: 'custom'
+        }));
+
+        const standardNormalized = standardResults.map((result) => ({
+            ...result,
+            historyType: 'standard'
+        }));
+
+        const results = [...standardNormalized, ...customResults]
+            .sort((a, b) => new Date(b.completedAt || b.submittedAt || 0) - new Date(a.completedAt || a.submittedAt || 0));
         
         if (results.length === 0) {
             historyContent.innerHTML = `
@@ -6593,9 +6625,11 @@ async function loadAssessmentHistory() {
         
         historyContent.innerHTML = results.map(result => {
             // Determine if this is a quiz result (no answers array or very few answers)
-            const isQuiz = !result.answers || result.answers.length === 0;
+            const isCustom = result.historyType === 'custom';
+            const isQuiz = !isCustom && (!result.answers || result.answers.length === 0);
             const resultTypeIcon = isQuiz ? '<i class="fas fa-graduation-cap text-purple-600 mr-2"></i>' : '<i class="fas fa-clipboard-list text-blue-600 mr-2"></i>';
-            const resultType = isQuiz ? 'Quiz' : 'Assessment';
+            const resultType = isCustom ? 'Custom Assessment' : (isQuiz ? 'Quiz' : 'Assessment');
+            const completedAt = result.completedAt || result.submittedAt;
             
             return `
                 <div class="bg-white dark:bg-gray-700 rounded-lg p-4 mb-4 shadow hover:shadow-lg transition">
@@ -6609,7 +6643,7 @@ async function loadAssessmentHistory() {
                                 </span>
                             </div>
                             <p class="text-sm text-gray-600 dark:text-gray-400">
-                                Completed: ${new Date(result.completedAt).toLocaleDateString()} at ${new Date(result.completedAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                Completed: ${new Date(completedAt).toLocaleDateString()} at ${new Date(completedAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                             </p>
                         </div>
                         <div class="text-right flex items-start gap-4">
@@ -6621,13 +6655,15 @@ async function loadAssessmentHistory() {
                                     ${result.passed ? '✓ Passed' : '✗ Review'}
                                 </span>
                             </div>
-                            <button onclick="viewStudentAssessmentDetails('${result._id}')" 
-                                style="background-color: #56AE67; color: white; border: 2px solid #2d6b3c;"
-                                class="px-4 py-2 rounded-lg hover:bg-[#3d8b4f] dark:hover:bg-[#6bc481] transition font-semibold shadow-sm"
-                                onmouseover="this.style.backgroundColor='#3d8b4f'" 
-                                onmouseout="this.style.backgroundColor='#56AE67'">
-                                <i class="fas fa-eye mr-1"></i>View Details
-                            </button>
+                            ${isCustom ? '' : `
+                                <button onclick="viewStudentAssessmentDetails('${result._id}')" 
+                                    style="background-color: #56AE67; color: white; border: 2px solid #2d6b3c;"
+                                    class="px-4 py-2 rounded-lg hover:bg-[#3d8b4f] dark:hover:bg-[#6bc481] transition font-semibold shadow-sm"
+                                    onmouseover="this.style.backgroundColor='#3d8b4f'" 
+                                    onmouseout="this.style.backgroundColor='#56AE67'">
+                                    <i class="fas fa-eye mr-1"></i>View Details
+                                </button>
+                            `}
                         </div>
                     </div>
                 </div>

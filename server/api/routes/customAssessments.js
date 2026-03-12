@@ -247,6 +247,27 @@ router.post('/submit', protect, authorize('student'), async (req, res) => {
     }
 });
 
+// @route   GET /api/custom-assessments/submissions/me
+// @desc    Get current student's custom assessment submissions
+// @access  Private (Student)
+router.get('/submissions/me', protect, authorize('student'), async (req, res) => {
+    try {
+        const submissions = await CustomAssessmentSubmission.find({ student: req.user._id })
+            .populate('assessment', 'title passingScore')
+            .populate('job', 'title')
+            .sort({ submittedAt: -1 });
+
+        res.json({
+            success: true,
+            count: submissions.length,
+            data: submissions
+        });
+    } catch (error) {
+        console.error('Error fetching student custom submissions:', error);
+        res.status(500).json({ success: false, message: 'Server error' });
+    }
+});
+
 // @route   GET /api/custom-assessments/submission/:submissionId
 // @desc    Get assessment submission results (for student or company)
 // @access  Private

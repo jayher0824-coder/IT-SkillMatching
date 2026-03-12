@@ -378,6 +378,13 @@ router.post('/:id/submit', protect, authorize('student'), async (req, res) => {
       breakdown: finalCategoryScores,
     };
 
+    // Award gamification points from earned assessment score.
+    if (!student.gamification) {
+      student.gamification = { points: 0, level: 1, badges: [] };
+    }
+    student.gamification.points += Math.max(0, totalScore);
+    student.gamification.level = Math.max(1, Math.floor(student.gamification.points / 100) + 1);
+
     // Update student skills based on assessment results
     // Only add/update the specific skill that was assessed (assessment.category)
     if (passed && assessment.category) {
