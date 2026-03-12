@@ -1429,73 +1429,46 @@ router.get('/quiz-questions/:skill', protect, async (req, res) => {
       typeFeature: 'language features',
     };
 
+    const easy = [
+      { question: `What is ${profile.label} most commonly used for?`, options: [profile.ecosystem, 'Only image editing', 'Hardware soldering only', 'Spreadsheet formatting'], correctAnswer: profile.ecosystem, difficulty: 'easy' },
+      { question: `Which tool is commonly used to manage ${profile.label} dependencies?`, options: [profile.packageTool, 'FTP client', 'Video codec', 'DNS server'], correctAnswer: profile.packageTool, difficulty: 'easy' },
+      { question: `In ${profile.label}, why is readable naming important?`, options: ['It improves maintainability and onboarding', 'It guarantees zero bugs', 'It replaces tests', 'It speeds up internet'], correctAnswer: 'It improves maintainability and onboarding', difficulty: 'easy' },
+      { question: `Which practice is best before deploying ${profile.label} code?`, options: ['Run tests and review changes', 'Skip validation for speed', 'Disable logs permanently', 'Hardcode credentials'], correctAnswer: 'Run tests and review changes', difficulty: 'easy' },
+      { question: `What is the benefit of small functions in ${profile.label}?`, options: ['Easier testing and reuse', 'Higher network throughput', 'No need for documentation', 'No need for debugging'], correctAnswer: 'Easier testing and reuse', difficulty: 'easy' },
+      { question: `Why use source control with ${profile.label} projects?`, options: ['Track changes and collaborate safely', 'Replace compilation', 'Store database passwords', 'Render UIs'], correctAnswer: 'Track changes and collaborate safely', difficulty: 'easy' },
+      { question: `What does linting usually help with in ${profile.label}?`, options: ['Consistent style and early issue detection', 'Automatic business logic design', 'Replacing deployment pipelines', 'Encrypting all data'], correctAnswer: 'Consistent style and early issue detection', difficulty: 'easy' },
+      { question: `In ${profile.label}, why separate config from code?`, options: ['Safer deployments and easier environment changes', 'Larger binary size', 'Slower CI builds', 'No effect at all'], correctAnswer: 'Safer deployments and easier environment changes', difficulty: 'easy' },
+      { question: `What is a practical first step when learning ${profile.label}?`, options: ['Build small projects and iterate', 'Start with complex distributed systems only', 'Skip fundamentals', 'Avoid documentation'], correctAnswer: 'Build small projects and iterate', difficulty: 'easy' },
+      { question: `Why are comments useful in ${profile.label} code?`, options: ['Explain intent where code is non-obvious', 'Replace all naming', 'Avoid writing tests', 'Increase runtime speed'], correctAnswer: 'Explain intent where code is non-obvious', difficulty: 'easy' },
+    ];
+
     const medium = [
-      {
-        question: `In ${profile.label}, which practice most improves long-term maintainability?`,
-        options: ['Consistent formatting, linting, and clear module boundaries', 'Avoiding tests to move faster', 'Using global mutable state everywhere', 'Copy-pasting logic between files'],
-        correctAnswer: 'Consistent formatting, linting, and clear module boundaries',
-        difficulty: 'medium',
-      },
-      {
-        question: `When building ${profile.label} projects, what is the primary role of ${profile.packageTool}?`,
-        options: ['Dependency/version management and reproducible builds', 'Rendering UI animations only', 'Replacing source control', 'Creating database schemas automatically'],
-        correctAnswer: 'Dependency/version management and reproducible builds',
-        difficulty: 'medium',
-      },
-      {
-        question: `What is a key benefit of ${profile.typeFeature} in ${profile.label}?`,
-        options: ['Catching classes of bugs earlier in development', 'Eliminating all runtime errors', 'Removing need for code review', 'Making algorithms unnecessary'],
-        correctAnswer: 'Catching classes of bugs earlier in development',
-        difficulty: 'medium',
-      },
-      {
-        question: `For ${profile.label} services in ${profile.ecosystem}, which approach scales best?`,
-        options: ['Small cohesive modules with clear interfaces', 'One large file with all logic', 'Frequent hidden side effects', 'No logging or observability'],
-        correctAnswer: 'Small cohesive modules with clear interfaces',
-        difficulty: 'medium',
-      },
-      {
-        question: `In ${profile.label}, why is automated testing important before release?`,
-        options: ['It reduces regressions during refactors and feature changes', 'It guarantees perfect UX', 'It replaces staging environments', 'It makes debugging impossible'],
-        correctAnswer: 'It reduces regressions during refactors and feature changes',
-        difficulty: 'medium',
-      },
+      { question: `In ${profile.label}, which practice most improves long-term maintainability?`, options: ['Consistent formatting, linting, and clear module boundaries', 'Avoiding tests to move faster', 'Using global mutable state everywhere', 'Copy-pasting logic between files'], correctAnswer: 'Consistent formatting, linting, and clear module boundaries', difficulty: 'medium' },
+      { question: `When building ${profile.label} projects, what is the primary role of ${profile.packageTool}?`, options: ['Dependency/version management and reproducible builds', 'Rendering UI animations only', 'Replacing source control', 'Creating database schemas automatically'], correctAnswer: 'Dependency/version management and reproducible builds', difficulty: 'medium' },
+      { question: `What is a key benefit of ${profile.typeFeature} in ${profile.label}?`, options: ['Catching classes of bugs earlier in development', 'Eliminating all runtime errors', 'Removing need for code review', 'Making algorithms unnecessary'], correctAnswer: 'Catching classes of bugs earlier in development', difficulty: 'medium' },
+      { question: `For ${profile.label} services in ${profile.ecosystem}, which approach scales best?`, options: ['Small cohesive modules with clear interfaces', 'One large file with all logic', 'Frequent hidden side effects', 'No logging or observability'], correctAnswer: 'Small cohesive modules with clear interfaces', difficulty: 'medium' },
+      { question: `In ${profile.label}, why is automated testing important before release?`, options: ['It reduces regressions during refactors and feature changes', 'It guarantees perfect UX', 'It replaces staging environments', 'It makes debugging impossible'], correctAnswer: 'It reduces regressions during refactors and feature changes', difficulty: 'medium' },
+      { question: `What improves observability in ${profile.label} services?`, options: ['Structured logs, metrics, and tracing', 'Turning off all logs', 'Random print statements only', 'Ignoring alerting'], correctAnswer: 'Structured logs, metrics, and tracing', difficulty: 'medium' },
+      { question: `How should secrets be handled in ${profile.label} apps?`, options: ['Use environment/secret managers, never hardcode', 'Commit them in source control', 'Store in client-side code', 'Print them in logs'], correctAnswer: 'Use environment/secret managers, never hardcode', difficulty: 'medium' },
+      { question: `For ${profile.label}, what makes code review effective?`, options: ['Small focused changes with clear context', 'Very large unscoped PRs', 'No tests included', 'No reviewer notes'], correctAnswer: 'Small focused changes with clear context', difficulty: 'medium' },
+      { question: `What is a good refactor strategy in ${profile.label}?`, options: ['Incremental changes with tests at each step', 'Rewrite everything at once without tests', 'Skip version control', 'Disable CI checks'], correctAnswer: 'Incremental changes with tests at each step', difficulty: 'medium' },
+      { question: `In ${profile.label}, what is the value of clear API contracts?`, options: ['Predictable integration and fewer runtime mismatches', 'No need for validation', 'Eliminates documentation', 'Forces monolith-only design'], correctAnswer: 'Predictable integration and fewer runtime mismatches', difficulty: 'medium' },
     ];
 
     const hard = [
-      {
-        question: `In advanced ${profile.label} systems, what is the best strategy for handling critical failures?`,
-        options: ['Fail fast with clear errors, retries where safe, and observability', 'Silently ignore all exceptions', 'Retry infinitely without backoff', 'Disable monitoring in production'],
-        correctAnswer: 'Fail fast with clear errors, retries where safe, and observability',
-        difficulty: 'hard',
-      },
-      {
-        question: `When optimizing ${profile.label} performance, what should be done first?`,
-        options: ['Profile real bottlenecks with measurements', 'Rewrite everything in another language', 'Inline all code manually', 'Remove type checks blindly'],
-        correctAnswer: 'Profile real bottlenecks with measurements',
-        difficulty: 'hard',
-      },
-      {
-        question: `For ${profile.framework} projects, which architectural choice improves testability?`,
-        options: ['Dependency injection and separation of concerns', 'Embedding business logic inside view templates only', 'Tight coupling across all modules', 'Using global mutable singletons for everything'],
-        correctAnswer: 'Dependency injection and separation of concerns',
-        difficulty: 'hard',
-      },
-      {
-        question: `What is the most robust way to evolve public APIs in ${profile.label}?`,
-        options: ['Version interfaces and maintain backward compatibility windows', 'Change contracts without notice', 'Remove response fields immediately', 'Skip deprecation strategy'],
-        correctAnswer: 'Version interfaces and maintain backward compatibility windows',
-        difficulty: 'hard',
-      },
-      {
-        question: `For secure ${profile.label} applications, which principle is essential?`,
-        options: ['Validate and sanitize all untrusted input', 'Trust all client-side values', 'Store secrets in source code', 'Disable authentication in development and production'],
-        correctAnswer: 'Validate and sanitize all untrusted input',
-        difficulty: 'hard',
-      },
+      { question: `In advanced ${profile.label} systems, what is the best strategy for handling critical failures?`, options: ['Fail fast with clear errors, retries where safe, and observability', 'Silently ignore all exceptions', 'Retry infinitely without backoff', 'Disable monitoring in production'], correctAnswer: 'Fail fast with clear errors, retries where safe, and observability', difficulty: 'hard' },
+      { question: `When optimizing ${profile.label} performance, what should be done first?`, options: ['Profile real bottlenecks with measurements', 'Rewrite everything in another language', 'Inline all code manually', 'Remove type checks blindly'], correctAnswer: 'Profile real bottlenecks with measurements', difficulty: 'hard' },
+      { question: `For ${profile.framework} projects, which architectural choice improves testability?`, options: ['Dependency injection and separation of concerns', 'Embedding business logic inside view templates only', 'Tight coupling across all modules', 'Using global mutable singletons for everything'], correctAnswer: 'Dependency injection and separation of concerns', difficulty: 'hard' },
+      { question: `What is the most robust way to evolve public APIs in ${profile.label}?`, options: ['Version interfaces and maintain backward compatibility windows', 'Change contracts without notice', 'Remove response fields immediately', 'Skip deprecation strategy'], correctAnswer: 'Version interfaces and maintain backward compatibility windows', difficulty: 'hard' },
+      { question: `For secure ${profile.label} applications, which principle is essential?`, options: ['Validate and sanitize all untrusted input', 'Trust all client-side values', 'Store secrets in source code', 'Disable authentication in development and production'], correctAnswer: 'Validate and sanitize all untrusted input', difficulty: 'hard' },
+      { question: `How do you reduce deployment risk in large ${profile.label} systems?`, options: ['Canary/gradual rollouts with rollback plans', 'Deploy everything at once without checks', 'Skip monitoring during rollout', 'Disable health checks'], correctAnswer: 'Canary/gradual rollouts with rollback plans', difficulty: 'hard' },
+      { question: `What is the strongest approach to concurrency safety in ${profile.label}?`, options: ['Use proven synchronization/immutability patterns and test race scenarios', 'Rely on luck and production traffic', 'Disable error handling', 'Share mutable global state freely'], correctAnswer: 'Use proven synchronization/immutability patterns and test race scenarios', difficulty: 'hard' },
+      { question: `Which strategy best protects data integrity in ${profile.label} apps?`, options: ['Transactional boundaries and idempotent operations', 'Skipping validation under load', 'Retrying writes indefinitely without limits', 'Disabling constraints'], correctAnswer: 'Transactional boundaries and idempotent operations', difficulty: 'hard' },
+      { question: `What is a key hardening step for ${profile.label} APIs?`, options: ['Rate limiting and strict authz checks', 'Open anonymous write endpoints', 'Expose stack traces to clients', 'Accept unbounded payloads'], correctAnswer: 'Rate limiting and strict authz checks', difficulty: 'hard' },
+      { question: `For long-term ${profile.label} platform reliability, which practice matters most?`, options: ['SLOs, incident reviews, and continuous improvement', 'Ignoring postmortems', 'Turning off alerts', 'No production dashboards'], correctAnswer: 'SLOs, incident reviews, and continuous improvement', difficulty: 'hard' },
     ];
 
-    return { medium, hard };
+    return { easy, medium, hard };
   };
 
   const universalProgrammingFallback = {
@@ -1525,6 +1498,7 @@ router.get('/quiz-questions/:skill', protect, async (req, res) => {
   let resolvedBank = normalizeBank(skillToQuestions[normalizedSkill]);
 
   if (strictLanguageSkills.has(normalizedSkill)) {
+    const TARGET_PER_DIFFICULTY = 10;
     const starter = normalizeBank(starterLanguageBanks[normalizedSkill]);
     resolvedBank = {
       easy: uniqueByQuestion([...(resolvedBank.easy || []), ...(starter.easy || [])]),
@@ -1533,11 +1507,23 @@ router.get('/quiz-questions/:skill', protect, async (req, res) => {
     };
 
     const generated = buildGeneratedLanguageQuestions(normalizedSkill);
-    if (resolvedBank.medium.length < 5) {
-      resolvedBank.medium = uniqueByQuestion([...(resolvedBank.medium || []), ...generated.medium]);
+    if (resolvedBank.easy.length < TARGET_PER_DIFFICULTY) {
+      resolvedBank.easy = uniqueByQuestion([
+        ...(resolvedBank.easy || []),
+        ...generated.easy.slice(0, TARGET_PER_DIFFICULTY - resolvedBank.easy.length),
+      ]);
     }
-    if (resolvedBank.hard.length < 5) {
-      resolvedBank.hard = uniqueByQuestion([...(resolvedBank.hard || []), ...generated.hard]);
+    if (resolvedBank.medium.length < TARGET_PER_DIFFICULTY) {
+      resolvedBank.medium = uniqueByQuestion([
+        ...(resolvedBank.medium || []),
+        ...generated.medium.slice(0, TARGET_PER_DIFFICULTY - resolvedBank.medium.length),
+      ]);
+    }
+    if (resolvedBank.hard.length < TARGET_PER_DIFFICULTY) {
+      resolvedBank.hard = uniqueByQuestion([
+        ...(resolvedBank.hard || []),
+        ...generated.hard.slice(0, TARGET_PER_DIFFICULTY - resolvedBank.hard.length),
+      ]);
     }
   }
 
