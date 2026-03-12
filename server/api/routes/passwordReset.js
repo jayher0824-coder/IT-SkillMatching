@@ -558,6 +558,7 @@ router.post('/test-email', async (req, res) => {
     res.json({ 
       success: result.success, 
       message: result.success ? 'Test email sent!' : 'Failed to send email',
+      provider: emailService.getEmailProvider ? emailService.getEmailProvider() : 'unknown',
       details: result
     });
   } catch (error) {

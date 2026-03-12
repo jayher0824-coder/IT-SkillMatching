@@ -3,6 +3,11 @@ const { Resend } = require('resend');
 
 const getEmailPassword = () => process.env.EMAIL_PASS || process.env.EMAIL_PASSWORD;
 
+const getEmailProvider = () => {
+  if (!emailClient) return 'none';
+  return emailClient.type;
+};
+
 // Create email client based on available configuration
 const createEmailClient = () => {
   // Priority 1: Resend (best for transactional emails)
@@ -310,8 +315,9 @@ const sendEmail = async (to, template) => {
         subject: template.subject,
         html: template.html
       });
-      console.log(`Email sent successfully via Resend to ${to}: ${result.id}`);
-      return { success: true, messageId: result.id };
+      const messageId = result?.id || result?.data?.id || null;
+      console.log(`Email sent successfully via Resend to ${to}: ${messageId || 'no-id-returned'}`);
+      return { success: true, provider: 'resend', messageId, raw: result };
     }
 
     // Use SMTP (SendGrid or Gmail)
@@ -325,13 +331,18 @@ const sendEmail = async (to, template) => {
 
       const info = await emailClient.client.sendMail(mailOptions);
       console.log(`Email sent successfully via SMTP to ${to}: ${info.messageId}`);
-      return { success: true, messageId: info.messageId };
+      return { success: true, provider: 'smtp', messageId: info.messageId };
     }
 
-    return { success: false, error: 'Unknown email client type' };
+    return { success: false, provider: getEmailProvider(), error: 'Unknown email client type' };
   } catch (error) {
     console.error('Error sending email:', error);
-    return { success: false, error: error.message };
+    return {
+      success: false,
+      provider: getEmailProvider(),
+      error: error.message,
+      code: error.code || null,
+    };
   }
 };
 
@@ -362,6 +373,7 @@ const sendGenericNotificationEmail = async (userEmail, userName, title, message)
 };
 
 module.exports = {
+  getEmailProvider,
   sendPasswordResetEmail,
   sendApplicationStatusEmail,
   sendAssessmentResultEmail,
