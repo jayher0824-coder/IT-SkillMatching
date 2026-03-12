@@ -207,10 +207,10 @@ router.post('/request-verification-code', async (req, res) => {
 });
 */
 
-// Step 2: Verify code and submit password reset request
+// Step 2: Send password reset email with link
 router.post('/forgot-password', passwordResetLimiter, async (req, res) => {
   try {
-    const { email, reason, securityAnswers, phoneNumber } = req.body;
+    const { email } = req.body;
 
     if (!email) {
       return res.status(400).json({ 
@@ -222,9 +222,10 @@ router.post('/forgot-password', passwordResetLimiter, async (req, res) => {
     const user = await User.findOne({ email: email.toLowerCase() });
 
     if (!user) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'No account found with this email address' 
+      // Don't reveal if user exists for security
+      return res.status(200).json({ 
+        success: true, 
+        message: 'If an account exists with this email, a password reset link has been sent.' 
       });
     }
 
@@ -236,109 +237,117 @@ router.post('/forgot-password', passwordResetLimiter, async (req, res) => {
       });
     }
 
-    // Rate limiting check - max 3 requests per day
+    // Rate limiting check - max 3 requests per hour
     const now = new Date();
-    const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+    const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);
     
-    // Reset count if it's been more than 24 hours
-    if (!user.passwordRequestResetDate || user.passwordRequestResetDate < oneDayAgo) {
-      user.passwordRequestCount = 0;
-      user.passwordRequestResetDate = now;
-    }
+    // Count requests in the last hour
+    const recentRequests = user.passwordChangeRequests?.filter(req => 
+      req.requestDate > oneHourAgo && req.status === 'pending'
+    ) || [];
 
-    if (user.passwordRequestCount >= MAX_REQUESTS_PER_DAY) {
+    if (recentRequests.length >= 3) {
       return res.status(429).json({ 
         success: false, 
-        message: 'Too many password reset requests. Please try again tomorrow.' 
+        message: 'Too many password reset requests. Please try again in an hour.' 
       });
     }
 
-    // Cooldown check - 10 minutes between successful requests
-    if (user.lastPasswordRequestDate) {
-      const cooldownEnd = new Date(user.lastPasswordRequestDate.getTime() + REQUEST_COOLDOWN_MINUTES * 60 * 1000);
-      if (now < cooldownEnd) {
-        const minutesLeft = Math.ceil((cooldownEnd - now) / (60 * 1000));
-        return res.status(429).json({ 
-          success: false, 
-          message: `Please wait ${minutesLeft} minute${minutesLeft > 1 ? 's' : ''} before requesting another password reset.` 
-        });
-      }
-    }
+    // Generate secure reset token
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const resetTokenHash = crypto.createHash('sha256').update(resetToken).digest('hex');
 
-    // Check for pending request
-    const hasPendingRequest = user.passwordChangeRequests?.some(req => req.status === 'pending');
-    if (hasPendingRequest) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'You already have a pending password change request.' 
-      });
-    }
+    // Token valid for 1 hour
+    const tokenExpiry = new Date(now.getTime() + 60 * 60 * 1000);
 
-    // Verify security questions if set
-    if (user.securityQuestions && user.securityQuestions.length > 0) {
-      if (!securityAnswers || Object.keys(securityAnswers).length === 0) {
-        return res.status(400).json({ 
-          success: false, 
-          message: 'Please answer your security questions',
-          requiresSecurityQuestions: true,
-          questions: user.securityQuestions.map(sq => ({ 
-            id: sq._id, 
-            question: sq.question 
-          }))
-        });
-      }
+    // Store token in user
+    user.resetPasswordToken = resetTokenHash;
+    user.resetPasswordExpires = tokenExpiry;
 
-      // Verify security answers
-      for (const sq of user.securityQuestions) {
-        const userAnswer = securityAnswers[sq._id.toString()];
-        if (!userAnswer) {
-          return res.status(400).json({ 
-            success: false, 
-            message: 'Please answer all security questions' 
-          });
-        }
-
-        const isMatch = await bcrypt.compare(userAnswer.toLowerCase().trim(), sq.answerHash);
-        if (!isMatch) {
-          return res.status(400).json({ 
-            success: false, 
-            message: 'Security answers do not match' 
-          });
-        }
-      }
-    }
-
-    // Get IP address and user agent for logging
-    const ipAddress = getClientIp(req);
-    const userAgent = req.headers['user-agent'] || 'unknown';
-
-    // Add password change request with security details
+    // Record the reset request
     if (!user.passwordChangeRequests) {
       user.passwordChangeRequests = [];
     }
 
     user.passwordChangeRequests.push({
-      reason: reason || 'Forgot password - verified via security questions',
-      phoneNumber: phoneNumber,
-      requestDate: new Date(),
+      reason: 'Password reset requested via email link',
+      requestDate: now,
       status: 'pending',
-      verified: true,
-      ipAddress: ipAddress,
-      userAgent: userAgent,
-      securityAnswers: securityAnswers ? new Map(Object.entries(securityAnswers)) : undefined,
+      verified: false,
+      ipAddress: getClientIp(req),
+      userAgent: req.headers['user-agent'] || 'unknown',
     });
 
-    // Clear any existing reset tokens and update rate limiting counters
-    user.resetPasswordToken = undefined;
-    user.resetPasswordExpires = undefined;
-    user.lastPasswordRequestDate = new Date();
-    user.passwordRequestCount += 1;
-    
     await user.save();
+
+    // Send password reset email with link
+    const resetLink = `${process.env.CLIENT_URL || 'http://localhost:3000'}/reset-password.html?token=${resetToken}`;
     
+    const emailTemplate = {
+      subject: '🔑 Password Reset Request - IT OJT Platform',
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background: linear-gradient(135deg, #56AE67 0%, #3d8b4f 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+            .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
+            .button { display: inline-block; background: #56AE67; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; margin: 20px 0; }
+            .warning { background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0; }
+            .footer { text-align: center; margin-top: 30px; color: #666; font-size: 12px; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>🔑 Password Reset Request</h1>
+            </div>
+            <div class="content">
+              <p>Hi ${user.email.split('@')[0]},</p>
+              <p>You requested to reset your password for your IT OJT Platform account. Please click the link below to proceed:</p>
+              
+              <center>
+                <a href="${resetLink}" class="button">Reset Your Password</a>
+              </center>
+              
+              <p style="text-align: center; color: #666; font-size: 12px;">
+                Or copy this link: <br>
+                <code>${resetLink}</code>
+              </p>
+              
+              <div class="warning">
+                <strong>⚠️ Security Notice:</strong>
+                <ul style="margin: 10px 0;">
+                  <li>This link expires in 1 hour</li>
+                  <li>If you didn't request this, please ignore this email</li>
+                  <li>Never share this link with anyone</li>
+                </ul>
+              </div>
+              
+              <p>If the button doesn't work, copy and paste the link above into your browser.</p>
+            </div>
+            <div class="footer">
+              <p>© 2025 IT OJT Platform. All rights reserved.</p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `
+    };
+
+    try {
+      await emailService.sendEmail(user.email, emailTemplate);
+      console.log('Password reset email sent to:', user.email);
+    } catch (emailError) {
+      console.error('Error sending password reset email:', emailError);
+      // Still return success - user can request another email
+    }
+
     res.status(200).json({ 
       success: true, 
-      message: 'Password reset request submitted successfully. An admin will review and approve your request.' 
+      message: 'If an account exists with this email, a password reset link has been sent.' 
     });
 
   } catch (error) {
