@@ -30,7 +30,7 @@ services:
         value: gmail
       - key: EMAIL_USER
         sync: false
-      - key: EMAIL_PASSWORD
+      - key: EMAIL_PASS
         sync: false
   - name: it-skill-matching
     type: web

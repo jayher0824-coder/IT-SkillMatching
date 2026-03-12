@@ -1,6 +1,8 @@
 const nodemailer = require('nodemailer');
 const { Resend } = require('resend');
 
+const getEmailPassword = () => process.env.EMAIL_PASS || process.env.EMAIL_PASSWORD;
+
 // Create email client based on available configuration
 const createEmailClient = () => {
   // Priority 1: Resend (best for transactional emails)
@@ -28,25 +30,25 @@ const createEmailClient = () => {
   }
 
   // Priority 3: Gmail (fallback)
-  if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
+  if (process.env.EMAIL_USER && getEmailPassword()) {
     console.log('Using Gmail for email delivery');
     return {
       type: 'smtp',
       client: nodemailer.createTransport({
-        service: 'gmail',
         host: 'smtp.gmail.com',
-        port: 465,
-        secure: true, // Use SSL
+        port: 587,
+        secure: false,
+        requireTLS: true,
         auth: {
           user: process.env.EMAIL_USER,
-          pass: process.env.EMAIL_PASS
+          pass: getEmailPassword()
         },
         tls: {
           rejectUnauthorized: false
         },
-        connectionTimeout: 20000,
-        greetingTimeout: 20000,
-        socketTimeout: 20000
+        connectionTimeout: 30000,
+        greetingTimeout: 30000,
+        socketTimeout: 30000
       })
     };
   }

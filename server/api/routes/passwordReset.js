@@ -337,13 +337,22 @@ router.post('/forgot-password', passwordResetLimiter, async (req, res) => {
       `
     };
 
-    try {
-      await emailService.sendEmail(user.email, emailTemplate);
-      console.log('Password reset email sent to:', user.email);
-    } catch (emailError) {
-      console.error('Error sending password reset email:', emailError);
-      // Still return success - user can request another email
+    const emailResult = await emailService.sendEmail(user.email, emailTemplate);
+
+    if (!emailResult?.success) {
+      user.resetPasswordToken = undefined;
+      user.resetPasswordExpires = undefined;
+      user.passwordChangeRequests.pop();
+      await user.save();
+
+      console.error('Password reset email delivery failed:', emailResult?.error || 'Unknown error');
+      return res.status(503).json({ 
+        success: false, 
+        message: 'Password reset email could not be delivered right now. Please try again later or contact the administrator.' 
+      });
     }
+
+    console.log('Password reset email sent to:', user.email);
 
     res.status(200).json({ 
       success: true, 
