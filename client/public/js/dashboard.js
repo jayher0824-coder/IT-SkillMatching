@@ -5645,17 +5645,8 @@ function startCategoryAssessment(category) {
         'database': 'Database Management'
     };
     
-    // Map general categories to specific skills for question fetching
-    const categoryToSkill = {
-        'programming': 'python', // Use Python as representative
-        'webDevelopment': 'javascript',
-        'networking': 'sql', // Use SQL as a proxy for general tech
-        'problemSolving': 'java',
-        'database': 'sql'
-    };
-    
-    // Determine which skill to use for fetching questions
-    const skillToFetch = categoryToSkill[category] || category;
+    // Use each selected category/skill directly so different assessments don't share proxy question pools.
+    const skillToFetch = category;
     
     console.log('startCategoryAssessment called:', { category, skillToFetch });
     

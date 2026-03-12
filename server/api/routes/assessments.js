@@ -1094,8 +1094,11 @@ router.get('/quiz-questions/:skill', protect, async (req, res) => {
     });
   }
 
+  // Shuffle question order so repeated attempts don't always return the exact same sequence.
+  const shuffledQuestions = [...questions].sort(() => Math.random() - 0.5);
+
   // Remove correct answers from client response
-  const safeQuestions = questions.map((q) => ({
+  const safeQuestions = shuffledQuestions.map((q) => ({
     question: q.question,
     options: q.options,
     difficulty: q.difficulty,
