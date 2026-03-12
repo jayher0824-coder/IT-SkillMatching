@@ -1398,6 +1398,106 @@ router.get('/quiz-questions/:skill', protect, async (req, res) => {
     }
   };
 
+  const languageProfiles = {
+    typescript: { label: 'TypeScript', ecosystem: 'Node.js', packageTool: 'npm', framework: 'Angular', typeFeature: 'static typing' },
+    csharp: { label: 'C#', ecosystem: '.NET', packageTool: 'NuGet', framework: 'ASP.NET', typeFeature: 'strong typing' },
+    cpp: { label: 'C++', ecosystem: 'native binaries', packageTool: 'CMake', framework: 'STL', typeFeature: 'compile-time typing' },
+    c: { label: 'C', ecosystem: 'systems programming', packageTool: 'make', framework: 'standard library', typeFeature: 'manual memory model' },
+    php: { label: 'PHP', ecosystem: 'server-side web', packageTool: 'Composer', framework: 'Laravel', typeFeature: 'dynamic typing' },
+    ruby: { label: 'Ruby', ecosystem: 'web apps', packageTool: 'Bundler', framework: 'Rails', typeFeature: 'dynamic typing' },
+    go: { label: 'Go', ecosystem: 'cloud services', packageTool: 'go modules', framework: 'stdlib', typeFeature: 'static typing' },
+    swift: { label: 'Swift', ecosystem: 'Apple platforms', packageTool: 'Swift Package Manager', framework: 'SwiftUI', typeFeature: 'type safety' },
+    kotlin: { label: 'Kotlin', ecosystem: 'Android/JVM', packageTool: 'Gradle', framework: 'Ktor', typeFeature: 'null safety' },
+    objectivec: { label: 'Objective-C', ecosystem: 'Apple platforms', packageTool: 'CocoaPods', framework: 'UIKit', typeFeature: 'dynamic runtime' },
+    r: { label: 'R', ecosystem: 'data analysis', packageTool: 'CRAN', framework: 'tidyverse', typeFeature: 'vectorized operations' },
+    scala: { label: 'Scala', ecosystem: 'JVM', packageTool: 'sbt', framework: 'Akka', typeFeature: 'functional + OO typing' },
+    perl: { label: 'Perl', ecosystem: 'scripting', packageTool: 'CPAN', framework: 'Mojolicious', typeFeature: 'dynamic typing' },
+    visualbasic: { label: 'Visual Basic .NET', ecosystem: '.NET', packageTool: 'NuGet', framework: 'WinForms', typeFeature: 'strong typing' },
+    assembly: { label: 'Assembly', ecosystem: 'low-level systems', packageTool: 'assembler toolchain', framework: 'ISA manuals', typeFeature: 'register-level instructions' },
+    matlab: { label: 'MATLAB', ecosystem: 'numerical computing', packageTool: 'MATLAB toolboxes', framework: 'Simulink', typeFeature: 'matrix-first operations' },
+    sql: { label: 'SQL', ecosystem: 'relational databases', packageTool: 'DB engine tools', framework: 'query optimizer', typeFeature: 'declarative querying' },
+    css: { label: 'CSS', ecosystem: 'frontend styling', packageTool: 'PostCSS', framework: 'Tailwind', typeFeature: 'cascading rules' },
+    html: { label: 'HTML', ecosystem: 'web documents', packageTool: 'HTML validators', framework: 'semantic markup', typeFeature: 'document structure' },
+  };
+
+  const buildGeneratedLanguageQuestions = (skillKey) => {
+    const profile = languageProfiles[skillKey] || {
+      label: skillKey.toUpperCase(),
+      ecosystem: 'software development',
+      packageTool: 'package manager',
+      framework: 'framework ecosystem',
+      typeFeature: 'language features',
+    };
+
+    const medium = [
+      {
+        question: `In ${profile.label}, which practice most improves long-term maintainability?`,
+        options: ['Consistent formatting, linting, and clear module boundaries', 'Avoiding tests to move faster', 'Using global mutable state everywhere', 'Copy-pasting logic between files'],
+        correctAnswer: 'Consistent formatting, linting, and clear module boundaries',
+        difficulty: 'medium',
+      },
+      {
+        question: `When building ${profile.label} projects, what is the primary role of ${profile.packageTool}?`,
+        options: ['Dependency/version management and reproducible builds', 'Rendering UI animations only', 'Replacing source control', 'Creating database schemas automatically'],
+        correctAnswer: 'Dependency/version management and reproducible builds',
+        difficulty: 'medium',
+      },
+      {
+        question: `What is a key benefit of ${profile.typeFeature} in ${profile.label}?`,
+        options: ['Catching classes of bugs earlier in development', 'Eliminating all runtime errors', 'Removing need for code review', 'Making algorithms unnecessary'],
+        correctAnswer: 'Catching classes of bugs earlier in development',
+        difficulty: 'medium',
+      },
+      {
+        question: `For ${profile.label} services in ${profile.ecosystem}, which approach scales best?`,
+        options: ['Small cohesive modules with clear interfaces', 'One large file with all logic', 'Frequent hidden side effects', 'No logging or observability'],
+        correctAnswer: 'Small cohesive modules with clear interfaces',
+        difficulty: 'medium',
+      },
+      {
+        question: `In ${profile.label}, why is automated testing important before release?`,
+        options: ['It reduces regressions during refactors and feature changes', 'It guarantees perfect UX', 'It replaces staging environments', 'It makes debugging impossible'],
+        correctAnswer: 'It reduces regressions during refactors and feature changes',
+        difficulty: 'medium',
+      },
+    ];
+
+    const hard = [
+      {
+        question: `In advanced ${profile.label} systems, what is the best strategy for handling critical failures?`,
+        options: ['Fail fast with clear errors, retries where safe, and observability', 'Silently ignore all exceptions', 'Retry infinitely without backoff', 'Disable monitoring in production'],
+        correctAnswer: 'Fail fast with clear errors, retries where safe, and observability',
+        difficulty: 'hard',
+      },
+      {
+        question: `When optimizing ${profile.label} performance, what should be done first?`,
+        options: ['Profile real bottlenecks with measurements', 'Rewrite everything in another language', 'Inline all code manually', 'Remove type checks blindly'],
+        correctAnswer: 'Profile real bottlenecks with measurements',
+        difficulty: 'hard',
+      },
+      {
+        question: `For ${profile.framework} projects, which architectural choice improves testability?`,
+        options: ['Dependency injection and separation of concerns', 'Embedding business logic inside view templates only', 'Tight coupling across all modules', 'Using global mutable singletons for everything'],
+        correctAnswer: 'Dependency injection and separation of concerns',
+        difficulty: 'hard',
+      },
+      {
+        question: `What is the most robust way to evolve public APIs in ${profile.label}?`,
+        options: ['Version interfaces and maintain backward compatibility windows', 'Change contracts without notice', 'Remove response fields immediately', 'Skip deprecation strategy'],
+        correctAnswer: 'Version interfaces and maintain backward compatibility windows',
+        difficulty: 'hard',
+      },
+      {
+        question: `For secure ${profile.label} applications, which principle is essential?`,
+        options: ['Validate and sanitize all untrusted input', 'Trust all client-side values', 'Store secrets in source code', 'Disable authentication in development and production'],
+        correctAnswer: 'Validate and sanitize all untrusted input',
+        difficulty: 'hard',
+      },
+    ];
+
+    return { medium, hard };
+  };
+
   const universalProgrammingFallback = {
     easy: [
       { question: 'Which data structure uses LIFO order?', options: ['Stack', 'Queue', 'Array', 'Graph'], correctAnswer: 'Stack', difficulty: 'easy' },
@@ -1424,6 +1524,23 @@ router.get('/quiz-questions/:skill', protect, async (req, res) => {
 
   let resolvedBank = normalizeBank(skillToQuestions[normalizedSkill]);
 
+  if (strictLanguageSkills.has(normalizedSkill)) {
+    const starter = normalizeBank(starterLanguageBanks[normalizedSkill]);
+    resolvedBank = {
+      easy: uniqueByQuestion([...(resolvedBank.easy || []), ...(starter.easy || [])]),
+      medium: uniqueByQuestion([...(resolvedBank.medium || []), ...(starter.medium || [])]),
+      hard: uniqueByQuestion([...(resolvedBank.hard || []), ...(starter.hard || [])]),
+    };
+
+    const generated = buildGeneratedLanguageQuestions(normalizedSkill);
+    if (resolvedBank.medium.length < 5) {
+      resolvedBank.medium = uniqueByQuestion([...(resolvedBank.medium || []), ...generated.medium]);
+    }
+    if (resolvedBank.hard.length < 5) {
+      resolvedBank.hard = uniqueByQuestion([...(resolvedBank.hard || []), ...generated.hard]);
+    }
+  }
+
   if (!resolvedBank.easy.length && !resolvedBank.medium.length && !resolvedBank.hard.length && categoryQuestionBanks[normalizedSkill]) {
     resolvedBank = normalizeBank(categoryQuestionBanks[normalizedSkill]);
   }
@@ -1442,10 +1559,6 @@ router.get('/quiz-questions/:skill', protect, async (req, res) => {
       medium: uniqueByQuestion(merged.medium),
       hard: uniqueByQuestion(merged.hard),
     };
-  }
-
-  if (!resolvedBank.easy.length && !resolvedBank.medium.length && !resolvedBank.hard.length && strictLanguageSkills.has(normalizedSkill) && starterLanguageBanks[normalizedSkill]) {
-    resolvedBank = normalizeBank(starterLanguageBanks[normalizedSkill]);
   }
 
   if (!resolvedBank.easy.length && !resolvedBank.medium.length && !resolvedBank.hard.length && strictLanguageSkills.has(normalizedSkill)) {
