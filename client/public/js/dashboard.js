@@ -226,6 +226,16 @@ function createSecondaryButton(text, onclick, additionalClasses = '') {
     return `<button onclick="${onclick}" class="${BUTTON_STYLES.secondary} ${additionalClasses}">${text}</button>`;
 }
 
+function buildAvatarUrl(avatar) {
+    if (!avatar || !avatar.path) {
+        return '';
+    }
+
+    const normalizedPath = avatar.path.startsWith('/') ? avatar.path : `/${avatar.path}`;
+    const cacheBuster = avatar.uploadedAt ? `?v=${new Date(avatar.uploadedAt).getTime()}` : '';
+    return `${normalizedPath}${cacheBuster}`;
+}
+
 // ============================================
 // SECTION NAVIGATION
 // ============================================
@@ -275,7 +285,6 @@ function switchToSection(sectionName) {
 
 /**
  * Updates the gamification display showing points and level
- * Also saves points to backend
  */
 function updateGamificationDisplay() {
     const pointsDisplay = document.getElementById('points-display');
@@ -287,9 +296,6 @@ function updateGamificationDisplay() {
     if (levelDisplay) {
         levelDisplay.textContent = quizGamification.level;
     }
-
-    // Save points to backend
-    saveGamificationPoints();
 }
 
 // ============================================
@@ -793,11 +799,14 @@ async function saveQuizResult() {
         console.log('Saving quiz result:', score);
         
         // Save to backend
-        const response = await apiCall('/assessments/quiz/result', 'POST', {
-            skill: skill,
-            score: score.percentage,
-            totalQuestions: score.totalCount,
-            questionsCorrect: score.correctCount
+        const response = await apiCall('/assessments/quiz/result', {
+            method: 'POST',
+            body: JSON.stringify({
+                skill: skill,
+                score: score.percentage,
+                totalQuestions: score.totalCount,
+                questionsCorrect: score.correctCount
+            })
         });
         
         if (response.success) {
@@ -1000,7 +1009,7 @@ async function loadStudentDashboard() {
                                 <div class="flex items-center space-x-4 min-w-0">
                                     <div class="w-16 h-16 rounded-full overflow-hidden border-2 border-white hidden md:block bg-white flex-shrink-0">
                                         ${studentProfile?.avatar?.path ? 
-                                            `<img src="/${studentProfile.avatar.path}" alt="Profile" class="w-full h-full object-cover" onerror="this.onerror=null; this.style.display='none'; this.parentElement.innerHTML='<div class=\\'w-full h-full flex items-center justify-center bg-gradient-to-br from-[#56AE67] to-[#3d8b4f]\\'><span class=\\'text-white text-xl font-bold\\'>${studentProfile.firstName?.charAt(0) || 'U'}${studentProfile.lastName?.charAt(0) || ''}</span></div>';">` :
+                                            `<img src="${buildAvatarUrl(studentProfile.avatar)}" alt="Profile" class="w-full h-full object-cover" onerror="this.onerror=null; this.style.display='none'; this.parentElement.innerHTML='<div class=\\'w-full h-full flex items-center justify-center bg-gradient-to-br from-[#56AE67] to-[#3d8b4f]\\'><span class=\\'text-white text-xl font-bold\\'>${studentProfile.firstName?.charAt(0) || 'U'}${studentProfile.lastName?.charAt(0) || ''}</span></div>';">` :
                                             `<div class="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#56AE67] to-[#3d8b4f]">
                                                 <span class="text-white text-xl font-bold">${studentProfile.firstName?.charAt(0) || 'U'}${studentProfile.lastName?.charAt(0) || ''}</span>
                                             </div>`
@@ -1439,6 +1448,10 @@ async function loadStudentDashboard() {
         // Attach event listeners to assessment cards after DOM is updated
         // Increased delay to ensure assessment.js is fully loaded
         setTimeout(() => {
+            quizGamification.loadFromBackend()
+                .then(() => updateGamificationDisplay())
+                .catch(() => updateGamificationDisplay());
+
             attachAssessmentCardListeners();
             loadAssessmentHistory();
             loadStudentProfile();
@@ -6334,7 +6347,7 @@ async function loadStudentProfile() {
                 <div class="flex items-center space-x-6">
                     <div class="w-32 h-32 rounded-full overflow-hidden bg-white border-4 border-white shadow-lg flex-shrink-0">
                         ${profile.avatar && profile.avatar.path ? 
-                            `<img src="/${profile.avatar.path}" alt="Profile Picture" class="w-full h-full object-cover" onerror="this.onerror=null; this.style.display='none'; this.parentElement.innerHTML='<div class=\\'w-full h-full flex items-center justify-center bg-gradient-to-br from-[#56AE67] to-[#3d8b4f]\\'><span class=\\'text-white text-4xl font-bold\\'>${profile.firstName?.charAt(0) || 'U'}${profile.lastName?.charAt(0) || ''}</span></div>';">` :
+                            `<img src="${buildAvatarUrl(profile.avatar)}" alt="Profile Picture" class="w-full h-full object-cover" onerror="this.onerror=null; this.style.display='none'; this.parentElement.innerHTML='<div class=\\'w-full h-full flex items-center justify-center bg-gradient-to-br from-[#56AE67] to-[#3d8b4f]\\'><span class=\\'text-white text-4xl font-bold\\'>${profile.firstName?.charAt(0) || 'U'}${profile.lastName?.charAt(0) || ''}</span></div>';">` :
                             `<div class="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#56AE67] to-[#3d8b4f]">
                                 <span class="text-white text-4xl font-bold">${profile.firstName?.charAt(0) || 'U'}${profile.lastName?.charAt(0) || ''}</span>
                             </div>`

@@ -1396,13 +1396,20 @@ router.post('/quiz/result', protect, authorize('student'), async (req, res) => {
       questionsCorrect
     });
 
-    // Find the student profile
-    const student = await Student.findOne({ user: req.user._id });
-    
+    // Find the student profile or create one for first-time quiz takers
+    let student = await Student.findOne({ user: req.user._id });
     if (!student) {
-      return res.status(404).json({
-        success: false,
-        message: 'Student profile not found',
+      const user = await User.findById(req.user._id).select('email');
+      const localPart = user?.email ? user.email.split('@')[0] : 'student';
+      const firstName = localPart.split(/[._-]/)[0] || 'Student';
+
+      student = await Student.create({
+        user: req.user._id,
+        studentId: `STU${Date.now()}${Math.floor(Math.random() * 1000)}`,
+        firstName: firstName.charAt(0).toUpperCase() + firstName.slice(1),
+        lastName: 'Student',
+        dateOfBirth: new Date('2000-01-01'),
+        phone: '0000000000',
       });
     }
 

@@ -14,6 +14,36 @@ const CustomAssessmentSubmission = require('../../database/models/CustomAssessme
 const NotificationService = require('../../services/notificationService');
 
 const router = express.Router();
+const ALLOWED_GAMIFICATION_BADGES = new Set([
+  'Level 1 Achieved!',
+  'Level 2 Achieved!',
+  'Level 3 Achieved!',
+  '10 Questions Completed',
+  '50 Questions Completed',
+]);
+
+async function getOrCreateStudentProfile(userId) {
+  let student = await Student.findOne({ user: userId });
+  if (student) {
+    return student;
+  }
+
+  const user = await User.findById(userId).select('email');
+  const localPart = user?.email ? user.email.split('@')[0] : 'student';
+  const sanitized = String(localPart || 'student').replace(/[^a-zA-Z0-9._-]/g, '');
+  const firstName = sanitized.split(/[._-]/)[0] || 'Student';
+
+  student = await Student.create({
+    user: userId,
+    studentId: `STU${Date.now()}${Math.floor(Math.random() * 1000)}`,
+    firstName: firstName.charAt(0).toUpperCase() + firstName.slice(1),
+    lastName: 'Student',
+    dateOfBirth: new Date('2000-01-01'),
+    phone: '0000000000',
+  });
+
+  return student;
+}
 
 // Configure multer for file uploads
 const storage = multer.diskStorage({
@@ -200,10 +230,7 @@ router.post('/upload-avatar', protect, authorize('student'), uploadAvatar.single
     if (!req.file) {
       return res.status(400).json({ success: false, message: 'No file uploaded' });
     }
-    let student = await Student.findOne({ user: req.user._id });
-    if (!student) {
-      return res.status(404).json({ success: false, message: 'Student profile not found' });
-    }
+    const student = await getOrCreateStudentProfile(req.user._id);
     
     // Extract relative path from uploads directory
     const relativePath = req.file.path.split('uploads')[1].replace(/\\/g, '/');
@@ -977,16 +1004,9 @@ router.get('/retake-requests', protect, authorize('student'), async (req, res) =
 // @access  Private (Students only)
 router.put('/gamification', protect, authorize('student'), async (req, res) => {
   try {
-    const { points, badge } = req.body;
+    const { points, badge, setAbsolute } = req.body;
     
-    const student = await Student.findOne({ user: req.user._id });
-    
-    if (!student) {
-      return res.status(404).json({
-        success: false,
-        message: 'Student profile not found',
-      });
-    }
+    const student = await getOrCreateStudentProfile(req.user._id);
 
     // Ensure gamification field is initialized
     if (!student.gamification) {
@@ -996,22 +1016,27 @@ router.put('/gamification', protect, authorize('student'), async (req, res) => {
         badges: []
       };
     }
-    
-    if (points && points > 0) {
-      student.gamification.points += points;
-      
-      // Check for level up
-      const levelThreshold = student.gamification.level * 100;
-      if (student.gamification.points >= levelThreshold) {
-        student.gamification.level++;
-        const levelBadge = `Level ${student.gamification.level} Achieved!`;
+
+    const numericPoints = Number(points);
+    if (Number.isFinite(numericPoints)) {
+      if (setAbsolute === true) {
+        student.gamification.points = Math.max(0, Math.floor(numericPoints));
+      } else if (numericPoints > 0) {
+        student.gamification.points += Math.floor(numericPoints);
+      }
+
+      const derivedLevel = Math.max(1, Math.floor(student.gamification.points / 100) + 1);
+      student.gamification.level = derivedLevel;
+
+      for (let level = 2; level <= Math.min(derivedLevel, 3); level++) {
+        const levelBadge = `Level ${level} Achieved!`;
         if (!student.gamification.badges.includes(levelBadge)) {
           student.gamification.badges.push(levelBadge);
         }
       }
     }
     
-    if (badge && !student.gamification.badges.includes(badge)) {
+    if (badge && ALLOWED_GAMIFICATION_BADGES.has(badge) && !student.gamification.badges.includes(badge)) {
       student.gamification.badges.push(badge);
     }
 
@@ -1038,13 +1063,11 @@ router.put('/gamification', protect, authorize('student'), async (req, res) => {
 // @access  Private (Students only)
 router.get('/gamification', protect, authorize('student'), async (req, res) => {
   try {
-    const student = await Student.findOne({ user: req.user._id });
-    
-    if (!student) {
-      return res.status(404).json({
-        success: false,
-        message: 'Student profile not found',
-      });
+    const student = await getOrCreateStudentProfile(req.user._id);
+
+    if (!student.gamification) {
+      student.gamification = { points: 0, level: 1, badges: [] };
+      await student.save();
     }
     
     res.json({
