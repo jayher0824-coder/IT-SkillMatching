@@ -4,16 +4,6 @@ const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
 const User = require('../../database/models/User');
 const emailService = require('../../services/emailService');
-const rateLimit = require('express-rate-limit');
-
-// Rate limiter for password reset
-const passwordResetLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000, // 1 hour
-  max: 3, // Limit each IP to 3 password reset attempts per hour
-  message: 'Too many password reset attempts, please try again after an hour',
-  standardHeaders: true,
-  legacyHeaders: false,
-});
 
 // Security constants
 const MAX_REQUESTS_PER_DAY = 999; // Effectively unlimited
@@ -208,7 +198,7 @@ router.post('/request-verification-code', async (req, res) => {
 */
 
 // Step 2: Send password reset email with link
-router.post('/forgot-password', passwordResetLimiter, async (req, res) => {
+router.post('/forgot-password', async (req, res) => {
   try {
     const { email } = req.body;
 
@@ -237,21 +227,7 @@ router.post('/forgot-password', passwordResetLimiter, async (req, res) => {
       });
     }
 
-    // Rate limiting check - max 3 requests per hour
     const now = new Date();
-    const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);
-    
-    // Count requests in the last hour
-    const recentRequests = user.passwordChangeRequests?.filter(req => 
-      req.requestDate > oneHourAgo && req.status === 'pending'
-    ) || [];
-
-    if (recentRequests.length >= 3) {
-      return res.status(429).json({ 
-        success: false, 
-        message: 'Too many password reset requests. Please try again in an hour.' 
-      });
-    }
 
     // Generate secure reset token
     const resetToken = crypto.randomBytes(32).toString('hex');
