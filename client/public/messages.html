@@ -7,6 +7,95 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
     <link href="/css/chat.css" rel="stylesheet">
+    <style>
+        .new-chat-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(2, 6, 23, 0.5);
+            z-index: 50;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+        }
+
+        .new-chat-overlay.show {
+            display: flex;
+        }
+
+        .new-chat-card {
+            width: min(560px, 100%);
+            background: #ffffff;
+            border-radius: 14px;
+            box-shadow: 0 18px 40px rgba(2, 6, 23, 0.25);
+            border: 1px solid #e5e7eb;
+            padding: 22px;
+        }
+
+        .new-chat-title {
+            margin: 0;
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #111827;
+        }
+
+        .new-chat-close {
+            border: none;
+            background: transparent;
+            font-size: 1.6rem;
+            line-height: 1;
+            color: #64748b;
+            cursor: pointer;
+        }
+
+        .new-chat-close:hover { color: #334155; }
+
+        .new-chat-label {
+            display: block;
+            font-size: .95rem;
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 8px;
+        }
+
+        .new-chat-input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
+            color: #0f172a;
+            outline: none;
+            background: #fff;
+        }
+
+        .new-chat-input:focus {
+            border-color: #56AE67;
+            box-shadow: 0 0 0 3px rgba(86,174,103,.18);
+        }
+
+        .new-chat-btn {
+            width: 100%;
+            padding: 12px 14px;
+            border-radius: 10px;
+            border: none;
+            background: #56AE67;
+            color: #ffffff;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background .2s ease, transform .12s ease;
+            margin-top: 14px;
+        }
+
+        .new-chat-btn:hover { background: #3d8b4f; }
+        .new-chat-btn:active { transform: translateY(1px); }
+
+        .new-chat-selected {
+            margin-top: 10px;
+            color: #334155;
+            font-size: .92rem;
+        }
+    </style>
 </head>
 <body class="bg-gray-50 dark:bg-gray-900">
     <div class="container mx-auto px-4 py-8">
@@ -102,22 +191,22 @@
     </div>
 
     <!-- New Chat Modal -->
-    <div id="new-chat-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-white dark:bg-gray-800 rounded-lg max-w-md w-full p-6">
+    <div id="new-chat-modal" class="new-chat-overlay">
+        <div class="new-chat-card">
             <div class="flex justify-between items-center mb-4">
-                <h3 class="text-xl font-bold text-gray-900 dark:text-white">Start New Conversation</h3>
-                <button id="close-modal-btn" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 text-2xl">
+                <h3 class="new-chat-title">Start New Conversation</h3>
+                <button id="close-modal-btn" class="new-chat-close" aria-label="Close">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
             
             <div class="space-y-4">
                 <div>
-                    <label class="block text-sm font-medium text-gray-900 dark:text-gray-200 mb-2">Select User</label>
+                    <label class="new-chat-label">Select User</label>
                     <div class="relative">
                         <!-- Search Input -->
                         <input type="text" id="user-search-input" 
-                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#56AE67] mb-2"
+                            class="new-chat-input"
                             placeholder="Search by name or email...">
                         
                         <!-- User List Dropdown -->
@@ -130,11 +219,11 @@
                         <!-- Hidden input for user ID -->
                         <input type="hidden" id="new-chat-user" value="">
                     </div>
-                    <div id="selected-user-display" class="text-sm text-gray-700 dark:text-gray-300 mt-2"></div>
+                    <div id="selected-user-display" class="new-chat-selected"></div>
                 </div>
                 
-                <button type="button" id="start-chat-btn" class="w-full px-4 py-2 bg-[#56AE67] text-white rounded-lg font-semibold font-bold text-base transition hover:bg-[#3d8b4f] active:bg-[#2d5a35] focus:outline-none focus:ring-2 focus:ring-[#56AE67] focus:ring-offset-2 dark:focus:ring-offset-gray-800 cursor-pointer border-0 z-20 relative" style="color: white; font-weight: 600; display: inline-block; width: 100%; text-align: center;">
-                    <i class="fas fa-comment-alt mr-2" style="color: white;"></i><span style="color: white; display: inline;">Start Conversation</span>
+                <button type="button" id="start-chat-btn" class="new-chat-btn">
+                    <i class="fas fa-comment-alt mr-2"></i><span>Start Conversation</span>
                 </button>
             </div>
         </div>
@@ -306,6 +395,7 @@
             
             // Show modal
             modal.classList.remove('hidden');
+            modal.classList.add('show');
             
             // Load users
             try {
@@ -396,6 +486,7 @@
             userDropdown.classList.add('hidden');
             
             // Hide modal
+            modal.classList.remove('show');
             modal.classList.add('hidden');
         }
 
