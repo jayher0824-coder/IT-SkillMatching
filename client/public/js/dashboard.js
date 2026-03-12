@@ -883,11 +883,11 @@ function showQuizCompletion(score, skill) {
                     
                     <!-- Action Buttons -->
                     <div class="flex gap-4">
-                        <button onclick="backToAssessment()" class="flex-1 py-3 px-6 bg-teal-600 dark:bg-teal-500 hover:bg-teal-700 dark:hover:bg-teal-600 text-white font-bold rounded-lg transition duration-200 shadow-md border-2 border-teal-700 dark:border-teal-400">
-                            <i class="fas fa-arrow-left mr-2"></i>Back to Assessment
+                        <button onclick="backToAssessment()" style="background-color:#0d9488;color:#ffffff;border:2px solid #0f766e;" class="flex-1 py-3 px-6 font-bold rounded-lg transition duration-200 shadow-md">
+                            <i class="fas fa-arrow-left mr-2" style="color:#ffffff;"></i><span style="color:#ffffff;">Back to Assessment</span>
                         </button>
-                        <button onclick="loadAssessmentHistory()" class="flex-1 py-3 px-6 bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-600 text-white font-bold rounded-lg transition duration-200 shadow-md border-2 border-blue-700 dark:border-blue-400">
-                            <i class="fas fa-history mr-2"></i>View History
+                        <button onclick="switchToSection('history')" style="background-color:#2563eb;color:#ffffff;border:2px solid #1d4ed8;" class="flex-1 py-3 px-6 font-bold rounded-lg transition duration-200 shadow-md">
+                            <i class="fas fa-history mr-2" style="color:#ffffff;"></i><span style="color:#ffffff;">View History</span>
                         </button>
                     </div>
                 </div>
