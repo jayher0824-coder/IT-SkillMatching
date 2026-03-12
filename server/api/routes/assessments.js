@@ -6,6 +6,27 @@ const User = require('../../database/models/User');
 
 const router = express.Router();
 
+async function getOrCreateStudentProfile(userId) {
+  const existing = await Student.findOne({ user: userId }).sort({ updatedAt: -1, createdAt: -1 });
+  if (existing) {
+    return existing;
+  }
+
+  const user = await User.findById(userId).select('name email');
+  const fullName = String(user?.name || '').trim();
+  const firstName = fullName ? fullName.split(' ')[0] : 'Student';
+  const lastName = fullName && fullName.split(' ').length > 1 ? fullName.split(' ').slice(1).join(' ') : 'Student';
+
+  return Student.create({
+    user: userId,
+    studentId: `STU${Date.now()}${Math.floor(Math.random() * 1000)}`,
+    firstName,
+    lastName,
+    dateOfBirth: new Date('2000-01-01'),
+    phone: '0000000000',
+  });
+}
+
 // @desc    Get available assessments
 // @route   GET /api/assessments
 // @access  Private
@@ -314,7 +335,7 @@ router.post('/:id/submit', protect, authorize('student'), async (req, res) => {
     });
 
     // Get or create student profile first
-    let student = await Student.findOne({ user: req.user._id });
+    let student = await getOrCreateStudentProfile(req.user._id);
     console.log('Student lookup result:', { found: !!student, userId: req.user._id });
     
     if (!student) {
@@ -449,13 +470,13 @@ router.get('/results/me', protect, authorize('student'), async (req, res) => {
   try {
     console.log('Fetching assessment results for user:', req.user._id);
     
-    // First, find the student profile for this user
-    const Student = require('../../database/models/Student');
-    const student = await Student.findOne({ user: req.user._id });
-    
-    console.log('Student profile lookup:', { found: !!student, studentId: student?._id });
-    
-    if (!student) {
+    // Find all student profiles for this user and load results from all of them.
+    const studentProfiles = await Student.find({ user: req.user._id }).select('_id');
+    const studentIds = studentProfiles.map((s) => s._id);
+
+    console.log('Student profile lookup:', { count: studentIds.length, userId: req.user._id });
+
+    if (studentIds.length === 0) {
       console.log('No student profile found for user:', req.user._id);
       return res.json({
         success: true,
@@ -466,11 +487,11 @@ router.get('/results/me', protect, authorize('student'), async (req, res) => {
     }
     
     // Now find assessment results for this student
-    const results = await AssessmentResult.find({ student: student._id })
+    const results = await AssessmentResult.find({ student: { $in: studentIds } })
       .populate('assessment', 'title description category')
       .sort({ completedAt: -1 });
 
-    console.log('Assessment results found:', { count: results.length, studentId: student._id });
+    console.log('Assessment results found:', { count: results.length, studentIds: studentIds.length });
 
     res.json({
       success: true,
@@ -1404,21 +1425,7 @@ router.post('/quiz/result', protect, authorize('student'), async (req, res) => {
     });
 
     // Find the student profile or create one for first-time quiz takers
-    let student = await Student.findOne({ user: req.user._id });
-    if (!student) {
-      const user = await User.findById(req.user._id).select('email');
-      const localPart = user?.email ? user.email.split('@')[0] : 'student';
-      const firstName = localPart.split(/[._-]/)[0] || 'Student';
-
-      student = await Student.create({
-        user: req.user._id,
-        studentId: `STU${Date.now()}${Math.floor(Math.random() * 1000)}`,
-        firstName: firstName.charAt(0).toUpperCase() + firstName.slice(1),
-        lastName: 'Student',
-        dateOfBirth: new Date('2000-01-01'),
-        phone: '0000000000',
-      });
-    }
+    const student = await getOrCreateStudentProfile(req.user._id);
 
     // Create or get a quiz assessment record
     let assessment = await Assessment.findOne({ 
@@ -1480,7 +1487,7 @@ router.post('/quiz/result', protect, authorize('student'), async (req, res) => {
 // @access  Private (Students only)
 router.get('/gamification/points', protect, authorize('student'), async (req, res) => {
     try {
-        const student = await Student.findOne({ user: req.user._id });
+        const student = await Student.findOne({ user: req.user._id }).sort({ updatedAt: -1, createdAt: -1 });
         if (!student) {
             return res.status(404).json({ success: false, message: 'Student profile not found' });
         }
@@ -1503,7 +1510,7 @@ router.get('/gamification/points', protect, authorize('student'), async (req, re
 router.post('/gamification/points', protect, authorize('student'), async (req, res) => {
     try {
         const { points, level } = req.body;
-        const student = await Student.findOne({ user: req.user._id });
+        const student = await Student.findOne({ user: req.user._id }).sort({ updatedAt: -1, createdAt: -1 });
         if (!student) {
             return res.status(404).json({ success: false, message: 'Student profile not found' });
         }

@@ -23,9 +23,24 @@ const ALLOWED_GAMIFICATION_BADGES = new Set([
 ]);
 
 async function getOrCreateStudentProfile(userId) {
-  let student = await Student.findOne({ user: userId });
-  if (student) {
-    return student;
+  const profiles = await Student.find({ user: userId }).sort({ updatedAt: -1, createdAt: -1 });
+  if (profiles.length > 0) {
+    const primary = profiles[0];
+
+    if (!primary.gamification) {
+      const maxPoints = profiles.reduce((max, profile) => {
+        const points = Number(profile.gamification?.points || 0);
+        return points > max ? points : max;
+      }, 0);
+      primary.gamification = {
+        points: maxPoints,
+        level: Math.max(1, Math.floor(maxPoints / 100) + 1),
+        badges: primary.gamification?.badges || []
+      };
+      await primary.save();
+    }
+
+    return primary;
   }
 
   const user = await User.findById(userId).select('email');
@@ -79,7 +94,9 @@ const upload = multer({
 // @access  Private (Students only)
 router.get('/profile', protect, authorize('student'), async (req, res) => {
   try {
-    let student = await Student.findOne({ user: req.user._id }).populate('user', 'email');
+    let student = await Student.findOne({ user: req.user._id })
+      .sort({ updatedAt: -1, createdAt: -1 })
+      .populate('user', 'email');
     
     if (!student) {
       return res.status(404).json({
@@ -124,7 +141,7 @@ router.put('/profile', protect, authorize('student'), async (req, res) => {
       phone
     });
 
-    let student = await Student.findOne({ user: req.user._id });
+    let student = await Student.findOne({ user: req.user._id }).sort({ updatedAt: -1, createdAt: -1 });
 
     if (student) {
       // Update existing profile
