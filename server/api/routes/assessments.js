@@ -1212,6 +1212,54 @@ router.get('/quiz-questions/:skill', protect, async (req, res) => {
     }
   };
 
+  // Map language-specific cards to closest available question banks.
+  const languageFallbackAliases = {
+    typescript: ['javascript'],
+    csharp: ['java', 'javascript'],
+    cpp: ['java', 'python'],
+    c: ['cpp', 'python'],
+    php: ['javascript', 'python'],
+    ruby: ['python', 'javascript'],
+    go: ['java', 'python'],
+    rust: ['cpp', 'python'],
+    swift: ['java', 'javascript'],
+    kotlin: ['java', 'javascript'],
+    objectivec: ['swift', 'cpp', 'java'],
+    r: ['python'],
+    scala: ['java'],
+    perl: ['python'],
+    visualbasic: ['java', 'javascript'],
+    assembly: ['cpp', 'c'],
+    matlab: ['python'],
+    sql: ['database'],
+    html: ['javascript'],
+    css: ['javascript']
+  };
+
+  const universalProgrammingFallback = {
+    easy: [
+      { question: 'Which data structure uses LIFO order?', options: ['Stack', 'Queue', 'Array', 'Graph'], correctAnswer: 'Stack', difficulty: 'easy' },
+      { question: 'What is the purpose of a variable in programming?', options: ['Store data values', 'Compile code', 'Render graphics only', 'Encrypt traffic'], correctAnswer: 'Store data values', difficulty: 'easy' },
+      { question: 'Which keyword usually controls conditional branching?', options: ['if', 'print', 'import', 'class'], correctAnswer: 'if', difficulty: 'easy' },
+      { question: 'What does a loop do?', options: ['Repeats a block of code', 'Deletes files', 'Creates a network', 'Compiles binaries'], correctAnswer: 'Repeats a block of code', difficulty: 'easy' },
+      { question: 'Why are functions useful?', options: ['They encapsulate reusable logic', 'They remove all bugs', 'They replace variables', 'They avoid testing'], correctAnswer: 'They encapsulate reusable logic', difficulty: 'easy' }
+    ],
+    medium: [
+      { question: 'What is the main benefit of modular code?', options: ['Easier maintenance and reuse', 'Guaranteed zero bugs', 'No need for tests', 'Smaller RAM always'], correctAnswer: 'Easier maintenance and reuse', difficulty: 'medium' },
+      { question: 'What is time complexity used for?', options: ['Estimate runtime growth with input size', 'Measure monitor size', 'Determine UI theme', 'Set CPU clock'], correctAnswer: 'Estimate runtime growth with input size', difficulty: 'medium' },
+      { question: 'What is refactoring?', options: ['Improving internal code structure without changing behavior', 'Rewriting OS kernels', 'Deploying a database', 'Removing all comments'], correctAnswer: 'Improving internal code structure without changing behavior', difficulty: 'medium' },
+      { question: 'Why are unit tests important?', options: ['They verify behavior and prevent regressions', 'They increase network bandwidth', 'They replace code reviews', 'They optimize CSS'], correctAnswer: 'They verify behavior and prevent regressions', difficulty: 'medium' },
+      { question: 'What is a common use of arrays/lists?', options: ['Store ordered collections of items', 'Encrypt passwords', 'Compile source code', 'Create sockets'], correctAnswer: 'Store ordered collections of items', difficulty: 'medium' }
+    ],
+    hard: [
+      { question: 'What is the key idea behind dynamic programming?', options: ['Reuse solutions to overlapping subproblems', 'Always use recursion only', 'Avoid all loops', 'Skip edge cases'], correctAnswer: 'Reuse solutions to overlapping subproblems', difficulty: 'hard' },
+      { question: 'What does immutability primarily help with?', options: ['Safer state management and fewer side effects', 'Faster internet speed', 'Automatic deployment', 'Lower disk temperature'], correctAnswer: 'Safer state management and fewer side effects', difficulty: 'hard' },
+      { question: 'What is a race condition?', options: ['Program behavior depends on unpredictable timing', 'Compiler syntax error', 'Database schema mismatch', 'GPU overheating'], correctAnswer: 'Program behavior depends on unpredictable timing', difficulty: 'hard' },
+      { question: 'Why use version control in development?', options: ['Track changes and collaborate safely', 'Replace all testing', 'Avoid documentation', 'Compile automatically'], correctAnswer: 'Track changes and collaborate safely', difficulty: 'hard' },
+      { question: 'What is a trade-off of abstraction layers?', options: ['Higher productivity but potential overhead', 'No trade-offs ever', 'Always worst performance', 'Removes all complexity'], correctAnswer: 'Higher productivity but potential overhead', difficulty: 'hard' }
+    ]
+  };
+
   let resolvedBank = normalizeBank(skillToQuestions[normalizedSkill]);
 
   if (!resolvedBank.easy.length && !resolvedBank.medium.length && !resolvedBank.hard.length && categoryQuestionBanks[normalizedSkill]) {
@@ -1234,11 +1282,26 @@ router.get('/quiz-questions/:skill', protect, async (req, res) => {
     };
   }
 
-  if (!resolvedBank.easy.length && !resolvedBank.medium.length && !resolvedBank.hard.length) {
-    return res.status(404).json({
-      success: false,
-      message: `No questions found for skill: ${skill}. Available skills: ${Object.keys(skillToQuestions).join(', ')}`,
+  if (!resolvedBank.easy.length && !resolvedBank.medium.length && !resolvedBank.hard.length && languageFallbackAliases[normalizedSkill]) {
+    const merged = { easy: [], medium: [], hard: [] };
+    languageFallbackAliases[normalizedSkill].forEach((aliasSkill) => {
+      const aliasBank = normalizeBank(skillToQuestions[aliasSkill]);
+      const aliasCategoryBank = normalizeBank(categoryQuestionBanks[aliasSkill]);
+
+      merged.easy.push(...aliasBank.easy, ...aliasCategoryBank.easy);
+      merged.medium.push(...aliasBank.medium, ...aliasCategoryBank.medium);
+      merged.hard.push(...aliasBank.hard, ...aliasCategoryBank.hard);
     });
+
+    resolvedBank = {
+      easy: uniqueByQuestion(merged.easy),
+      medium: uniqueByQuestion(merged.medium),
+      hard: uniqueByQuestion(merged.hard),
+    };
+  }
+
+  if (!resolvedBank.easy.length && !resolvedBank.medium.length && !resolvedBank.hard.length) {
+    resolvedBank = normalizeBank(universalProgrammingFallback);
   }
 
   let questionPool = normalizedDifficulty
@@ -1248,10 +1311,18 @@ router.get('/quiz-questions/:skill', protect, async (req, res) => {
   questionPool = uniqueByQuestion(questionPool);
 
   if (questionPool.length === 0) {
-    return res.status(404).json({
-      success: false,
-      message: `No questions found for skill: ${skill} with difficulty: ${difficulty || 'all'}`,
-    });
+    questionPool = uniqueByQuestion([
+      ...resolvedBank.easy,
+      ...resolvedBank.medium,
+      ...resolvedBank.hard,
+    ]);
+
+    if (questionPool.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: `No questions found for skill: ${skill} with difficulty: ${difficulty || 'all'}`,
+      });
+    }
   }
 
   const takeCount = Math.min(QUESTIONS_PER_QUIZ, questionPool.length);
