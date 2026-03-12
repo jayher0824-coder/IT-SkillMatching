@@ -114,6 +114,13 @@ const userSchema = new mongoose.Schema({
   passwordRequestResetDate: {
     type: Date,
   },
+  // Recently served quiz question keys by bucket (skill:difficulty)
+  // Used to avoid repeating questions across consecutive assessments.
+  quizQuestionMemory: {
+    type: Map,
+    of: [String],
+    default: {},
+  },
   lastLogin: {
     type: Date,
   },

@@ -369,22 +369,11 @@ async function fetchSkillQuestions(skill, difficulty = 'medium') {
             options: Array.isArray(q.options) ? q.options : [],
             correctAnswer: q.correctAnswer || (Array.isArray(q.options) ? q.options[0] : ''),
             hint: `Think about the core concepts of ${skill}. Look for the most accurate answer.`,
-            difficulty: 'medium'
+            difficulty: q.difficulty || difficulty || 'medium'
         }));
 
         // Filter out invalid questions
         questions = questions.filter(q => q.question && q.options && q.options.length >= 2);
-
-        // Integrate adaptive difficulty based on current performance
-        questions.forEach(q => {
-            if (quizGamification.points > 50) {
-                q.difficulty = 'hard';
-            } else if (quizGamification.points > 20) {
-                q.difficulty = 'medium';
-            } else {
-                q.difficulty = 'easy';
-            }
-        });
 
         console.log(`Successfully processed ${questions.length} questions for ${skill}`);
         return questions;

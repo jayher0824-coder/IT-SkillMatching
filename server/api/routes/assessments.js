@@ -1061,48 +1061,216 @@ router.get('/quiz-questions/:skill', protect, async (req, res) => {
     ],
   };
 
-  // Normalize skill to lowercase for matching
-  const normalizedSkill = skill.toLowerCase();
+  const normalizedSkill = String(skill || '').toLowerCase().trim();
+  const normalizedDifficulty = ['easy', 'medium', 'hard'].includes(String(difficulty || '').toLowerCase())
+    ? String(difficulty).toLowerCase()
+    : null;
 
-  if (!skillToQuestions[normalizedSkill]) {
+  const QUESTIONS_PER_QUIZ = 5;
+  const MEMORY_WINDOW = 40;
+
+  const shuffle = (arr) => [...arr].sort(() => Math.random() - 0.5);
+
+  const normalizeBank = (bank) => {
+    const out = { easy: [], medium: [], hard: [] };
+
+    if (!bank) return out;
+
+    if (Array.isArray(bank)) {
+      bank.forEach((q) => {
+        const qDiff = ['easy', 'medium', 'hard'].includes(q?.difficulty) ? q.difficulty : 'easy';
+        out[qDiff].push(q);
+      });
+      return out;
+    }
+
+    ['easy', 'medium', 'hard'].forEach((d) => {
+      if (Array.isArray(bank[d])) out[d] = [...bank[d]];
+    });
+
+    return out;
+  };
+
+  const uniqueByQuestion = (questions) => {
+    const seen = new Set();
+    return questions.filter((q) => {
+      const key = String(q?.question || '').toLowerCase().trim();
+      if (!key || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  };
+
+  const getQuestionKey = (q) => `${normalizedSkill}|${normalizedDifficulty || 'all'}|${String(q?.question || '').toLowerCase().trim()}`;
+
+  // Category aliases ensure questions remain connected to their subject area.
+  const skillAliases = {
+    programming: ['python', 'javascript', 'java'],
+    webdevelopment: ['html', 'css', 'javascript'],
+    problemsolving: ['python', 'javascript', 'java'],
+    networking: ['java', 'python', 'javascript'],
+    database: ['sql', 'javascript', 'python'],
+  };
+
+  const categoryQuestionBanks = {
+    networking: {
+      easy: [
+        { question: 'What does IP stand for in networking?', options: ['Internet Protocol', 'Internal Process', 'Integrated Port', 'Internet Package'], correctAnswer: 'Internet Protocol', difficulty: 'easy' },
+        { question: 'Which device forwards traffic between networks?', options: ['Router', 'Switch', 'Hub', 'Repeater'], correctAnswer: 'Router', difficulty: 'easy' },
+        { question: 'Which protocol is used to load web pages?', options: ['HTTP', 'FTP', 'SSH', 'SMTP'], correctAnswer: 'HTTP', difficulty: 'easy' },
+        { question: 'What is the default port for HTTPS?', options: ['443', '80', '22', '25'], correctAnswer: '443', difficulty: 'easy' },
+        { question: 'Which command checks reachability between two hosts?', options: ['ping', 'mkdir', 'grep', 'chmod'], correctAnswer: 'ping', difficulty: 'easy' }
+      ],
+      medium: [
+        { question: 'What is the purpose of DNS?', options: ['Resolve domain names to IP addresses', 'Encrypt traffic', 'Assign MAC addresses', 'Compress packets'], correctAnswer: 'Resolve domain names to IP addresses', difficulty: 'medium' },
+        { question: 'What does NAT primarily do?', options: ['Translates private IPs to public IPs', 'Increases RAM', 'Caches websites only', 'Blocks all inbound traffic'], correctAnswer: 'Translates private IPs to public IPs', difficulty: 'medium' },
+        { question: 'Which layer of OSI handles routing?', options: ['Network layer', 'Session layer', 'Presentation layer', 'Physical layer'], correctAnswer: 'Network layer', difficulty: 'medium' },
+        { question: 'Which protocol secures remote shell access?', options: ['SSH', 'Telnet', 'SNMP', 'TFTP'], correctAnswer: 'SSH', difficulty: 'medium' },
+        { question: 'What is a VLAN used for?', options: ['Logical network segmentation', 'Increasing CPU speed', 'File encryption only', 'Email filtering'], correctAnswer: 'Logical network segmentation', difficulty: 'medium' }
+      ],
+      hard: [
+        { question: 'What is the main purpose of BGP?', options: ['Inter-domain routing between autonomous systems', 'LAN file sharing', 'Database replication', 'Email delivery'], correctAnswer: 'Inter-domain routing between autonomous systems', difficulty: 'hard' },
+        { question: 'What does CIDR /27 mean for IPv4?', options: ['32 addresses total', '64 addresses total', '128 addresses total', '16 addresses total'], correctAnswer: '32 addresses total', difficulty: 'hard' },
+        { question: 'Which metric is most directly used by OSPF?', options: ['Cost based on bandwidth', 'Hop count only', 'Packet loss only', 'Latency only'], correctAnswer: 'Cost based on bandwidth', difficulty: 'hard' },
+        { question: 'What is asymmetric routing?', options: ['Request and response use different paths', 'All traffic uses one path', 'Traffic uses only wireless', 'Only UDP traffic is routed'], correctAnswer: 'Request and response use different paths', difficulty: 'hard' },
+        { question: 'Which technology prevents L2 loops in switched networks?', options: ['STP', 'ARP', 'NTP', 'RDP'], correctAnswer: 'STP', difficulty: 'hard' }
+      ]
+    },
+    database: {
+      easy: [
+        { question: 'What does SQL stand for?', options: ['Structured Query Language', 'Simple Query Logic', 'Server Query Link', 'Sequential Query Language'], correctAnswer: 'Structured Query Language', difficulty: 'easy' },
+        { question: 'Which SQL command retrieves data?', options: ['SELECT', 'INSERT', 'UPDATE', 'DELETE'], correctAnswer: 'SELECT', difficulty: 'easy' },
+        { question: 'Which key uniquely identifies a row?', options: ['Primary key', 'Foreign key', 'Composite key', 'Index key'], correctAnswer: 'Primary key', difficulty: 'easy' },
+        { question: 'Which clause filters rows in SQL?', options: ['WHERE', 'GROUP BY', 'ORDER BY', 'HAVING'], correctAnswer: 'WHERE', difficulty: 'easy' },
+        { question: 'Which SQL statement adds a new row?', options: ['INSERT', 'SELECT', 'ALTER', 'TRUNCATE'], correctAnswer: 'INSERT', difficulty: 'easy' }
+      ],
+      medium: [
+        { question: 'What does a foreign key enforce?', options: ['Referential integrity', 'Password hashing', 'Sorting order', 'Disk backup'], correctAnswer: 'Referential integrity', difficulty: 'medium' },
+        { question: 'Which clause is used to aggregate grouped results?', options: ['HAVING', 'LIMIT', 'DISTINCT', 'OFFSET'], correctAnswer: 'HAVING', difficulty: 'medium' },
+        { question: 'What is normalization mainly for?', options: ['Reduce redundancy and improve integrity', 'Increase font size', 'Encrypt all values', 'Replace indexes'], correctAnswer: 'Reduce redundancy and improve integrity', difficulty: 'medium' },
+        { question: 'Which index type is typically default in many SQL engines?', options: ['B-tree', 'Graph', 'Bitmap only', 'Hash tree'], correctAnswer: 'B-tree', difficulty: 'medium' },
+        { question: 'What does JOIN do in SQL?', options: ['Combines rows from related tables', 'Deletes duplicate columns', 'Encrypts records', 'Backs up table only'], correctAnswer: 'Combines rows from related tables', difficulty: 'medium' }
+      ],
+      hard: [
+        { question: 'What is a transaction isolation level used for?', options: ['Control concurrency side effects', 'Compress backups', 'Generate IDs only', 'Render charts'], correctAnswer: 'Control concurrency side effects', difficulty: 'hard' },
+        { question: 'Which phenomenon can READ COMMITTED still allow?', options: ['Non-repeatable reads', 'No reads at all', 'Schema corruption', 'Deadlock elimination'], correctAnswer: 'Non-repeatable reads', difficulty: 'hard' },
+        { question: 'What does ACID stand for in databases?', options: ['Atomicity, Consistency, Isolation, Durability', 'Availability, Concurrency, Integrity, Distribution', 'Atomicity, Caching, Indexing, Durability', 'Accuracy, Consistency, IO, Dependencies'], correctAnswer: 'Atomicity, Consistency, Isolation, Durability', difficulty: 'hard' },
+        { question: 'When is denormalization commonly used?', options: ['To optimize read performance in specific workloads', 'To remove all keys', 'To avoid indexes entirely', 'To eliminate SQL'], correctAnswer: 'To optimize read performance in specific workloads', difficulty: 'hard' },
+        { question: 'What is the primary role of a query execution plan?', options: ['Show how the DB engine will execute a query', 'Store audit logs', 'Encrypt table names', 'Create API routes'], correctAnswer: 'Show how the DB engine will execute a query', difficulty: 'hard' }
+      ]
+    },
+    problemsolving: {
+      easy: [
+        { question: 'What is the first step in solving a programming problem?', options: ['Understand the problem statement', 'Start coding immediately', 'Optimize prematurely', 'Skip test cases'], correctAnswer: 'Understand the problem statement', difficulty: 'easy' },
+        { question: 'Why are test cases important?', options: ['They validate correctness', 'They make code slower', 'They remove algorithms', 'They replace debugging'], correctAnswer: 'They validate correctness', difficulty: 'easy' },
+        { question: 'What is pseudocode mainly used for?', options: ['Planning logic before coding', 'Compiling binaries', 'Encrypting source files', 'Deploying servers'], correctAnswer: 'Planning logic before coding', difficulty: 'easy' },
+        { question: 'What does edge case mean?', options: ['Unusual input scenario', 'Syntax error only', 'Database lock', 'User interface color'], correctAnswer: 'Unusual input scenario', difficulty: 'easy' },
+        { question: 'Which structure is best for FIFO processing?', options: ['Queue', 'Stack', 'Tree', 'Graph'], correctAnswer: 'Queue', difficulty: 'easy' }
+      ],
+      medium: [
+        { question: 'What is time complexity used to estimate?', options: ['How runtime grows with input size', 'Disk color', 'Compiler version', 'Number of comments'], correctAnswer: 'How runtime grows with input size', difficulty: 'medium' },
+        { question: 'Which technique solves overlapping subproblems efficiently?', options: ['Dynamic programming', 'Bubble sort', 'Greedy coloring', 'Binary serialization'], correctAnswer: 'Dynamic programming', difficulty: 'medium' },
+        { question: 'When is binary search applicable?', options: ['On sorted data', 'On random text only', 'On unsorted linked lists always', 'Only on graphs'], correctAnswer: 'On sorted data', difficulty: 'medium' },
+        { question: 'What is a trade-off between arrays and linked lists?', options: ['Arrays have fast index access; linked lists have cheaper middle insertions', 'Arrays are always slower', 'Linked lists use no memory', 'There is no trade-off'], correctAnswer: 'Arrays have fast index access; linked lists have cheaper middle insertions', difficulty: 'medium' },
+        { question: 'What does Big-O ignore?', options: ['Constant factors in asymptotic analysis', 'Input size entirely', 'Algorithm correctness', 'Data structures'], correctAnswer: 'Constant factors in asymptotic analysis', difficulty: 'medium' }
+      ],
+      hard: [
+        { question: 'Which approach is ideal for shortest path in weighted graphs with non-negative edges?', options: ['Dijkstra algorithm', 'Depth-first search only', 'Bubble sort', 'Linear scan'], correctAnswer: 'Dijkstra algorithm', difficulty: 'hard' },
+        { question: 'What property allows divide-and-conquer to be effective?', options: ['Problem can be split into independent subproblems', 'Database has indexes', 'UI has pagination', 'Network uses TLS'], correctAnswer: 'Problem can be split into independent subproblems', difficulty: 'hard' },
+        { question: 'What is memoization?', options: ['Caching function results for repeated inputs', 'Encrypting memory addresses', 'Sorting recursively only', 'Deleting duplicate files'], correctAnswer: 'Caching function results for repeated inputs', difficulty: 'hard' },
+        { question: 'What is the main challenge in NP-complete problems?', options: ['No known polynomial-time solution for all cases', 'They cannot be tested', 'They have no input', 'They are always unsolvable'], correctAnswer: 'No known polynomial-time solution for all cases', difficulty: 'hard' },
+        { question: 'Why do heuristic algorithms exist?', options: ['To get good-enough solutions when exact methods are too costly', 'To guarantee optimality always', 'To replace all data structures', 'To avoid testing'], correctAnswer: 'To get good-enough solutions when exact methods are too costly', difficulty: 'hard' }
+      ]
+    }
+  };
+
+  let resolvedBank = normalizeBank(skillToQuestions[normalizedSkill]);
+
+  if (!resolvedBank.easy.length && !resolvedBank.medium.length && !resolvedBank.hard.length && categoryQuestionBanks[normalizedSkill]) {
+    resolvedBank = normalizeBank(categoryQuestionBanks[normalizedSkill]);
+  }
+
+  if (!resolvedBank.easy.length && !resolvedBank.medium.length && !resolvedBank.hard.length && skillAliases[normalizedSkill]) {
+    const merged = { easy: [], medium: [], hard: [] };
+    skillAliases[normalizedSkill].forEach((aliasSkill) => {
+      const aliasBank = normalizeBank(skillToQuestions[aliasSkill]);
+      merged.easy.push(...aliasBank.easy);
+      merged.medium.push(...aliasBank.medium);
+      merged.hard.push(...aliasBank.hard);
+    });
+
+    resolvedBank = {
+      easy: uniqueByQuestion(merged.easy),
+      medium: uniqueByQuestion(merged.medium),
+      hard: uniqueByQuestion(merged.hard),
+    };
+  }
+
+  if (!resolvedBank.easy.length && !resolvedBank.medium.length && !resolvedBank.hard.length) {
     return res.status(404).json({
       success: false,
       message: `No questions found for skill: ${skill}. Available skills: ${Object.keys(skillToQuestions).join(', ')}`,
     });
   }
 
-  // Get questions for the skill
-  let questions = [];
-  const skillQuestions = skillToQuestions[normalizedSkill];
+  let questionPool = normalizedDifficulty
+    ? resolvedBank[normalizedDifficulty]
+    : [...resolvedBank.easy, ...resolvedBank.medium, ...resolvedBank.hard];
 
-  if (difficulty && ['easy', 'medium', 'hard'].includes(difficulty.toLowerCase())) {
-    // Filter by specific difficulty
-    questions = skillQuestions[difficulty.toLowerCase()] || [];
-  } else {
-    // Return all questions if no difficulty specified
-    questions = [
-      ...(skillQuestions.easy || []),
-      ...(skillQuestions.medium || []),
-      ...(skillQuestions.hard || [])
-    ];
-  }
+  questionPool = uniqueByQuestion(questionPool);
 
-  if (questions.length === 0) {
+  if (questionPool.length === 0) {
     return res.status(404).json({
       success: false,
       message: `No questions found for skill: ${skill} with difficulty: ${difficulty || 'all'}`,
     });
   }
 
-  // Shuffle question order so repeated attempts don't always return the exact same sequence.
-  const shuffledQuestions = [...questions].sort(() => Math.random() - 0.5);
+  const takeCount = Math.min(QUESTIONS_PER_QUIZ, questionPool.length);
+  const memoryBucket = `${normalizedSkill}:${normalizedDifficulty || 'all'}`;
 
-  // Remove correct answers from client response
-  const safeQuestions = shuffledQuestions.map((q) => ({
+  // Serve unseen questions first, then cycle once pool is exhausted.
+  let recentQuestionKeys = [];
+  const memoryOwner = await User.findById(req.user._id).select('quizQuestionMemory');
+  if (memoryOwner?.quizQuestionMemory?.get(memoryBucket)) {
+    recentQuestionKeys = memoryOwner.quizQuestionMemory.get(memoryBucket) || [];
+  }
+  const recentSet = new Set(recentQuestionKeys);
+
+  let unseenPool = questionPool.filter((q) => !recentSet.has(getQuestionKey(q)));
+  if (unseenPool.length < takeCount) {
+    // Reset cycle for this bucket when all questions have been consumed.
+    unseenPool = questionPool;
+    recentQuestionKeys = [];
+  }
+
+  const selectedQuestions = shuffle(unseenPool).slice(0, takeCount);
+
+  if (memoryOwner) {
+    const selectedKeys = selectedQuestions.map(getQuestionKey);
+    const mergedKeys = [...recentQuestionKeys, ...selectedKeys];
+    const seen = new Set();
+    const dedupedRecent = [];
+
+    // Keep most recent unique keys up to MEMORY_WINDOW.
+    for (let i = mergedKeys.length - 1; i >= 0; i -= 1) {
+      const key = mergedKeys[i];
+      if (!seen.has(key)) {
+        seen.add(key);
+        dedupedRecent.unshift(key);
+      }
+      if (dedupedRecent.length >= MEMORY_WINDOW) break;
+    }
+
+    memoryOwner.quizQuestionMemory.set(memoryBucket, dedupedRecent);
+    await memoryOwner.save();
+  }
+
+  const safeQuestions = selectedQuestions.map((q) => ({
     question: q.question,
     options: q.options,
-    difficulty: q.difficulty,
-    correctAnswer: undefined
+    difficulty: q.difficulty || normalizedDifficulty || 'medium',
+    correctAnswer: undefined,
   }));
 
   res.json({
