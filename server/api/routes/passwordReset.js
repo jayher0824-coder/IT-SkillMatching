@@ -4,6 +4,8 @@ const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
 const User = require('../../database/models/User');
 const emailService = require('../../services/emailService');
+const NotificationService = require('../../services/notificationService');
+const NotificationService = require('../../services/notificationService');
 
 // Security constants
 const MAX_REQUESTS_PER_DAY = 999; // Effectively unlimited
@@ -316,15 +318,29 @@ router.post('/forgot-password', async (req, res) => {
     const emailResult = await emailService.sendEmail(user.email, emailTemplate);
 
     if (!emailResult?.success) {
-      user.resetPasswordToken = undefined;
-      user.resetPasswordExpires = undefined;
-      user.passwordChangeRequests.pop();
-      await user.save();
+      console.warn('Password reset email delivery failed for:', user.email, emailResult?.error || 'Unknown error');
 
-      console.error('Password reset email delivery failed:', emailResult?.error || 'Unknown error');
-      return res.status(503).json({ 
-        success: false, 
-        message: 'Password reset email could not be delivered right now. Please try again later or contact the administrator.' 
+      // Notify all active admins so they can manually assist the user
+      try {
+        const admins = await User.find({ role: 'admin', isActive: true }).select('_id');
+        for (const admin of admins) {
+          await NotificationService.create({
+            recipient: admin._id,
+            type: 'system',
+            title: '⚠️ Password Reset Email Failed',
+            message: `User ${user.email} requested a password reset but the email could not be delivered. Reset link (expires in 1 hour): ${resetLink}`,
+            link: '/admin.html',
+            data: { userEmail: user.email, userId: user._id.toString(), resetLink }
+          });
+        }
+      } catch (notifErr) {
+        console.error('Failed to notify admins about email failure:', notifErr);
+      }
+
+      return res.status(200).json({
+        success: true,
+        emailFailed: true,
+        message: 'We could not send the reset email to your address. The administrator has been notified and will assist you shortly.'
       });
     }
 
