@@ -128,6 +128,8 @@ router.get('/', protect, async (req, res) => {
 // @access  Public
 router.get('/stats', async (req, res) => {
   try {
+    const exposePublicSkillsStats = process.env.EXPOSE_PUBLIC_SKILLS_STATS === 'true';
+
     // Count total assessment results (completed assessments)
     const totalAssessmentsTaken = await AssessmentResult.countDocuments();
     
@@ -156,7 +158,8 @@ router.get('/stats', async (req, res) => {
       data: {
         totalAssessmentsTaken,
         uniqueStudents: uniqueStudents.length,
-        totalSkillsAssessed: totalSkillsAssessed[0]?.total || 0,
+        // Keep landing-page metric at 0 until real testing is enabled.
+        totalSkillsAssessed: exposePublicSkillsStats ? (totalSkillsAssessed[0]?.total || 0) : 0,
         passingRate: parseFloat(passingRate),
         averageScore: avgScore[0]?.avgPercentage ? avgScore[0].avgPercentage.toFixed(1) : 0
       }

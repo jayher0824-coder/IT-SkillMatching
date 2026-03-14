@@ -386,7 +386,7 @@ The skills assessment is a core feature that ensures quality matching:
 ## API Documentation
 
 ### Authentication Endpoints:
-- `POST /api/auth/register` - User registration
+- `POST /api/auth/register` - Public registration disabled (students use Google sign-in, companies are admin-created)
 - `POST /api/auth/login` - User login
 - `GET /api/auth/me` - Get current user
 

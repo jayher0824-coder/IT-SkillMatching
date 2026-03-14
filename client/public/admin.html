@@ -587,6 +587,167 @@
                 </div>
             );
         }
+
+        // Company Account Creation
+        function CompanyAccountManagement() {
+            const [formData, setFormData] = useState({
+                email: '',
+                password: '',
+                companyName: '',
+                industry: '',
+                companySize: '11-50',
+                description: '',
+                website: '',
+                companyAddress: '',
+                contactFirstName: '',
+                contactLastName: '',
+                contactTitle: '',
+                contactPhone: ''
+            });
+            const [submitting, setSubmitting] = useState(false);
+            const [error, setError] = useState('');
+            const [success, setSuccess] = useState('');
+
+            const handleChange = (e) => {
+                const { name, value } = e.target;
+                setFormData(prev => ({ ...prev, [name]: value }));
+            };
+
+            const handleCreateCompany = async (e) => {
+                e.preventDefault();
+                setSubmitting(true);
+                setError('');
+                setSuccess('');
+
+                try {
+                    const payload = {
+                        ...formData,
+                        email: formData.email.trim(),
+                        companyName: formData.companyName.trim(),
+                        industry: formData.industry.trim(),
+                        description: formData.description.trim(),
+                    };
+
+                    const res = await axios.post(`${API_BASE}/admin/company-accounts`, payload);
+
+                    if (res.data?.success) {
+                        setSuccess(`Company account created for ${res.data.data?.user?.email || payload.email}.`);
+                        setFormData({
+                            email: '',
+                            password: '',
+                            companyName: '',
+                            industry: '',
+                            companySize: '11-50',
+                            description: '',
+                            website: '',
+                            companyAddress: '',
+                            contactFirstName: '',
+                            contactLastName: '',
+                            contactTitle: '',
+                            contactPhone: ''
+                        });
+                    }
+                } catch (err) {
+                    setError(err.response?.data?.message || 'Failed to create company account');
+                } finally {
+                    setSubmitting(false);
+                }
+            };
+
+            return (
+                <div>
+                    <h2 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '20px', color: '#1f2937' }}>
+                        Create Company Account
+                    </h2>
+                    <p style={{ color: '#6b7280', marginBottom: '20px' }}>
+                        Create company login credentials and company profile. This replaces public company registration.
+                    </p>
+
+                    <form onSubmit={handleCreateCompany} className="stat-card" style={{ maxWidth: '900px' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '16px' }}>
+                            <div>
+                                <label style={{ display: 'block', marginBottom: '8px', color: '#374151', fontWeight: '500' }}>Company Login Email *</label>
+                                <input name="email" type="email" value={formData.email} onChange={handleChange} required
+                                    style={{ width: '100%', padding: '10px', border: '1px solid #d1d5db', borderRadius: '6px' }} />
+                            </div>
+                            <div>
+                                <label style={{ display: 'block', marginBottom: '8px', color: '#374151', fontWeight: '500' }}>Temporary Password *</label>
+                                <input name="password" type="password" value={formData.password} onChange={handleChange} minLength="8" required
+                                    style={{ width: '100%', padding: '10px', border: '1px solid #d1d5db', borderRadius: '6px' }} />
+                            </div>
+                            <div>
+                                <label style={{ display: 'block', marginBottom: '8px', color: '#374151', fontWeight: '500' }}>Company Name *</label>
+                                <input name="companyName" value={formData.companyName} onChange={handleChange} required
+                                    style={{ width: '100%', padding: '10px', border: '1px solid #d1d5db', borderRadius: '6px' }} />
+                            </div>
+                            <div>
+                                <label style={{ display: 'block', marginBottom: '8px', color: '#374151', fontWeight: '500' }}>Industry *</label>
+                                <input name="industry" value={formData.industry} onChange={handleChange} required
+                                    style={{ width: '100%', padding: '10px', border: '1px solid #d1d5db', borderRadius: '6px' }} />
+                            </div>
+                            <div>
+                                <label style={{ display: 'block', marginBottom: '8px', color: '#374151', fontWeight: '500' }}>Company Size *</label>
+                                <select name="companySize" value={formData.companySize} onChange={handleChange}
+                                    style={{ width: '100%', padding: '10px', border: '1px solid #d1d5db', borderRadius: '6px' }}>
+                                    <option value="1-10">1-10</option>
+                                    <option value="11-50">11-50</option>
+                                    <option value="51-200">51-200</option>
+                                    <option value="201-500">201-500</option>
+                                    <option value="500+">500+</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label style={{ display: 'block', marginBottom: '8px', color: '#374151', fontWeight: '500' }}>Website</label>
+                                <input name="website" type="url" value={formData.website} onChange={handleChange}
+                                    placeholder="https://company.com"
+                                    style={{ width: '100%', padding: '10px', border: '1px solid #d1d5db', borderRadius: '6px' }} />
+                            </div>
+                        </div>
+
+                        <div style={{ marginTop: '16px' }}>
+                            <label style={{ display: 'block', marginBottom: '8px', color: '#374151', fontWeight: '500' }}>Company Description *</label>
+                            <textarea name="description" value={formData.description} onChange={handleChange} required rows="4"
+                                style={{ width: '100%', padding: '10px', border: '1px solid #d1d5db', borderRadius: '6px', fontFamily: 'inherit' }} />
+                        </div>
+
+                        <div style={{ marginTop: '16px' }}>
+                            <label style={{ display: 'block', marginBottom: '8px', color: '#374151', fontWeight: '500' }}>Address (street, city, state, zip)</label>
+                            <input name="companyAddress" value={formData.companyAddress} onChange={handleChange}
+                                placeholder="123 Main St, Valenzuela, NCR, 1440"
+                                style={{ width: '100%', padding: '10px', border: '1px solid #d1d5db', borderRadius: '6px' }} />
+                        </div>
+
+                        <h3 style={{ marginTop: '24px', marginBottom: '12px', color: '#1f2937' }}>Contact Person (optional)</h3>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
+                            <input name="contactFirstName" value={formData.contactFirstName} onChange={handleChange} placeholder="First name"
+                                style={{ width: '100%', padding: '10px', border: '1px solid #d1d5db', borderRadius: '6px' }} />
+                            <input name="contactLastName" value={formData.contactLastName} onChange={handleChange} placeholder="Last name"
+                                style={{ width: '100%', padding: '10px', border: '1px solid #d1d5db', borderRadius: '6px' }} />
+                            <input name="contactTitle" value={formData.contactTitle} onChange={handleChange} placeholder="Title"
+                                style={{ width: '100%', padding: '10px', border: '1px solid #d1d5db', borderRadius: '6px' }} />
+                            <input name="contactPhone" value={formData.contactPhone} onChange={handleChange} placeholder="09123456789"
+                                style={{ width: '100%', padding: '10px', border: '1px solid #d1d5db', borderRadius: '6px' }} />
+                        </div>
+
+                        {error && (
+                            <div style={{ marginTop: '16px', backgroundColor: '#fee2e2', border: '1px solid #fca5a5', color: '#991b1b', padding: '10px', borderRadius: '6px' }}>
+                                {error}
+                            </div>
+                        )}
+                        {success && (
+                            <div style={{ marginTop: '16px', backgroundColor: '#dcfce7', border: '1px solid #86efac', color: '#166534', padding: '10px', borderRadius: '6px' }}>
+                                {success}
+                            </div>
+                        )}
+
+                        <button type="submit" disabled={submitting}
+                            style={{ marginTop: '20px', padding: '10px 16px', backgroundColor: '#16a34a', color: 'white', border: 'none', borderRadius: '6px', cursor: submitting ? 'not-allowed' : 'pointer', opacity: submitting ? 0.7 : 1, fontWeight: '600' }}>
+                            {submitting ? 'Creating...' : 'Create Company Account'}
+                        </button>
+                    </form>
+                </div>
+            );
+        }
         
         // Feedback Management - All Users
         function FeedbackManagement() {
@@ -873,8 +1034,8 @@
             const [notifications, setNotifications] = useState([]);
             const [loading, setLoading] = useState(true);
             const [filter, setFilter] = useState('all');
-            
-            useEffect(() => {
+
+            const fetchNotifications = () => {
                 axios.get(`${API_BASE}/notifications`)
                     .then(res => {
                         const allNotifications = res.data.data || [];
@@ -885,12 +1046,22 @@
                         setNotifications([]);
                     })
                     .finally(() => setLoading(false));
+            };
+            
+            useEffect(() => {
+                fetchNotifications();
+
+                const intervalId = setInterval(() => {
+                    fetchNotifications();
+                }, 10000);
+
+                return () => clearInterval(intervalId);
             }, []);
             
             if (loading) return <div className="loading"><i className="fas fa-spinner fa-spin"></i> Loading notifications...</div>;
             
-            const unread = notifications.filter(n => !n.isRead);
-            const filtered = filter === 'all' ? notifications : filter === 'unread' ? unread : notifications.filter(n => n.isRead);
+            const unread = notifications.filter(n => !n.read);
+            const filtered = filter === 'all' ? notifications : filter === 'unread' ? unread : notifications.filter(n => n.read);
             
             return (
                 <div>
@@ -921,8 +1092,8 @@
                                 <div key={idx} style={{ 
                                     padding: '16px',
                                     borderBottom: '1px solid #e5e7eb',
-                                    backgroundColor: notif.isRead ? '#ffffff' : '#f0f9ff',
-                                    borderLeft: `4px solid ${notif.isRead ? '#d1d5db' : '#0ea5e9'}`
+                                    backgroundColor: notif.read ? '#ffffff' : '#f0f9ff',
+                                    borderLeft: `4px solid ${notif.read ? '#d1d5db' : '#0ea5e9'}`
                                 }}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
                                         <div style={{ flex: 1 }}>
@@ -941,10 +1112,10 @@
                                             borderRadius: '4px',
                                             fontSize: '11px',
                                             fontWeight: '600',
-                                            backgroundColor: notif.isRead ? '#e5e7eb' : '#0ea5e9',
-                                            color: notif.isRead ? '#374151' : 'white'
+                                            backgroundColor: notif.read ? '#e5e7eb' : '#0ea5e9',
+                                            color: notif.read ? '#374151' : 'white'
                                         }}>
-                                            {notif.isRead ? 'Read' : 'Unread'}
+                                            {notif.read ? 'Read' : 'Unread'}
                                         </span>
                                     </div>
                                 </div>
@@ -2110,6 +2281,9 @@
                         <a className={`nav-item ${page === 'users' ? 'active' : ''}`} onClick={() => setPage('users')}>
                             <i className="fas fa-users" style={{ marginRight: '10px' }}></i> Users
                         </a>
+                        <a className={`nav-item ${page === 'company-accounts' ? 'active' : ''}`} onClick={() => setPage('company-accounts')}>
+                            <i className="fas fa-building-circle-check" style={{ marginRight: '10px' }}></i> Company Accounts
+                        </a>
                         <a className={`nav-item ${page === 'feedback' ? 'active' : ''}`} onClick={() => setPage('feedback')}>
                             <i className="fas fa-comments" style={{ marginRight: '10px' }}></i> Feedback
                         </a>
@@ -2154,6 +2328,7 @@
                         
                         {page === 'dashboard' && <DashboardStats />}
                         {page === 'users' && <UsersManagement />}
+                        {page === 'company-accounts' && <CompanyAccountManagement />}
                         {page === 'feedback' && <FeedbackManagement />}
                         {page === 'messages' && <MessagesManagement />}
                         {page === 'notifications' && <NotificationsManagement />}

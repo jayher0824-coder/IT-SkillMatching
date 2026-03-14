@@ -301,23 +301,24 @@ async function loadPlatformStatistics() {
 
 // Load total skills assessed count
 async function loadSkillsAssessedCount() {
+    const skillsElement = document.getElementById('total-skills');
+
     try {
-        // This endpoint would need to be created to count total assessment results
-        // For now, we'll use a reasonable estimate based on assessment completion
         const response = await fetch(`${API_BASE}/assessments/stats`);
         const data = await response.json();
         
-        if (data.success && data.data && data.data.totalSkillsAssessed) {
-            const skillsElement = document.getElementById('total-skills');
-            if (skillsElement) {
-                const count = data.data.totalSkillsAssessed;
-                skillsElement.textContent = count >= 100 ? '100+' : count;
-            }
+        if (data.success && data.data && data.data.totalSkillsAssessed !== undefined && skillsElement) {
+            const count = Number(data.data.totalSkillsAssessed);
+            skillsElement.textContent = Number.isFinite(count) && count >= 0 ? String(count) : '0';
+            return;
+        }
+
+        if (skillsElement) {
+            skillsElement.textContent = '0';
         }
     } catch (error) {
         // Silently fail - show 0 if endpoint doesn't exist yet
         console.log('Skills assessed stats not available');
-        const skillsElement = document.getElementById('total-skills');
         if (skillsElement) {
             skillsElement.textContent = '0';
         }
@@ -365,20 +366,29 @@ function showLoginModal(role) {
     
     modalTitle.textContent = titleText;
 
-    // Show tabs only for students and companies (not for admin)
-    const tabsHTML = role === 'admin' ? '' : `
-        <div id="login-tabs" class="flex mb-6 bg-gray-100 dark:bg-gray-700 p-1 rounded-lg">
-            <button id="login-tab" onclick="switchTab('login', '${role}')" 
-                class="flex-1 py-3 px-4 rounded-lg font-semibold shadow-md transition duration-300 transform hover:scale-105" 
+    const tabsHTML = `
+        <div class="mb-6 bg-gray-100 dark:bg-gray-700 p-1 rounded-lg">
+            <button id="login-tab"
+                class="w-full py-3 px-4 rounded-lg font-semibold shadow-md" 
                 style="background-color: #56AE67 !important; color: white !important;">
                 <i class="fas fa-sign-in-alt mr-2"></i>Login
             </button>
-            <button id="register-tab" onclick="switchTab('register', '${role}')" 
-                class="flex-1 py-3 px-4 bg-transparent text-gray-700 dark:text-gray-300 rounded-lg font-semibold transition duration-300">
-                <i class="fas fa-user-plus mr-2"></i>Register
-            </button>
         </div>
     `;
+
+    const accessNoticeHTML = role === 'student'
+        ? `
+            <div class="mb-4 text-sm text-[#3d8b4f] dark:text-[#6bc481] bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-3">
+                Student registration is disabled. Use your official Fatima Google account to sign in.
+            </div>
+        `
+        : role === 'company'
+            ? `
+                <div class="mb-4 text-sm text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3">
+                    Company self-registration is disabled. Contact the admin to request a company account.
+                </div>
+            `
+            : '';
 
     // Google OAuth only for students
     const googleOAuthHTML = role === 'student' ? `
@@ -405,6 +415,7 @@ function showLoginModal(role) {
 
     modalContent.innerHTML = `
         ${tabsHTML}
+        ${accessNoticeHTML}
         <div id="auth-form-container"></div>
         ${googleOAuthHTML}
         <div id="auth-message" class="mt-4 text-center"></div>
@@ -599,6 +610,11 @@ function renderAuthForm(role, mode) {
 function switchTab(tab, role) {
     const loginTab = document.getElementById('login-tab');
     const registerTab = document.getElementById('register-tab');
+
+    if (!loginTab || !registerTab) {
+        renderAuthForm(role, 'login');
+        return;
+    }
 
     if (tab === 'login') {
         loginTab.className = 'flex-1 py-3 px-4 rounded-lg font-semibold shadow-md transition duration-300 transform hover:scale-105';
@@ -1866,6 +1882,11 @@ async function handleAuth(event, role, mode) {
     const submitText = document.getElementById('submit-text');
     const messageDiv = document.getElementById('auth-message');
     const isRegister = mode === 'register';
+
+    if (isRegister) {
+        messageDiv.innerHTML = `<div class="text-red-500 text-sm">Registration is disabled. Students should use Google sign-in, and company accounts are created by admin.</div>`;
+        return;
+    }
     
     const email = document.getElementById('email').value.trim();
     const password = document.getElementById('password').value;

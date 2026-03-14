@@ -406,6 +406,123 @@ router.get('/users', protect, authorize('admin'), async (req, res) => {
   }
 });
 
+// @desc    Create company account (admin only)
+// @route   POST /api/admin/company-accounts
+// @access  Private (Admin only)
+router.post('/company-accounts', protect, authorize('admin'), async (req, res) => {
+  try {
+    const {
+      email,
+      password,
+      companyName,
+      industry,
+      companySize,
+      description,
+      website,
+      companyAddress,
+      contactFirstName,
+      contactLastName,
+      contactTitle,
+      contactPhone,
+    } = req.body;
+
+    if (!email || !password || !companyName || !industry || !companySize || !description) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email, password, company name, industry, company size, and description are required',
+      });
+    }
+
+    if (password.length < 8) {
+      return res.status(400).json({
+        success: false,
+        message: 'Password must be at least 8 characters long',
+      });
+    }
+
+    const allowedCompanySizes = ['1-10', '11-50', '51-200', '201-500', '500+'];
+    if (!allowedCompanySizes.includes(companySize)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid company size value',
+      });
+    }
+
+    const normalizedEmail = String(email).trim().toLowerCase();
+    const existingUser = await User.findOne({ email: normalizedEmail });
+    if (existingUser) {
+      return res.status(400).json({
+        success: false,
+        message: 'A user already exists with this email',
+      });
+    }
+
+    const user = await User.create({
+      email: normalizedEmail,
+      password,
+      role: 'company',
+      isActive: true,
+    });
+
+    try {
+      const [street, city, state, zipCode] = (companyAddress || '').split(',').map(part => part.trim());
+
+      const company = await Company.create({
+        user: user._id,
+        companyName: companyName.trim(),
+        industry: industry.trim(),
+        companySize,
+        description: description.trim(),
+        website: website ? website.trim() : '',
+        verified: true,
+        address: {
+          street: street || '',
+          city: city || '',
+          state: state || '',
+          zipCode: zipCode || '',
+          country: 'Philippines',
+        },
+        contactPerson: {
+          firstName: contactFirstName ? contactFirstName.trim() : '',
+          lastName: contactLastName ? contactLastName.trim() : '',
+          title: contactTitle ? contactTitle.trim() : '',
+          phone: contactPhone ? contactPhone.trim() : '',
+          email: normalizedEmail,
+        },
+      });
+
+      return res.status(201).json({
+        success: true,
+        message: 'Company account created successfully',
+        data: {
+          user: {
+            _id: user._id,
+            email: user.email,
+            role: user.role,
+            isActive: user.isActive,
+          },
+          company: {
+            _id: company._id,
+            companyName: company.companyName,
+            industry: company.industry,
+            companySize: company.companySize,
+            verified: company.verified,
+          },
+        },
+      });
+    } catch (companyError) {
+      await User.findByIdAndDelete(user._id);
+      throw companyError;
+    }
+  } catch (error) {
+    console.error('Error creating company account:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error',
+    });
+  }
+});
+
 // @desc    Reset user password by admin
 // @route   PUT /api/admin/users/:id/reset-password
 // @access  Private (Admin only)

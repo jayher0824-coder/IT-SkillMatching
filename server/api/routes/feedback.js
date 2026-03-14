@@ -165,7 +165,7 @@ router.post('/:id/reply', protect, authorize('admin'), async (req, res) => {
         recipient: feedback.user._id,
         title: 'Feedback Reply',
         message: `Admin replied to your feedback: "${feedback.subject}"`,
-        type: 'feedback_reply',
+        type: 'feedback_response',
         link: '/dashboard?tab=feedback',
         data: {
           feedbackId: feedback._id,

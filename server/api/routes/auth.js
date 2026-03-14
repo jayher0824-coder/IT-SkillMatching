@@ -3,7 +3,6 @@ const jwt = require('jsonwebtoken');
 const { body, validationResult } = require('express-validator');
 const User = require('../../database/models/User');
 const Student = require('../../database/models/Student');
-const Company = require('../../database/models/Company');
 const passport = require('passport');
 const rateLimit = require('express-rate-limit');
 
@@ -35,169 +34,28 @@ const generateToken = (id) => {
   });
 };
 
-router.post('/register', authLimiter, [
-  body('email').isEmail().withMessage('Please provide a valid email'),
-  body('password')
-    .isLength({ min: 6 }).withMessage('Password must be at least 6 characters')
-    .custom((value, { req }) => {
-      // Enhanced validation for student registration
-      if (req.body.role === 'student') {
-        if (value.length < 8) {
-          throw new Error('Password must be at least 8 characters long');
-        }
-        if (!/[A-Z]/.test(value)) {
-          throw new Error('Password must contain at least one uppercase letter');
-        }
-        if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(value)) {
-          throw new Error('Password must contain at least one special character');
-        }
-      }
-      return true;
-    }),
-  body('role').isIn(['student', 'company', 'admin']).withMessage('Role must be student, company, or admin'),
-  body('firstName').optional().custom((value, { req }) => {
-    if (req.body.role === 'student' && !value) {
-      throw new Error('First name is required for students');
-    }
-    return true;
-  }),
-  body('lastName').optional().custom((value, { req }) => {
-    if (req.body.role === 'student' && !value) {
-      throw new Error('Last name is required for students');
-    }
-    return true;
-  }),
-  body('studentId').optional().isLength({ min: 1 }).withMessage('Student ID must not be empty').custom((value, { req }) => {
-    if (req.body.role === 'student' && !value) {
-      throw new Error('Student ID is required for students');
-    }
-    return true;
-  }),
-  body('phone').optional().isMobilePhone().withMessage('Valid phone number is required').custom((value, { req }) => {
-    if (req.body.role === 'student' && !value) {
-      throw new Error('Phone number is required for students');
-    }
-    return true;
-  }),
-  body('address.street').optional().notEmpty().withMessage('Street address is required').custom((value, { req }) => {
-    if (req.body.role === 'student' && !value) {
-      throw new Error('Street address is required for students');
-    }
-    return true;
-  }),
-  body('address.city').optional().notEmpty().withMessage('City is required').custom((value, { req }) => {
-    if (req.body.role === 'student' && !value) {
-      throw new Error('City is required for students');
-    }
-    return true;
-  }),
-  body('address.state').optional().notEmpty().withMessage('State is required').custom((value, { req }) => {
-    if (req.body.role === 'student' && !value) {
-      throw new Error('State is required for students');
-    }
-    return true;
-  }),
-  body('address.zip').optional().isPostalCode('any').withMessage('Valid ZIP code is required').custom((value, { req }) => {
-    if (req.body.role === 'student' && !value) {
-      throw new Error('ZIP code is required for students');
-    }
-    return true;
-  }),
-], async (req, res) => {
-  try {
-    console.log('Registration attempt:', { email: req.body.email, role: req.body.role });
-    
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      console.error('Validation errors:', errors.array());
-      return res.status(400).json({
-        success: false,
-        errors: errors.array(),
-        message: errors.array().map(e => e.msg).join('; ')
-      });
-    }
+// Public self-registration is intentionally disabled.
+router.post('/register', authLimiter, (req, res) => {
+  const requestedRole = req.body?.role;
 
-    const { email, password, role, studentId, phone, address, firstName, lastName } = req.body;
-
-    // For students, validate Fatima student email domain
-    if (role === 'student' && !email.endsWith('@student.fatima.edu.ph')) {
-      return res.status(400).json({
-        success: false,
-        message: 'Student email must be a Fatima student Google account (@student.fatima.edu.ph)',
-      });
-    }
-
-    // Check if user already exists
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      return res.status(400).json({
-        success: false,
-        message: 'User already exists with this email',
-      });
-    }
-
-    // For students, check if studentId already exists
-    if (role === 'student') {
-      const existingStudent = await Student.findOne({ studentId });
-      if (existingStudent) {
-        return res.status(400).json({
-          success: false,
-          message: 'Student ID already exists',
-        });
-      }
-    }
-
-    // Create user
-    const user = await User.create({
-      email,
-      password,
-      role,
-    });
-
-    // If registering as student, create student profile with provided details
-    if (role === 'student') {
-      await Student.create({
-        user: user._id,
-        studentId,
-        firstName,
-        lastName,
-        dateOfBirth: new Date('2000-01-01'), // Default, update later
-        phone,
-        address: {
-          street: address.street,
-          city: address.city,
-          state: address.state,
-          zipCode: address.zip,
-          country: 'Philippines', // Default for OLFU
-        },
-        assessmentCompleted: false, // Require assessment
-        assessmentScore: null,
-        skills: [],
-      });
-    }
-
-    const token = generateToken(user._id);
-
-    res.status(201).json({
-      success: true,
-      token,
-      user: {
-        _id: user._id,
-        email: user.email,
-        role: user.role,
-        themePreference: user.themePreference,
-        isActive: user.isActive,
-        createdAt: user.createdAt,
-      },
-    });
-  } catch (error) {
-    console.error('Registration error:', error.message);
-    console.error('Stack:', error.stack);
-    res.status(500).json({
+  if (requestedRole === 'student') {
+    return res.status(403).json({
       success: false,
-      message: 'Server error: ' + error.message,
+      message: 'Student self-registration is disabled. Please sign in using your Fatima Google account.',
     });
   }
+
+  if (requestedRole === 'company') {
+    return res.status(403).json({
+      success: false,
+      message: 'Company self-registration is disabled. Please contact an admin to create your company account.',
+    });
+  }
+
+  return res.status(403).json({
+    success: false,
+    message: 'Public registration is disabled. Please contact an administrator.',
+  });
 });
 
 // @desc    Login user
