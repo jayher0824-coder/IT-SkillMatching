@@ -5,6 +5,9 @@ const Student = require('../../database/models/Student');
 const Company = require('../../database/models/Company');
 const Job = require('../../database/models/Job');
 const { AssessmentResult } = require('../../database/models/Assessment');
+const Notification = require('../../database/models/Notification');
+const Conversation = require('../../database/models/Conversation');
+const Message = require('../../database/models/Message');
 const Feedback = require('../../database/models/Feedback');
 const EmailReport = require('../../database/models/EmailReport');
 const NotificationService = require('../../services/notificationService');
@@ -687,6 +690,84 @@ router.put('/users/:id/status', protect, authorize('admin'), async (req, res) =>
     });
   } catch (error) {
     console.error(error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error',
+    });
+  }
+});
+
+// @desc    Delete user account (inactive users only)
+// @route   DELETE /api/admin/users/:id
+// @access  Private (Admin only)
+router.delete('/users/:id', protect, authorize('admin'), async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id).select('-password');
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found',
+      });
+    }
+
+    // Prevent admin from deleting themselves
+    if (user._id.toString() === req.user._id.toString()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot delete your own account',
+      });
+    }
+
+    // Safety policy: account must be inactive before deletion.
+    if (user.isActive !== false) {
+      return res.status(400).json({
+        success: false,
+        message: 'User must be deactivated first before deletion',
+      });
+    }
+
+    if (user.role === 'student') {
+      const studentProfiles = await Student.find({ user: user._id }).select('_id');
+      const studentIds = studentProfiles.map((s) => s._id);
+
+      if (studentIds.length > 0) {
+        await AssessmentResult.deleteMany({ student: { $in: studentIds } });
+        await Job.updateMany(
+          {},
+          { $pull: { applications: { student: { $in: studentIds } } } }
+        );
+        await Student.deleteMany({ _id: { $in: studentIds } });
+      }
+    }
+
+    if (user.role === 'company') {
+      const companies = await Company.find({ user: user._id }).select('_id');
+      const companyIds = companies.map((c) => c._id);
+
+      if (companyIds.length > 0) {
+        await Job.deleteMany({ company: { $in: companyIds } });
+        await Company.deleteMany({ _id: { $in: companyIds } });
+      }
+    }
+
+    // Remove related communication and notifications.
+    await Notification.deleteMany({ recipient: user._id });
+    await Message.deleteMany({ sender: user._id });
+    await Conversation.deleteMany({ participants: user._id });
+
+    await User.findByIdAndDelete(user._id);
+
+    res.json({
+      success: true,
+      message: 'User account deleted successfully',
+      data: {
+        userId: user._id,
+        email: user.email,
+        role: user.role,
+      },
+    });
+  } catch (error) {
+    console.error('Delete user error:', error);
     res.status(500).json({
       success: false,
       message: 'Server error',

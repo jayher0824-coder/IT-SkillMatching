@@ -343,6 +343,26 @@
                     alert('Error updating user status: ' + (err.response?.data?.message || err.message));
                 }
             };
+
+            const handleDeleteUser = async (user) => {
+                if (user.isActive !== false) {
+                    alert('Deactivate this user first before deleting.');
+                    return;
+                }
+
+                const confirmed = window.confirm(
+                    `Delete user ${user.email}? This will permanently remove the account and related data.`
+                );
+
+                if (!confirmed) return;
+
+                try {
+                    await axios.delete(`${API_BASE}/admin/users/${user._id}`);
+                    fetchUsers();
+                } catch (err) {
+                    alert('Error deleting user: ' + (err.response?.data?.message || err.message));
+                }
+            };
             
             if (loading) return <div className="loading"><i className="fas fa-spinner fa-spin"></i> Loading users...</div>;
             
@@ -458,6 +478,23 @@
                                                     title={user.isActive !== false ? 'Deactivate' : 'Activate'}
                                                 >
                                                     <i className={`fas ${user.isActive !== false ? 'fa-lock' : 'fa-unlock'}`}></i>
+                                                </button>
+                                                <button
+                                                    onClick={() => handleDeleteUser(user)}
+                                                    disabled={user.isActive !== false}
+                                                    style={{
+                                                        padding: '6px 10px',
+                                                        marginLeft: '6px',
+                                                        backgroundColor: user.isActive === false ? '#7f1d1d' : '#d1d5db',
+                                                        color: user.isActive === false ? 'white' : '#6b7280',
+                                                        border: 'none',
+                                                        borderRadius: '4px',
+                                                        cursor: user.isActive === false ? 'pointer' : 'not-allowed',
+                                                        fontSize: '12px'
+                                                    }}
+                                                    title={user.isActive === false ? 'Delete User' : 'Deactivate user first'}
+                                                >
+                                                    <i className="fas fa-trash"></i>
                                                 </button>
                                             </td>
                                         </tr>
