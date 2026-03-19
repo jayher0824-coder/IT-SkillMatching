@@ -177,7 +177,22 @@ router.post('/submit', protect, authorize('student'), async (req, res) => {
         });
 
         if (existingSubmission) {
-            return res.status(400).json({ success: false, message: 'Assessment already submitted' });
+            const totalPoints = assessment.questions.reduce((sum, question) => sum + (question.points || 0), 0);
+
+            // Return existing result as a successful response so the student can continue application flow.
+            return res.json({
+                success: true,
+                message: 'Assessment already submitted',
+                submissionId: existingSubmission._id,
+                alreadySubmitted: true,
+                result: {
+                    score: existingSubmission.score,
+                    totalPoints,
+                    percentage: existingSubmission.percentage,
+                    passed: existingSubmission.passed,
+                    passingScore: assessment.passingScore
+                }
+            });
         }
 
         // Grade the assessment
@@ -485,28 +500,16 @@ router.put('/:assessmentId', protect, authorize('company'), async (req, res) => 
             return res.status(403).json({ success: false, message: 'Not authorized to edit this assessment' });
         }
 
-        // Check if assessment has submissions (can't edit if students have submitted)
+        // Check if assessment has submissions
         const submissionCount = await CustomAssessmentSubmission.countDocuments({ assessment: assessmentId });
-        if (submissionCount > 0) {
-            return res.status(400).json({ 
-                success: false, 
-                message: 'Cannot edit assessment after students have submitted. Delete submissions first or create a new assessment.' 
-            });
-        }
 
         // Validate questions
         if (!questions || !Array.isArray(questions) || questions.length === 0) {
             return res.status(400).json({ success: false, message: 'At least one question is required' });
         }
 
-        // Update assessment fields
-        assessment.title = title || assessment.title;
-        assessment.description = description || assessment.description;
-        assessment.duration = duration !== undefined ? duration : assessment.duration;
-        assessment.passingScore = passingScore !== undefined ? passingScore : assessment.passingScore;
-
-        // Update questions
-        assessment.questions = questions.map(q => {
+        // Build normalized questions payload
+        const normalizedQuestions = questions.map(q => {
             const questionData = {
                 questionText: q.questionText,
                 questionType: q.questionType || 'multiple-choice',
@@ -542,6 +545,48 @@ router.put('/:assessmentId', protect, authorize('company'), async (req, res) => 
 
             return questionData;
         });
+
+        if (submissionCount > 0) {
+            // Preserve historical submissions by versioning the assessment for future takers.
+            assessment.isActive = false;
+            await assessment.save();
+
+            const newAssessment = await CustomAssessment.create({
+                company: assessment.company,
+                job: assessment.job,
+                title: title || assessment.title,
+                description: description || assessment.description,
+                duration: duration !== undefined ? duration : assessment.duration,
+                passingScore: passingScore !== undefined ? passingScore : assessment.passingScore,
+                questions: normalizedQuestions,
+                isActive: true
+            });
+
+            await Job.findByIdAndUpdate(assessment.job, {
+                customAssessment: newAssessment._id,
+                requireCustomAssessment: true
+            });
+
+            console.log('Assessment versioned:', { oldId: assessment._id, newId: newAssessment._id, submissionCount });
+
+            return res.json({
+                success: true,
+                message: 'Assessment updated successfully. A new version was created for future applicants.',
+                versioned: true,
+                assessment: {
+                    _id: newAssessment._id,
+                    title: newAssessment.title,
+                    questionCount: newAssessment.questions.length
+                }
+            });
+        }
+
+        // No submissions yet, safe to update in place.
+        assessment.title = title || assessment.title;
+        assessment.description = description || assessment.description;
+        assessment.duration = duration !== undefined ? duration : assessment.duration;
+        assessment.passingScore = passingScore !== undefined ? passingScore : assessment.passingScore;
+        assessment.questions = normalizedQuestions;
 
         await assessment.save();
         console.log('Assessment updated:', assessment._id);
