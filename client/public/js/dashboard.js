@@ -227,13 +227,23 @@ function createSecondaryButton(text, onclick, additionalClasses = '') {
 }
 
 function buildAvatarUrl(avatar) {
-    if (!avatar || !avatar.path) {
+    if (!avatar) {
         return '';
     }
 
-    const normalizedPath = avatar.path.startsWith('/') ? avatar.path : `/${avatar.path}`;
-    const cacheBuster = avatar.uploadedAt ? `?v=${new Date(avatar.uploadedAt).getTime()}` : '';
-    return `${normalizedPath}${cacheBuster}`;
+    // If avatar has data URL (Base64), use it directly
+    if (avatar.data && avatar.data.startsWith('data:')) {
+        return avatar.data;
+    }
+
+    // Fallback for legacy path-based avatars
+    if (avatar.path) {
+        const normalizedPath = avatar.path.startsWith('/') ? avatar.path : `/${avatar.path}`;
+        const cacheBuster = avatar.uploadedAt ? `?v=${new Date(avatar.uploadedAt).getTime()}` : '';
+        return `${normalizedPath}${cacheBuster}`;
+    }
+
+    return '';
 }
 
 // ============================================

@@ -137,7 +137,8 @@ const studentSchema = new mongoose.Schema({
   },
   avatar: {
     filename: String,
-    path: String,
+    data: String, // Base64 encoded image data (data:image/jpeg;base64,...)
+    mimeType: String, // e.g., 'image/jpeg', 'image/png'
     uploadedAt: Date,
   },
   portfolio: {

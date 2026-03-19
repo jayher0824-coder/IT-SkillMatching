@@ -247,17 +247,30 @@ router.post('/upload-avatar', protect, authorize('student'), uploadAvatar.single
     if (!req.file) {
       return res.status(400).json({ success: false, message: 'No file uploaded' });
     }
+    
     const student = await getOrCreateStudentProfile(req.user._id);
     
-    // Extract relative path from uploads directory
-    const relativePath = req.file.path.split('uploads')[1].replace(/\\/g, '/');
+    // Read file and convert to Base64
+    const fs = require('fs');
+    const fileData = fs.readFileSync(req.file.path);
+    const base64Data = fileData.toString('base64');
+    const mimeType = req.file.mimetype;
+    
+    // Store as data URL for direct use in img src
+    const dataUrl = `data:${mimeType};base64,${base64Data}`;
     
     student.avatar = {
       filename: req.file.originalname,
-      path: 'uploads' + relativePath,
+      data: dataUrl,
+      mimeType: mimeType,
       uploadedAt: new Date(),
     };
+    
     await student.save();
+    
+    // Delete the temporary file from disk after saving to DB
+    fs.unlinkSync(req.file.path);
+    
     res.json({ success: true, message: 'Avatar uploaded', data: student.avatar });
   } catch (err) {
     console.error(err);
