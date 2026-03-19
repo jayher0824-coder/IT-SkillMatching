@@ -1730,45 +1730,57 @@ async function loadCompanyDashboard() {
                                                         <span><i class="fas fa-map-marker-alt mr-1"></i>${job.location?.city || 'Remote'}</span>
                                                     </div>
                                                 </div>
-                                                <div class="flex space-x-2 ml-4">
-                                                    <button onclick="viewJobApplications('${job._id}')" 
-                                                        class="text-[#56AE67] hover:text-[#2d6b3c] dark:text-[#6bc481] dark:hover:text-[#7dd091] text-sm"
-                                                        title="View Applications">
-                                                        <i class="fas fa-users"></i>
-                                                    </button>
-                                                    ${job.customAssessment ? `
-                                                        <button onclick="viewAssessmentResults('${job._id}')" 
-                                                            class="text-purple-600 hover:text-purple-800 dark:text-purple-400 dark:hover:text-purple-300 text-sm"
-                                                            title="View Assessment Results">
-                                                            <i class="fas fa-chart-bar"></i>
+                                                <div class="ml-4 min-w-[220px]">
+                                                    <div class="mb-2 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Actions</div>
+                                                    <div class="flex flex-wrap gap-2 justify-end">
+                                                        <button onclick="viewJobApplications('${job._id}')" 
+                                                            class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-300 dark:hover:bg-emerald-900/50 text-xs font-medium transition"
+                                                            title="View Applications">
+                                                            <i class="fas fa-users"></i>
+                                                            <span>Applicants</span>
                                                         </button>
-                                                        <button onclick="openEditAssessmentModal('${job._id}', '${job.customAssessment && typeof job.customAssessment === 'object' ? job.customAssessment._id : (job.customAssessment || '')}')" 
-                                                            class="text-amber-600 hover:text-amber-800 dark:text-amber-400 dark:hover:text-amber-300 text-sm"
-                                                            title="Edit Assessment">
-                                                            <i class="fas fa-edit"></i>
+
+                                                        ${job.customAssessment ? `
+                                                            <button onclick="viewAssessmentResults('${job._id}')" 
+                                                                class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-violet-50 text-violet-700 hover:bg-violet-100 dark:bg-violet-900/30 dark:text-violet-300 dark:hover:bg-violet-900/50 text-xs font-medium transition"
+                                                                title="View Assessment Results">
+                                                                <i class="fas fa-chart-bar"></i>
+                                                                <span>Results</span>
+                                                            </button>
+                                                            <button onclick="openEditAssessmentModal('${job._id}', '${job.customAssessment && typeof job.customAssessment === 'object' ? job.customAssessment._id : (job.customAssessment || '')}')" 
+                                                                class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-amber-50 text-amber-700 hover:bg-amber-100 dark:bg-amber-900/30 dark:text-amber-300 dark:hover:bg-amber-900/50 text-xs font-medium transition"
+                                                                title="Edit Assessment">
+                                                                <i class="fas fa-edit"></i>
+                                                                <span>Edit Assessment</span>
+                                                            </button>
+                                                            <button onclick="deleteCustomAssessment('${job.customAssessment && typeof job.customAssessment === 'object' ? job.customAssessment._id : (job.customAssessment || '')}')" 
+                                                                class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-rose-50 text-rose-700 hover:bg-rose-100 dark:bg-rose-900/30 dark:text-rose-300 dark:hover:bg-rose-900/50 text-xs font-medium transition"
+                                                                title="Delete Assessment">
+                                                                <i class="fas fa-trash"></i>
+                                                                <span>Delete Assessment</span>
+                                                            </button>
+                                                        ` : `
+                                                            <button onclick="openCreateAssessmentModal('${job._id}')" 
+                                                                class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-blue-50 text-blue-700 hover:bg-blue-100 dark:bg-blue-900/30 dark:text-blue-300 dark:hover:bg-blue-900/50 text-xs font-medium transition"
+                                                                title="Create Custom Assessment">
+                                                                <i class="fas fa-clipboard-list"></i>
+                                                                <span>Create Assessment</span>
+                                                            </button>
+                                                        `}
+
+                                                        <button onclick="editJob('${job._id}')" 
+                                                            class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600 text-xs font-medium transition"
+                                                            title="Edit Job">
+                                                            <i class="fas fa-pen"></i>
+                                                            <span>Edit Job</span>
                                                         </button>
-                                                        <button onclick="deleteCustomAssessment('${job.customAssessment && typeof job.customAssessment === 'object' ? job.customAssessment._id : (job.customAssessment || '')}')" 
-                                                            class="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 text-sm"
-                                                            title="Delete Assessment">
+                                                        <button onclick="deleteJob('${job._id}', '${job.title}')" 
+                                                            class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-red-50 text-red-700 hover:bg-red-100 dark:bg-red-900/30 dark:text-red-300 dark:hover:bg-red-900/50 text-xs font-medium transition"
+                                                            title="Delete Job">
                                                             <i class="fas fa-trash"></i>
+                                                            <span>Delete Job</span>
                                                         </button>
-                                                    ` : `
-                                                        <button onclick="openCreateAssessmentModal('${job._id}')" 
-                                                            class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 text-sm"
-                                                            title="Create Custom Assessment">
-                                                            <i class="fas fa-clipboard-list"></i>
-                                                        </button>
-                                                    `}
-                                                    <button onclick="editJob('${job._id}')" 
-                                                        class="text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-300 text-sm"
-                                                        title="Edit Job">
-                                                        <i class="fas fa-edit"></i>
-                                                    </button>
-                                                    <button onclick="deleteJob('${job._id}', '${job.title}')" 
-                                                        class="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 text-sm"
-                                                        title="Delete Job">
-                                                        <i class="fas fa-trash"></i>
-                                                    </button>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
