@@ -948,21 +948,42 @@ async function loadStudentDashboard() {
 
     try {
         // Load student profile and data
-        const [profileResponse, jobsResponse, applicationsResponse] = await Promise.all([
+        const [profileResponse, jobsResponse, applicationsResponse, assessmentResultsResponse] = await Promise.all([
             apiCall('/students/profile').catch(() => ({ success: false, data: null })),
             apiCall('/jobs').catch(() => ({ success: false, data: [] })),
-            apiCall('/students/applications').catch(() => ({ success: false, data: [] }))
+            apiCall('/students/applications').catch(() => ({ success: false, data: [] })),
+            apiCall('/assessments/results/me').catch(() => ({ success: false, data: [] }))
         ]);
 
         const studentProfile = profileResponse.success ? profileResponse.data : null;
         const jobs = (jobsResponse.success && jobsResponse.data) ? (Array.isArray(jobsResponse.data) ? jobsResponse.data : []) : [];
         const applications = applicationsResponse.success ? applicationsResponse.data : [];
+        const assessmentResults = assessmentResultsResponse.success ? (assessmentResultsResponse.data || []) : [];
         
         // Filter out jobs with missing company data to prevent errors
         const validJobs = jobs.filter(job => job && job.company && job.company.companyName);
         
         // Filter out applications with null or missing job references
         const validApplications = applications.filter(app => app && app.job && app.job.title);
+
+        // Build accurate student dashboard metrics
+        const verifiedSkills = (studentProfile?.skills || []).filter(skill => skill && skill.verified);
+        const pendingApplications = validApplications.filter(app => app.status === 'pending').length;
+        const shortlistedApplications = validApplications.filter(app => app.status === 'shortlisted').length;
+        const hiredApplications = validApplications.filter(app => app.status === 'hired').length;
+        const passedAssessments = assessmentResults.filter(result => result && result.passed).length;
+
+        const avgAssessmentScore = assessmentResults.length > 0
+            ? Math.round(assessmentResults.reduce((sum, result) => sum + (result.percentage || 0), 0) / assessmentResults.length)
+            : null;
+
+        const bestAssessmentScore = assessmentResults.length > 0
+            ? Math.max(...assessmentResults.map(result => result.percentage || 0))
+            : null;
+
+        const assessmentDisplayScore = avgAssessmentScore !== null
+            ? avgAssessmentScore
+            : (studentProfile?.assessmentScore?.overall || 0);
 
         dashboardContainer.innerHTML = `
             <div class="flex flex-col md:flex-row h-screen bg-gray-50 dark:bg-gray-900">
@@ -1051,8 +1072,8 @@ async function loadStudentDashboard() {
                         </div>
 
                 <!-- Stats Cards -->
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6 mb-4 md:mb-8">
-                    <div class="bg-white dark:bg-gray-800 p-3 md:p-6 rounded-lg shadow">
+                <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 md:gap-6 mb-4 md:mb-8">
+                    <div class="bg-white dark:bg-gray-800 p-4 md:p-6 rounded-xl shadow border border-gray-100 dark:border-gray-700">
                         <div class="flex flex-col md:flex-row items-start md:items-center">
                             <div class="p-2 md:p-3 bg-blue-100 dark:bg-blue-900/30 rounded-full mb-2 md:mb-0">
                                 <i class="fas fa-briefcase text-blue-600 dark:text-blue-400 text-base md:text-xl"></i>
@@ -1060,10 +1081,11 @@ async function loadStudentDashboard() {
                             <div class="md:ml-4">
                                 <p class="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">${validJobs.length}</p>
                                 <p class="text-gray-600 dark:text-gray-300 text-xs md:text-sm">Available Jobs</p>
+                                <p class="text-[11px] md:text-xs text-gray-500 dark:text-gray-400 mt-1">Active opportunities you can apply to now</p>
                             </div>
                         </div>
                     </div>
-                    <div class="bg-white dark:bg-gray-800 p-3 md:p-6 rounded-lg shadow">
+                    <div class="bg-white dark:bg-gray-800 p-4 md:p-6 rounded-xl shadow border border-gray-100 dark:border-gray-700">
                         <div class="flex flex-col md:flex-row items-start md:items-center">
                             <div class="p-2 md:p-3 bg-green-100 dark:bg-green-900/30 rounded-full mb-2 md:mb-0">
                                 <i class="fas fa-paper-plane text-green-600 dark:text-green-400 text-base md:text-xl"></i>
@@ -1071,28 +1093,31 @@ async function loadStudentDashboard() {
                             <div class="md:ml-4">
                                 <p class="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">${validApplications.length}</p>
                                 <p class="text-gray-600 dark:text-gray-300 text-xs md:text-sm">Applications</p>
+                                <p class="text-[11px] md:text-xs text-gray-500 dark:text-gray-400 mt-1">${pendingApplications} pending • ${shortlistedApplications} shortlisted • ${hiredApplications} hired</p>
                             </div>
                         </div>
                     </div>
-                    <div class="bg-white dark:bg-gray-800 p-3 md:p-6 rounded-lg shadow">
+                    <div class="bg-white dark:bg-gray-800 p-4 md:p-6 rounded-xl shadow border border-gray-100 dark:border-gray-700">
                         <div class="flex flex-col md:flex-row items-start md:items-center">
                             <div class="p-2 md:p-3 bg-purple-100 dark:bg-purple-900/30 rounded-full mb-2 md:mb-0">
                                 <i class="fas fa-chart-line text-purple-600 dark:text-purple-400 text-base md:text-xl"></i>
                             </div>
                             <div class="md:ml-4">
-                                <p class="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">${studentProfile?.assessmentScore?.overall || 0}%</p>
+                                <p class="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">${assessmentDisplayScore}%</p>
                                 <p class="text-gray-600 dark:text-gray-300 text-xs md:text-sm">Assessment Score</p>
+                                <p class="text-[11px] md:text-xs text-gray-500 dark:text-gray-400 mt-1">${assessmentResults.length > 0 ? `Avg of ${assessmentResults.length} attempts${bestAssessmentScore !== null ? ` • Best ${bestAssessmentScore}%` : ''}` : 'No completed assessments yet'}</p>
                             </div>
                         </div>
                     </div>
-                    <div class="bg-white dark:bg-gray-800 p-3 md:p-6 rounded-lg shadow">
+                    <div class="bg-white dark:bg-gray-800 p-4 md:p-6 rounded-xl shadow border border-gray-100 dark:border-gray-700">
                         <div class="flex flex-col md:flex-row items-start md:items-center">
                             <div class="p-2 md:p-3 bg-yellow-100 dark:bg-yellow-900/30 rounded-full mb-2 md:mb-0">
                                 <i class="fas fa-skills text-yellow-600 dark:text-yellow-400 text-base md:text-xl"></i>
                             </div>
                             <div class="md:ml-4">
-                                <p class="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">${studentProfile?.skills?.length || 0}</p>
+                                <p class="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">${verifiedSkills.length}</p>
                                 <p class="text-gray-600 dark:text-gray-300 text-xs md:text-sm">Verified Skills</p>
+                                <p class="text-[11px] md:text-xs text-gray-500 dark:text-gray-400 mt-1">${passedAssessments > 0 ? `${passedAssessments} passed assessments unlocked these skills` : 'Complete assessments to verify skills'}</p>
                             </div>
                         </div>
                     </div>
