@@ -201,20 +201,16 @@
             const desc = el.querySelector('.test-desc').value.trim();
             const isHidden = el.querySelector('.test-hidden').checked;
 
-            if (input && expectedOutput) {
+            // Keep partially filled test cases instead of blocking creation.
+            if (input || expectedOutput) {
                 testCases.push({
-                    input,
-                    expectedOutput,
+                    input: input || '',
+                    expectedOutput: expectedOutput || '',
                     description: desc || 'Test case',
                     isHidden
                 });
             }
         });
-
-        if (testCases.length === 0) {
-            alert('Please add at least one test case');
-            return;
-        }
 
         const question = {
             type: 'coding',

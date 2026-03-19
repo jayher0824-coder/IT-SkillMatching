@@ -943,12 +943,6 @@ router.post('/create-question', protect, authorize('admin', 'company'), async (r
           message: 'Programming language is required for coding questions'
         });
       }
-      if (!testCases || testCases.length === 0) {
-        return res.status(400).json({
-          success: false,
-          message: 'At least one test case is required for coding questions'
-        });
-      }
     }
 
     // Create question object

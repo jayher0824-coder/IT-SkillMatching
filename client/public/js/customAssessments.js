@@ -118,7 +118,12 @@ function addAssessmentQuestion() {
     const questionHTML = `
         <div class="question-item bg-gray-100 dark:bg-gray-700 rounded-lg p-4 mb-4" data-question-id="${questionCounter}">
             <div class="flex justify-between items-start mb-3">
-                <h4 class="font-medium text-gray-900 dark:text-white">Question ${questionCounter}</h4>
+                <div class="flex items-center gap-2">
+                    <h4 class="font-medium text-gray-900 dark:text-white">Question ${questionCounter}</h4>
+                    <span class="draft-badge hidden inline-flex items-center gap-1 px-2 py-1 bg-amber-100 dark:bg-amber-900 text-amber-800 dark:text-amber-200 rounded text-xs font-medium">
+                        <i class="fas fa-pencil"></i>Draft
+                    </span>
+                </div>
                 <button onclick="this.closest('.question-item').remove()" 
                     class="text-red-600 hover:text-red-800">
                     <i class="fas fa-trash"></i>
@@ -187,6 +192,9 @@ function toggleQuestionOptions(select) {
     
     if (select.value === 'short-answer') {
         optionsContainer.style.display = 'none';
+        // Hide draft badge for non-coding questions
+        const badge = questionItem.querySelector('.draft-badge');
+        if (badge) badge.classList.add('hidden');
     } else if (select.value === 'coding') {
         // Show coding challenge fields
         optionsContainer.innerHTML = `
@@ -225,7 +233,8 @@ function toggleQuestionOptions(select) {
                 <div>
                     <label class="block text-xs text-gray-600 dark:text-gray-400 mb-1">Test Cases (JSON Format)</label>
                     <textarea class="coding-test-cases w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg
-                           dark:bg-gray-600 dark:text-white" rows="3" placeholder='[{"input": "5", "output": "120"}]'></textarea>
+                           dark:bg-gray-600 dark:text-white" rows="3" placeholder='[{"input": "5", "output": "120"}]' 
+                           onchange="updateDraftBadge(this)" oninput="updateDraftBadge(this)"></textarea>
                 </div>
                 <div>
                     <label class="block text-xs text-gray-600 dark:text-gray-400 mb-1">Time Limit (seconds)</label>
@@ -234,6 +243,12 @@ function toggleQuestionOptions(select) {
                 </div>
             </div>
         `;
+        // Show draft badge and update its status
+        const badge = questionItem.querySelector('.draft-badge');
+        if (badge) {
+            badge.classList.remove('hidden');
+            updateDraftBadge(questionItem.querySelector('.coding-test-cases'));
+        }
     } else if (select.value === 'true-false') {
         optionsContainer.innerHTML = `
             <label class="block text-xs text-gray-600 dark:text-gray-400 mb-2">Answer Options</label>
@@ -244,6 +259,9 @@ function toggleQuestionOptions(select) {
                        dark:bg-gray-600 dark:text-white" value="False" readonly>
             </div>
         `;
+        // Hide draft badge for non-coding questions
+        const badge = questionItem.querySelector('.draft-badge');
+        if (badge) badge.classList.add('hidden');
     } else {
         optionsContainer.innerHTML = `
             <label class="block text-xs text-gray-600 dark:text-gray-400 mb-2">Answer Options</label>
@@ -258,6 +276,37 @@ function toggleQuestionOptions(select) {
                        dark:bg-gray-600 dark:text-white" placeholder="Option D">
             </div>
         `;
+        // Hide draft badge for non-coding questions
+        const badge = questionItem.querySelector('.draft-badge');
+        if (badge) badge.classList.add('hidden');
+    }
+}
+
+// Update draft badge visibility based on test cases validity
+function updateDraftBadge(testCasesElement) {
+    const questionItem = testCasesElement.closest('.question-item');
+    const badge = questionItem.querySelector('.draft-badge');
+    if (!badge) return;
+    
+    const testCasesStr = testCasesElement.value.trim();
+    let hasValidTestCases = false;
+    
+    if (testCasesStr) {
+        try {
+            const parsed = JSON.parse(testCasesStr);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+                hasValidTestCases = true;
+            }
+        } catch (e) {
+            // Invalid JSON
+        }
+    }
+    
+    // Show badge if no valid test cases, hide if valid
+    if (hasValidTestCases) {
+        badge.classList.add('hidden');
+    } else {
+        badge.classList.remove('hidden');
     }
 }
 
@@ -302,20 +351,17 @@ async function saveCustomAssessment(jobId) {
             const testCasesStr = item.querySelector('.coding-test-cases').value.trim();
             const timeLimit = parseInt(item.querySelector('.coding-time-limit').value) || 30;
 
-            if (!testCasesStr) {
-                showToast(`Coding Challenge ${index + 1} needs test cases`, 'error');
-                hasError = true;
-                return;
-            }
-
-            let testCases;
-            try {
-                testCases = JSON.parse(testCasesStr);
-                if (!Array.isArray(testCases)) throw new Error();
-            } catch (e) {
-                showToast(`Coding Challenge ${index + 1} has invalid test case format (must be JSON array)`, 'error');
-                hasError = true;
-                return;
+            // Make test cases optional and tolerant of invalid JSON for easier authoring.
+            let testCases = [];
+            if (testCasesStr) {
+                try {
+                    const parsed = JSON.parse(testCasesStr);
+                    if (Array.isArray(parsed)) {
+                        testCases = parsed;
+                    }
+                } catch (e) {
+                    showToast(`Coding Challenge ${index + 1}: invalid test case JSON ignored. Question will still be saved.`, 'info');
+                }
             }
 
             questions.push({
