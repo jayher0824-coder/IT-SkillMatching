@@ -2290,6 +2290,23 @@
         function App() {
             const { user, loading, logout } = useAuth();
             const [page, setPage] = useState('dashboard');
+            const [unreadNotifications, setUnreadNotifications] = useState(0);
+            
+            // Poll for unread notifications
+            useEffect(() => {
+                const fetchUnreadCount = () => {
+                    axios.get(`${API_BASE}/notifications`)
+                        .then(res => {
+                            const unreadCount = (res.data.data || []).filter(n => !n.read).length;
+                            setUnreadNotifications(unreadCount);
+                        })
+                        .catch(err => console.error('Error fetching notifications:', err));
+                };
+                
+                fetchUnreadCount();
+                const intervalId = setInterval(fetchUnreadCount, 10000);
+                return () => clearInterval(intervalId);
+            }, []);
             
             if (loading) {
                 return (
@@ -2327,8 +2344,28 @@
                         <a className={`nav-item ${page === 'messages' ? 'active' : ''}`} onClick={() => setPage('messages')}>
                             <i className="fas fa-envelope" style={{ marginRight: '10px' }}></i> Messages
                         </a>
-                        <a className={`nav-item ${page === 'notifications' ? 'active' : ''}`} onClick={() => setPage('notifications')}>
+                        <a className={`nav-item ${page === 'notifications' ? 'active' : ''}`} onClick={() => setPage('notifications')} style={{ position: 'relative' }}>
                             <i className="fas fa-bell" style={{ marginRight: '10px' }}></i> Notifications
+                            {unreadNotifications > 0 && (
+                                <span style={{
+                                    position: 'absolute',
+                                    right: '10px',
+                                    top: '50%',
+                                    transform: 'translateY(-50%)',
+                                    backgroundColor: '#ef4444',
+                                    color: 'white',
+                                    borderRadius: '50%',
+                                    width: '24px',
+                                    height: '24px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    fontSize: '12px',
+                                    fontWeight: 'bold'
+                                }}>
+                                    {unreadNotifications > 99 ? '99+' : unreadNotifications}
+                                </span>
+                            )}
                         </a>
                         <a className={`nav-item ${page === 'password-reset-requests' ? 'active' : ''}`} onClick={() => setPage('password-reset-requests')}>
                             <i className="fas fa-key" style={{ marginRight: '10px' }}></i> Password Reset
@@ -2357,10 +2394,28 @@
                     
                     {/* Main content */}
                     <div className="admin-main">
-                        <div style={{ marginBottom: '20px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                             <p style={{ color: '#6b7280', fontSize: '14px' }}>
                                 Welcome, <strong>{user.firstName} {user.lastName}</strong>
                             </p>
+                            {unreadNotifications > 0 && (
+                                <div style={{
+                                    padding: '8px 16px',
+                                    backgroundColor: '#fef3c7',
+                                    border: '1px solid #fcd34d',
+                                    borderRadius: '6px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.3s'
+                                }} onClick={() => setPage('notifications')}>
+                                    <i className="fas fa-bell" style={{ color: '#f59e0b', fontSize: '16px' }}></i>
+                                    <span style={{ color: '#92400e', fontSize: '14px', fontWeight: '500' }}>
+                                        {unreadNotifications} new {unreadNotifications === 1 ? 'notification' : 'notifications'}
+                                    </span>
+                                </div>
+                            )}
                         </div>
                         
                         {page === 'dashboard' && <DashboardStats />}
