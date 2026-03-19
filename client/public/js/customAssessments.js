@@ -350,6 +350,7 @@ async function saveCustomAssessment(jobId) {
             const codeTemplate = item.querySelector('.coding-template').value.trim();
             const testCasesStr = item.querySelector('.coding-test-cases').value.trim();
             const timeLimit = parseInt(item.querySelector('.coding-time-limit').value) || 30;
+            const correctAnswer = (item.querySelector('.correct-answer')?.value || '').trim();
 
             // Make test cases optional and tolerant of invalid JSON for easier authoring.
             let testCases = [];
@@ -373,6 +374,7 @@ async function saveCustomAssessment(jobId) {
                 codeTemplate,
                 testCases,
                 timeLimit,
+                correctAnswer,
                 points: 5
             });
         } else {
@@ -1251,6 +1253,7 @@ async function updateCustomAssessment(assessmentId) {
             const codeTemplate = item.querySelector('.coding-template').value.trim();
             const testCasesStr = item.querySelector('.coding-test-cases').value.trim();
             const timeLimit = parseInt(item.querySelector('.coding-time-limit').value) || 30;
+            const correctAnswer = (item.querySelector('.correct-answer')?.value || '').trim();
 
             if (!testCasesStr) {
                 showToast(`Coding Challenge ${index + 1} needs test cases`, 'error');
@@ -1277,6 +1280,7 @@ async function updateCustomAssessment(assessmentId) {
                 codeTemplate,
                 testCases,
                 timeLimit,
+                correctAnswer,
                 points: 5
             });
         } else {

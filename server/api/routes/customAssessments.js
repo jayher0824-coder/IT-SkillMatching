@@ -163,6 +163,9 @@ router.post('/submit', protect, authorize('student'), async (req, res) => {
     try {
         const { assessmentId, jobId, answers, timeSpent } = req.body;
 
+        const normalizeObjectiveAnswer = (value) => String(value || '').trim().toLowerCase().replace(/\s+/g, ' ');
+        const normalizeCodeAnswer = (value) => String(value || '').replace(/\s+/g, '');
+
         // Get the full assessment with correct answers
         const assessment = await CustomAssessment.findById(assessmentId);
         if (!assessment) {
@@ -208,8 +211,12 @@ router.post('/submit', protect, authorize('student'), async (req, res) => {
             let pointsEarned = 0;
 
             if (studentAnswer) {
-                if (question.questionType !== 'short-answer') {
-                    isCorrect = studentAnswer.answer === question.correctAnswer;
+                if (question.questionType === 'coding') {
+                    // For coding answers, ignore whitespace/newline formatting differences.
+                    isCorrect = normalizeCodeAnswer(studentAnswer.answer) === normalizeCodeAnswer(question.correctAnswer);
+                    pointsEarned = isCorrect ? question.points : 0;
+                } else if (question.questionType !== 'short-answer') {
+                    isCorrect = normalizeObjectiveAnswer(studentAnswer.answer) === normalizeObjectiveAnswer(question.correctAnswer);
                     pointsEarned = isCorrect ? question.points : 0;
                 } else {
                     isCorrect = null; // Needs manual review
