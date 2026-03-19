@@ -436,5 +436,6 @@ async function fetchAndUpdateNotifications() {
 // Make function available globally
 if (typeof window !== 'undefined') {
     window.fetchAndUpdateNotifications = window.fetchAndUpdateNotifications || fetchAndUpdateNotifications;
+    window.initializeNotificationBell = window.initializeNotificationBell || initializeNotificationBell;
 }
 

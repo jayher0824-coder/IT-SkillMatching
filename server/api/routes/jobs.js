@@ -516,15 +516,21 @@ router.put('/:id/applications/:applicationId', protect, authorize('company'), as
       // Notify student about status change
       try {
         const statusMessages = {
+          'reviewed': 'is being reviewed',
           'reviewing': 'is being reviewed',
+          'shortlisted': 'has been shortlisted!',
           'interviewed': 'has moved to interview stage',
           'accepted': 'has been accepted! Congratulations!',
+          'hired': 'has been hired! Congratulations!',
           'rejected': 'was not selected this time'
         };
 
         if (student.user) {
+          console.log(`Creating notification for student ${student.user} - Application status: ${status}`);
+          const recipientId = student.user.toString ? student.user.toString() : student.user;
+          
           await NotificationService.create({
-            recipient: student.user,
+            recipient: recipientId,
             type: 'application_status',
             title: 'Application Status Update',
             message: `Your application for ${job.title} ${statusMessages[status] || 'has been updated'}`,
@@ -536,9 +542,11 @@ router.put('/:id/applications/:applicationId', protect, authorize('company'), as
               companyName: job.company.companyName
             }
           });
+          console.log(`Notification created successfully for student ${recipientId}`);
         }
       } catch (notifError) {
         console.error('Error creating application status notification:', notifError);
+        console.error('Student data:', { studentId: student._id, userId: student.user });
       }
     }
 
