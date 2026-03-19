@@ -228,21 +228,25 @@ function createSecondaryButton(text, onclick, additionalClasses = '') {
 
 function buildAvatarUrl(avatar) {
     if (!avatar) {
+        console.log('buildAvatarUrl: No avatar data');
         return '';
     }
 
     // If avatar has data URL (Base64), use it directly
     if (avatar.data && avatar.data.startsWith('data:')) {
+        console.log('buildAvatarUrl: Using Base64 data URL');
         return avatar.data;
     }
 
     // Fallback for legacy path-based avatars
     if (avatar.path) {
+        console.log('buildAvatarUrl: Using legacy path-based avatar');
         const normalizedPath = avatar.path.startsWith('/') ? avatar.path : `/${avatar.path}`;
         const cacheBuster = avatar.uploadedAt ? `?v=${new Date(avatar.uploadedAt).getTime()}` : '';
         return `${normalizedPath}${cacheBuster}`;
     }
 
+    console.log('buildAvatarUrl: No usable avatar data', avatar);
     return '';
 }
 
@@ -1029,7 +1033,7 @@ async function loadStudentDashboard() {
                             <div class="flex items-center justify-between gap-4">
                                 <div class="flex items-center space-x-4 min-w-0">
                                     <div class="w-16 h-16 rounded-full overflow-hidden border-2 border-white hidden md:block bg-white flex-shrink-0">
-                                        ${studentProfile?.avatar?.path ? 
+                                        ${studentProfile?.avatar && (studentProfile?.avatar?.path || studentProfile?.avatar?.data) ? 
                                             `<img src="${buildAvatarUrl(studentProfile.avatar)}" alt="Profile" class="w-full h-full object-cover" onerror="this.onerror=null; this.style.display='none'; this.parentElement.innerHTML='<div class=\\'w-full h-full flex items-center justify-center bg-gradient-to-br from-[#56AE67] to-[#3d8b4f]\\'><span class=\\'text-white text-xl font-bold\\'>${studentProfile.firstName?.charAt(0) || 'U'}${studentProfile.lastName?.charAt(0) || ''}</span></div>';">` :
                                             `<div class="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#56AE67] to-[#3d8b4f]">
                                                 <span class="text-white text-xl font-bold">${studentProfile.firstName?.charAt(0) || 'U'}${studentProfile.lastName?.charAt(0) || ''}</span>
@@ -6369,7 +6373,7 @@ async function loadStudentProfile() {
             <div class="bg-[#56AE67] rounded-lg p-8 mb-6 text-white shadow-xl" style="background-color: #56AE67 !important;">
                 <div class="flex items-center space-x-6">
                     <div class="w-32 h-32 rounded-full overflow-hidden bg-white border-4 border-white shadow-lg flex-shrink-0">
-                        ${profile.avatar && profile.avatar.path ? 
+                        ${profile.avatar && (profile.avatar.path || profile.avatar.data) ? 
                             `<img src="${buildAvatarUrl(profile.avatar)}" alt="Profile Picture" class="w-full h-full object-cover" onerror="this.onerror=null; this.style.display='none'; this.parentElement.innerHTML='<div class=\\'w-full h-full flex items-center justify-center bg-gradient-to-br from-[#56AE67] to-[#3d8b4f]\\'><span class=\\'text-white text-4xl font-bold\\'>${profile.firstName?.charAt(0) || 'U'}${profile.lastName?.charAt(0) || ''}</span></div>';">` :
                             `<div class="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#56AE67] to-[#3d8b4f]">
                                 <span class="text-white text-4xl font-bold">${profile.firstName?.charAt(0) || 'U'}${profile.lastName?.charAt(0) || ''}</span>
@@ -7224,12 +7228,17 @@ window.uploadAvatar = async function(event) {
         });
         
         const data = await response.json();
+        console.log('Avatar upload response:', data);
         
         if (data.success) {
+            console.log('Avatar uploaded successfully. Data:', data.data);
             showToast('Profile picture uploaded successfully!', 'success');
             closeModal();
-            // Reload profile to show new avatar
-            loadStudentProfile();
+            // Add small delay to ensure modal is closed, then reload profile
+            setTimeout(() => {
+                console.log('Reloading student profile after avatar upload...');
+                loadStudentProfile();
+            }, 500);
         } else {
             showToast(data.message || 'Failed to upload avatar', 'error');
             if (uploadBtn) {
