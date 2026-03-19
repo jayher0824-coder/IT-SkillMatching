@@ -5,7 +5,6 @@ const bcrypt = require('bcryptjs');
 const User = require('../../database/models/User');
 const emailService = require('../../services/emailService');
 const NotificationService = require('../../services/notificationService');
-const NotificationService = require('../../services/notificationService');
 
 // Security constants
 const MAX_REQUESTS_PER_DAY = 999; // Effectively unlimited
