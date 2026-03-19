@@ -1,4 +1,108 @@
 <!-- Code Editor for Assessment Questions -->
+<style>
+    /* Global scrollbar styling for code editor component */
+    #code-editor {
+        scrollbar-width: thin;
+        scrollbar-color: #4b5563 #1a202c;
+    }
+    
+    #code-editor::-webkit-scrollbar {
+        width: 10px;
+    }
+    
+    #code-editor::-webkit-scrollbar-track {
+        background: #1a202c;
+        border-radius: 5px;
+    }
+    
+    #code-editor::-webkit-scrollbar-thumb {
+        background: #4b5563;
+        border-radius: 5px;
+        border: 2px solid #1a202c;
+    }
+    
+    #code-editor::-webkit-scrollbar-thumb:hover {
+        background: #6b7280;
+    }
+
+    #test-cases-display {
+        scrollbar-width: thin;
+        scrollbar-color: #4b5563 #1a202c;
+    }
+
+    #test-cases-display::-webkit-scrollbar {
+        width: 10px;
+    }
+
+    #test-cases-display::-webkit-scrollbar-track {
+        background: #1a202c;
+        border-radius: 5px;
+    }
+
+    #test-cases-display::-webkit-scrollbar-thumb {
+        background: #4b5563;
+        border-radius: 5px;
+        border: 2px solid #1a202c;
+    }
+
+    #test-cases-display::-webkit-scrollbar-thumb:hover {
+        background: #6b7280;
+    }
+
+    #test-results-table {
+        scrollbar-width: thin;
+        scrollbar-color: #4b5563 #111827;
+    }
+
+    #test-results-table::-webkit-scrollbar {
+        width: 10px;
+        height: 10px;
+    }
+
+    #test-results-table::-webkit-scrollbar-track {
+        background: #111827;
+        border-radius: 5px;
+    }
+
+    #test-results-table::-webkit-scrollbar-thumb {
+        background: #4b5563;
+        border-radius: 5px;
+        border: 2px solid #111827;
+    }
+
+    #test-results-table::-webkit-scrollbar-thumb:hover {
+        background: #6b7280;
+    }
+
+    #execution-error, #direct-output {
+        scrollbar-width: thin;
+        scrollbar-color: #4b5563 #111827;
+    }
+
+    #execution-error::-webkit-scrollbar,
+    #direct-output::-webkit-scrollbar {
+        width: 10px;
+    }
+
+    #execution-error::-webkit-scrollbar-track,
+    #direct-output::-webkit-scrollbar-track {
+        background: #111827;
+        border-radius: 5px;
+    }
+
+    #execution-error::-webkit-scrollbar-thumb,
+    #direct-output::-webkit-scrollbar-thumb {
+        background: #4b5563;
+        border-radius: 5px;
+        border: 2px solid #111827;
+    }
+
+    #execution-error::-webkit-scrollbar-thumb:hover,
+    #direct-output::-webkit-scrollbar-thumb:hover {
+        background: #6b7280;
+    }
+</style>
+
 <div id="code-editor-container" style="display: none;" class="mt-6 p-6 bg-gray-900 rounded-lg border-2 border-gray-700">
     <div class="mb-4">
         <h4 class="text-lg font-semibold text-white mb-3">
@@ -27,56 +131,20 @@
     <!-- Code Editor -->
     <div class="mb-4">
         <label class="block text-gray-300 text-sm font-bold mb-2">Your Code</label>
-        <textarea id="code-editor" class="w-full h-64 px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg text-white font-mono text-sm focus:outline-none focus:border-blue-500 resize-none overflow-y-scroll" style="scrollbar-width: thin; scrollbar-color: #4b5563 #1a202c;" placeholder="Write your code here..."></textarea>
+        <textarea id="code-editor" class="w-full h-64 px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg text-white font-mono text-sm focus:outline-none focus:border-blue-500 resize-none" placeholder="Write your code here..." style="overflow-y: scroll;"></textarea>
         <small class="text-gray-500 mt-1 block">
             <i class="fas fa-info-circle mr-1"></i>
             Code will be executed in a sandboxed environment
         </small>
     </div>
 
-    <!-- Scrollbar Styling for Code Editor -->
-    <style>
-        #code-editor::-webkit-scrollbar {
-            width: 8px;
-        }
-        #code-editor::-webkit-scrollbar-track {
-            background: #1a202c;
-            border-radius: 4px;
-        }
-        #code-editor::-webkit-scrollbar-thumb {
-            background: #4b5563;
-            border-radius: 4px;
-        }
-        #code-editor::-webkit-scrollbar-thumb:hover {
-            background: #6b7280;
-        }
-    </style>
-
     <!-- Test Cases Display -->
     <div class="mb-4" id="test-cases-container" style="display: none;">
         <label class="block text-gray-300 text-sm font-bold mb-2">Test Cases</label>
-        <div id="test-cases-display" class="space-y-2 max-h-40 overflow-y-auto" style="scrollbar-width: thin; scrollbar-color: #4b5563 #1a202c;">
+        <div id="test-cases-display" class="space-y-2 max-h-40 overflow-y-scroll">
             <!-- Test cases will be populated here -->
         </div>
     </div>
-
-    <!-- Scrollbar Styling for Test Cases -->
-    <style>
-        #test-cases-display::-webkit-scrollbar {
-            width: 8px;
-        }
-        #test-cases-display::-webkit-scrollbar-track {
-            background: #1a202c;
-            border-radius: 4px;
-        }
-        #test-cases-display::-webkit-scrollbar-thumb {
-            background: #4b5563;
-            border-radius: 4px;
-        }
-        #test-cases-display::-webkit-scrollbar-thumb:hover {
-            background: #6b7280;
-        }
-    </style>
 
     <!-- Action Buttons -->
     <div class="flex gap-3 mb-4">
@@ -99,7 +167,7 @@
         </h5>
 
         <!-- Test Results Table -->
-        <div id="test-results-table" style="display: none; scrollbar-width: thin; scrollbar-color: #4b5563 #111827;" class="overflow-x-auto overflow-y-auto mb-4 max-h-60">
+        <div id="test-results-table" class="overflow-auto mb-4 max-h-60">
             <table class="w-full text-sm text-left text-gray-300">
                 <thead class="text-xs uppercase bg-gray-700 text-gray-100 sticky top-0">
                     <tr>
@@ -116,77 +184,17 @@
             </table>
         </div>
 
-        <!-- Scrollbar Styling for Test Results -->
-        <style>
-            #test-results-table::-webkit-scrollbar {
-                width: 8px;
-                height: 8px;
-            }
-            #test-results-table::-webkit-scrollbar-track {
-                background: #111827;
-                border-radius: 4px;
-            }
-            #test-results-table::-webkit-scrollbar-thumb {
-                background: #4b5563;
-                border-radius: 4px;
-            }
-            #test-results-table::-webkit-scrollbar-thumb:hover {
-                background: #6b7280;
-            }
-        </style>
-
         <!-- Execution Errors -->
-        <div id="execution-error" style="display: none;" class="p-3 bg-red-900/30 border border-red-600 rounded-lg mb-3 overflow-auto max-h-48" style="scrollbar-width: thin; scrollbar-color: #7f1d1d #111827;">
+        <div id="execution-error" style="display: none;" class="p-3 bg-red-900/30 border border-red-600 rounded-lg mb-3 overflow-auto max-h-48">
             <p class="text-red-400 font-semibold mb-1">Error:</p>
             <pre id="error-message" class="text-red-300 text-xs overflow-x-auto"></pre>
         </div>
 
         <!-- Direct Output -->
-        <div id="direct-output" style="display: none;" class="p-3 bg-gray-700 rounded-lg overflow-auto max-h-48" style="scrollbar-width: thin; scrollbar-color: #4b5563 #111827;">
+        <div id="direct-output" style="display: none;" class="p-3 bg-gray-700 rounded-lg overflow-auto max-h-48">
             <p class="text-gray-400 font-semibold mb-2">Output:</p>
             <pre id="output-content" class="text-green-400 text-xs overflow-x-auto font-mono"></pre>
         </div>
-
-        <!-- Scrollbar Styling for Output Areas -->
-        <style>
-            #execution-error::-webkit-scrollbar,
-            #direct-output::-webkit-scrollbar {
-                width: 8px;
-                height: 8px;
-            }
-            #execution-error::-webkit-scrollbar-track,
-            #direct-output::-webkit-scrollbar-track {
-                background: #111827;
-                border-radius: 4px;
-            }
-            #execution-error::-webkit-scrollbar-thumb,
-            #direct-output::-webkit-scrollbar-thumb {
-                background: #4b5563;
-                border-radius: 4px;
-            }
-            #execution-error::-webkit-scrollbar-thumb:hover,
-            #direct-output::-webkit-scrollbar-thumb:hover {
-                background: #6b7280;
-            }
-            #error-message::-webkit-scrollbar,
-            #output-content::-webkit-scrollbar {
-                width: 6px;
-                height: 6px;
-            }
-            #error-message::-webkit-scrollbar-track,
-            #output-content::-webkit-scrollbar-track {
-                background: transparent;
-            }
-            #error-message::-webkit-scrollbar-thumb,
-            #output-content::-webkit-scrollbar-thumb {
-                background: #6b7280;
-                border-radius: 3px;
-            }
-            #error-message::-webkit-scrollbar-thumb:hover,
-            #output-content::-webkit-scrollbar-thumb:hover {
-                background: #9ca3af;
-            }
-        </style>
 
         <!-- Test Summary -->
         <div id="test-summary" style="display: none;" class="mt-3 p-3 bg-blue-900/30 border border-blue-600 rounded-lg">
