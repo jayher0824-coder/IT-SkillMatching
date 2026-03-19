@@ -1085,6 +1085,21 @@
                     .finally(() => setLoading(false));
             };
             
+            const handleToggleRead = async (notificationId, isCurrentlyRead) => {
+                try {
+                    if (isCurrentlyRead) {
+                        // For now, we can only mark as read via API, not unread
+                        console.log('Notification already read');
+                        return;
+                    }
+                    
+                    await axios.put(`${API_BASE}/notifications/${notificationId}/read`);
+                    fetchNotifications();
+                } catch (err) {
+                    console.error('Error updating notification:', err);
+                }
+            };
+            
             useEffect(() => {
                 fetchNotifications();
 
@@ -1144,16 +1159,25 @@
                                                 {new Date(notif.createdAt).toLocaleDateString()} {new Date(notif.createdAt).toLocaleTimeString()}
                                             </div>
                                         </div>
-                                        <span style={{ 
-                                            padding: '4px 8px', 
-                                            borderRadius: '4px',
-                                            fontSize: '11px',
-                                            fontWeight: '600',
-                                            backgroundColor: notif.read ? '#e5e7eb' : '#0ea5e9',
-                                            color: notif.read ? '#374151' : 'white'
-                                        }}>
+                                        <button 
+                                            onClick={() => handleToggleRead(notif._id, notif.read)}
+                                            style={{ 
+                                                padding: '6px 12px', 
+                                                borderRadius: '4px',
+                                                fontSize: '11px',
+                                                fontWeight: '600',
+                                                backgroundColor: notif.read ? '#e5e7eb' : '#0ea5e9',
+                                                color: notif.read ? '#374151' : 'white',
+                                                border: 'none',
+                                                cursor: notif.read ? 'not-allowed' : 'pointer',
+                                                opacity: notif.read ? 0.6 : 1,
+                                                transition: 'all 0.2s'
+                                            }}
+                                            disabled={notif.read}
+                                            title={notif.read ? 'Already marked as read' : 'Click to mark as read'}
+                                        >
                                             {notif.read ? 'Read' : 'Unread'}
-                                        </span>
+                                        </button>
                                     </div>
                                 </div>
                             ))}
