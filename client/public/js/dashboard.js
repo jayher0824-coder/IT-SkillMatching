@@ -7371,17 +7371,36 @@ async function loadCareerPaths() {
         const profile = profileResponse.data;
         const assessments = assessmentResponse.data || [];
 
-        // Get latest assessment scores
+        // Get latest assessment scores - handle both direct and nested structures
         let categoryScores = {};
+        let hasCompletedAssessments = false;
+        
         if (assessments.length > 0) {
+            hasCompletedAssessments = true;
             const latestAssessment = assessments[0];
-            categoryScores = latestAssessment.categoryScores || {};
+            
+            // Try to get categoryScores from different possible locations
+            categoryScores = latestAssessment.categoryScores || 
+                           latestAssessment.breakdown || 
+                           {};
+            
+            // If categoryScores is empty, create a basic score distribution from assessments
+            if (Object.keys(categoryScores).length === 0 && latestAssessment.percentage) {
+                // Use the overall percentage as a baseline for all career categories
+                categoryScores = {
+                    webDevelopment: latestAssessment.percentage,
+                    programming: latestAssessment.percentage,
+                    database: latestAssessment.percentage,
+                    networking: latestAssessment.percentage,
+                    problemSolving: latestAssessment.percentage
+                };
+            }
         }
 
         // Generate career recommendations based on skills and scores
-        const careerPaths = generateCareerRecommendations(profile, categoryScores);
+        const careerPaths = generateCareerRecommendations(profile, categoryScores, hasCompletedAssessments);
 
-        if (careerPaths.length === 0) {
+        if (careerPaths.length === 0 && !hasCompletedAssessments) {
             careerPathsContent.innerHTML = `
                 <div class="text-center py-8">
                     <div class="text-gray-400 text-5xl mb-4">
@@ -7485,7 +7504,7 @@ async function loadCareerPaths() {
     }
 }
 
-function generateCareerRecommendations(profile, categoryScores) {
+function generateCareerRecommendations(profile, categoryScores, hasCompletedAssessments = false) {
     const careerPaths = [
         {
             title: 'Full Stack Developer',
@@ -7555,13 +7574,21 @@ function generateCareerRecommendations(profile, categoryScores) {
         let categoryCount = 0;
 
         path.primaryCategories.forEach(category => {
-            if (categoryScores[category] !== undefined) {
+            if (categoryScores[category] !== undefined && categoryScores[category] > 0) {
                 totalScore += categoryScores[category];
                 categoryCount++;
             }
         });
 
-        const matchScore = categoryCount > 0 ? Math.round(totalScore / categoryCount) : 0;
+        // If no specific category scores found but student has completed assessments, 
+        // give a baseline match score
+        let matchScore = 0;
+        if (categoryCount > 0) {
+            matchScore = Math.round(totalScore / categoryCount);
+        } else if (hasCompletedAssessments) {
+            // Give all paths a baseline score when assessments are completed
+            matchScore = 50;
+        }
 
         // Determine skill gap
         const userSkills = profile?.skills?.map(s => s.name.toLowerCase()) || [];
@@ -7574,7 +7601,7 @@ function generateCareerRecommendations(profile, categoryScores) {
             matchScore,
             skillGap
         };
-    }).filter(path => path.matchScore > 0).sort((a, b) => b.matchScore - a.matchScore);
+    }).sort((a, b) => b.matchScore - a.matchScore);
 }
 
 /**
