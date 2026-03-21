@@ -4735,7 +4735,7 @@ async function viewStudentProfile(studentId) {
 function createStudentProfileViewModal(profile) {
     const modal = document.createElement('div');
     modal.id = 'student-profile-view-modal';
-    modal.className = 'fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 overflow-y-auto';
+    modal.className = 'fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 overflow-hidden';
     
     // Close modal when clicking outside
     modal.addEventListener('click', function(e) {
@@ -5000,7 +5000,7 @@ function editJob(jobId) {
 function createEditJobModal() {
     const modal = document.createElement('div');
     modal.id = 'edit-job-modal';
-    modal.className = 'fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 overflow-y-auto';
+    modal.className = 'fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 overflow-hidden';
     
     modal.innerHTML = `
         <div class="bg-white dark:bg-gray-800 rounded-lg w-full max-w-6xl my-8 shadow-xl flex flex-col" style="max-height: calc(100vh - 4rem);">
