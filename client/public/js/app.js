@@ -450,12 +450,11 @@ function showLoginModal(role) {
     modalTitle.textContent = titleText;
 
     const tabsHTML = `
-        <div class="mb-6 bg-gray-100 dark:bg-gray-700 p-1 rounded-lg">
-            <button id="login-tab"
-                class="w-full py-3 px-4 rounded-lg font-semibold shadow-md" 
-                style="background-color: #56AE67 !important; color: white !important;">
-                <i class="fas fa-sign-in-alt mr-2"></i>Login
-            </button>
+        <div class="mb-6 bg-gray-100 dark:bg-gray-700 p-2 rounded-lg">
+            <div class="w-full py-2 px-4 rounded-lg font-semibold text-center" 
+                style="background-color: #56AE67; color: white;">
+                <i class="fas fa-sign-in-alt mr-2"></i>Login Form
+            </div>
         </div>
     `;
 
@@ -2173,23 +2172,23 @@ async function handleStudentRegistration(event) {
     }
 }
 
-// ------------------ Company Profile Modal ------------------
-async function showCompanyProfile() {
+// ------------------ Company Profile Modal (legacy) ------------------
+async function showCompanyProfileLegacyModal() {
     const modal = document.getElementById('company-profile-modal');
     if (!modal) return;
     modal.classList.remove('hidden');
     try {
         const res = await apiCall('/companies/profile');
-        if (res.success) populateCompanyProfileForm(res.data);
+        if (res.success) populateLegacyCompanyProfileForm(res.data);
     } catch (e) { console.error(e); }
 }
 
-function closeCompanyProfileModal() {
+function closeCompanyProfileLegacyModal() {
     const modal = document.getElementById('company-profile-modal');
     if (modal) modal.classList.add('hidden');
 }
 
-function populateCompanyProfileForm(profile) {
+function populateLegacyCompanyProfileForm(profile) {
     if (!profile) return;
     const form = document.getElementById('company-profile-form');
     form.employeeName.value = profile.employeeName || '';
