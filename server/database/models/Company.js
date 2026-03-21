@@ -25,6 +25,15 @@ const companySchema = new mongoose.Schema({
   },
   website: String,
   logo: String,
+  coverImage: String,
+  tagline: String,
+  specialties: [String],
+  recruitmentEmail: String,
+  verificationStatus: {
+    type: String,
+    enum: ['pending', 'verified', 'rejected'],
+    default: 'verified',
+  },
   address: {
     street: String,
     city: String,

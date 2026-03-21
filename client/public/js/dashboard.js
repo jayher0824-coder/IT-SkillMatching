@@ -1464,6 +1464,13 @@ async function loadStudentDashboard() {
                             </div>
                         </div>
 
+                        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Company Announcements</h3>
+                            <div id="student-announcements-widget" class="space-y-3">
+                                <p class="text-sm text-gray-500 dark:text-gray-400">Loading company announcements...</p>
+                            </div>
+                        </div>
+
                         <!-- Skills Overview -->
                         ${studentProfile?.skills?.filter(s => s.verified && s.score >= 60).length > 0 ? `
                             <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
@@ -1745,6 +1752,7 @@ async function loadStudentDashboard() {
             loadStudentProfile();
             loadCareerPaths();
             loadSkillProgress();
+            loadStudentAnnouncementsWidget();
             
             // Attach messages navigation listeners
             const navMessagesBtn = document.getElementById('nav-messages');
@@ -1879,7 +1887,7 @@ async function loadCompanyDashboard() {
         console.log('Fetching company data...');
         
         // Load company data
-        const [profileResponse, jobsResponse, analyticsResponse] = await Promise.all([
+        const [profileResponse, jobsResponse, analyticsResponse, announcementsResponse] = await Promise.all([
             apiCall('/companies/profile').catch(err => {
                 console.error('Error fetching company profile:', err);
                 return { success: false, data: null };
@@ -1891,6 +1899,10 @@ async function loadCompanyDashboard() {
             apiCall('/companies/analytics').catch(err => {
                 console.error('Error fetching company analytics:', err);
                 return { success: false, data: {} };
+            }),
+            apiCall('/companies/announcements').catch(err => {
+                console.error('Error fetching company announcements:', err);
+                return { success: false, data: [] };
             })
         ]);
         
@@ -1901,6 +1913,7 @@ async function loadCompanyDashboard() {
         const companyProfile = profileResponse.success ? profileResponse.data : null;
         const jobs = jobsResponse.success ? jobsResponse.data : [];
         const analytics = analyticsResponse.success ? analyticsResponse.data : {};
+        const announcements = announcementsResponse.success ? (announcementsResponse.data || []) : [];
         
         // Store company name in sessionStorage for navigation display
         if (companyProfile && companyProfile.name) {
@@ -2120,6 +2133,58 @@ async function loadCompanyDashboard() {
                             </div>
                         ` : ''}
 
+                        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-3">Company Feed</h3>
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mb-4">Post announcements, hiring updates, and image-based company news for students.</p>
+                            <form id="company-announcement-form" class="space-y-3" onsubmit="submitCompanyAnnouncement(event)">
+                                <input id="announcement-title" type="text" maxlength="120" required class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-[#56AE67] dark:bg-gray-700 dark:text-white dark:border-gray-600" placeholder="Post title">
+                                <textarea id="announcement-content" rows="3" maxlength="5000" required class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-[#56AE67] dark:bg-gray-700 dark:text-white dark:border-gray-600" placeholder="Share your announcement to student applicants..."></textarea>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <select id="announcement-category" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-[#56AE67] dark:bg-gray-700 dark:text-white dark:border-gray-600">
+                                        <option value="announcement">Announcement</option>
+                                        <option value="hiring">Hiring</option>
+                                        <option value="event">Event</option>
+                                        <option value="deadline">Deadline</option>
+                                        <option value="result">Result</option>
+                                    </select>
+                                    <select id="announcement-audience" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-[#56AE67] dark:bg-gray-700 dark:text-white dark:border-gray-600">
+                                        <option value="all">All Students</option>
+                                        <option value="applicants">Applicants</option>
+                                        <option value="shortlisted">Shortlisted</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="text-xs text-gray-600 dark:text-gray-400">Image (optional)</label>
+                                    <input id="announcement-image" type="file" accept="image/*" class="w-full mt-1 text-xs text-gray-700 dark:text-gray-300">
+                                </div>
+                                <label class="flex items-center text-xs text-gray-700 dark:text-gray-300">
+                                    <input id="announcement-pinned" type="checkbox" class="mr-2"> Pin this post
+                                </label>
+                                <button type="submit" class="w-full bg-[#56AE67] text-white px-4 py-2 rounded-lg hover:bg-[#3d8b4f] transition font-semibold">Publish Announcement</button>
+                            </form>
+                            <div id="company-announcement-status" class="text-xs mt-3"></div>
+                        </div>
+
+                        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Recent Feed Posts</h3>
+                            <div class="space-y-3">
+                                ${announcements.length > 0 ? announcements.slice(0, 5).map(post => `
+                                    <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-3">
+                                        <div class="flex items-start justify-between gap-2">
+                                            <div>
+                                                <div class="text-sm font-semibold text-gray-900 dark:text-white">${post.title || 'Untitled Post'}</div>
+                                                <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">${(post.category || 'announcement').toUpperCase()} • ${formatDate(post.publishedAt || post.createdAt)}</div>
+                                            </div>
+                                            <button onclick="deleteCompanyAnnouncement('${post._id}')" class="text-xs px-2 py-1 bg-red-50 text-red-700 rounded hover:bg-red-100 dark:bg-red-900/30 dark:text-red-300" title="Delete post">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                        ${post.imageUrl ? `<img src="${post.imageUrl}" alt="Announcement image" class="w-full mt-2 rounded-lg border border-gray-200 dark:border-gray-700" style="max-height:120px; object-fit:cover;">` : ''}
+                                    </div>
+                                `).join('') : '<p class="text-sm text-gray-500 dark:text-gray-400">No announcements yet. Publish your first post.</p>'}
+                            </div>
+                        </div>
+
                         <!-- Quick Actions -->
                         <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
                             <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Quick Actions</h3>
@@ -2198,6 +2263,110 @@ async function loadCompanyDashboard() {
                 </button>
             </div>
         `;
+    }
+}
+
+window.submitCompanyAnnouncement = async function(event) {
+    event.preventDefault();
+
+    const statusEl = document.getElementById('company-announcement-status');
+    const title = document.getElementById('announcement-title')?.value?.trim();
+    const content = document.getElementById('announcement-content')?.value?.trim();
+    const category = document.getElementById('announcement-category')?.value || 'announcement';
+    const audience = document.getElementById('announcement-audience')?.value || 'all';
+    const isPinned = document.getElementById('announcement-pinned')?.checked ? 'true' : 'false';
+    const imageFile = document.getElementById('announcement-image')?.files?.[0] || null;
+
+    if (!title || !content) {
+        if (statusEl) {
+            statusEl.className = 'text-xs mt-3 text-red-600 dark:text-red-400';
+            statusEl.textContent = 'Title and content are required.';
+        }
+        return;
+    }
+
+    try {
+        if (statusEl) {
+            statusEl.className = 'text-xs mt-3 text-blue-600 dark:text-blue-400';
+            statusEl.textContent = 'Publishing...';
+        }
+
+        const formData = new FormData();
+        formData.append('title', title);
+        formData.append('content', content);
+        formData.append('category', category);
+        formData.append('audience', audience);
+        formData.append('isPinned', isPinned);
+        if (imageFile) formData.append('image', imageFile);
+
+        const token = sessionStorage.getItem('authToken');
+        const response = await fetch('/api/companies/announcements', {
+            method: 'POST',
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+            body: formData,
+        });
+
+        const payload = await response.json();
+        if (!response.ok || !payload?.success) {
+            throw new Error(payload?.message || 'Failed to publish announcement');
+        }
+
+        showToast('Announcement published successfully!', 'success');
+        loadCompanyDashboard();
+    } catch (error) {
+        console.error('Error publishing announcement:', error);
+        if (statusEl) {
+            statusEl.className = 'text-xs mt-3 text-red-600 dark:text-red-400';
+            statusEl.textContent = error.message || 'Failed to publish announcement.';
+        }
+    }
+};
+
+window.deleteCompanyAnnouncement = async function(announcementId) {
+    if (!announcementId) return;
+
+    const confirmed = window.confirm('Delete this announcement from your company feed?');
+    if (!confirmed) return;
+
+    try {
+        await apiCall(`/companies/announcements/${announcementId}`, {
+            method: 'DELETE'
+        });
+        showToast('Announcement deleted.', 'success');
+        loadCompanyDashboard();
+    } catch (error) {
+        console.error('Error deleting announcement:', error);
+        showToast('Failed to delete announcement.', 'error');
+    }
+};
+
+async function loadStudentAnnouncementsWidget() {
+    const target = document.getElementById('student-announcements-widget');
+    if (!target) return;
+
+    try {
+        const response = await apiCall('/companies/announcements/public?limit=6');
+        const posts = response?.success ? (response.data || []) : [];
+
+        if (!posts.length) {
+            target.innerHTML = '<p class="text-sm text-gray-500 dark:text-gray-400">No company announcements yet.</p>';
+            return;
+        }
+
+        target.innerHTML = posts.slice(0, 4).map(post => `
+            <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-3">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-xs px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 rounded">${(post.category || 'announcement').toUpperCase()}</span>
+                    <span class="text-xs text-gray-500 dark:text-gray-400">${formatDate(post.publishedAt || post.createdAt)}</span>
+                </div>
+                <h4 class="text-sm font-semibold text-gray-900 dark:text-white">${post.title || 'Announcement'}</h4>
+                <p class="text-xs text-gray-600 dark:text-gray-300 mt-1 line-clamp-3">${post.content || ''}</p>
+                <p class="text-xs text-[#56AE67] dark:text-[#6bc481] mt-2 font-medium">${post.company?.companyName || 'Company'}</p>
+            </div>
+        `).join('');
+    } catch (error) {
+        console.error('Error loading student announcement feed:', error);
+        target.innerHTML = '<p class="text-sm text-red-600 dark:text-red-400">Failed to load company announcements.</p>';
     }
 }
 
@@ -2583,6 +2752,18 @@ function showCompanyProfile() {
                             <label class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">Website</label>
                             <input type="url" id="website" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-[#56AE67]" value="${profile?.website || ''}" placeholder="https://company.com">
                         </div>
+                        <div class="mb-4">
+                            <label class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">Tagline</label>
+                            <input type="text" id="tagline" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-[#56AE67]" value="${profile?.tagline || ''}" placeholder="Building future-ready OJT opportunities">
+                        </div>
+                        <div class="mb-4">
+                            <label class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">Logo URL</label>
+                            <input type="url" id="logo" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-[#56AE67]" value="${profile?.logo || ''}" placeholder="https://.../logo.png">
+                        </div>
+                        <div class="mb-4">
+                            <label class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">Cover Image URL</label>
+                            <input type="url" id="coverImage" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-[#56AE67]" value="${profile?.coverImage || ''}" placeholder="https://.../cover.jpg">
+                        </div>
                     </div>
                     
                     <!-- Contact Information -->
@@ -2648,6 +2829,20 @@ function showCompanyProfile() {
                     <h4 class="font-semibold mb-3">Company Benefits (comma-separated)</h4>
                     <input type="text" id="benefits" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-[#56AE67] dark:bg-gray-700 dark:text-white dark:border-gray-600" value="${profile?.benefits?.join(', ') || ''}" placeholder="Health Insurance, Flexible Hours, Remote Work">
                 </div>
+
+                <div class="mt-6">
+                    <h4 class="font-semibold mb-3">Specialties & Recruitment Contact</h4>
+                    <div class="grid md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">Specialties (comma-separated)</label>
+                            <input type="text" id="specialties" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-[#56AE67]" value="${profile?.specialties?.join(', ') || ''}" placeholder="Cloud, Web Development, Data Analytics">
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">Recruitment Email</label>
+                            <input type="email" id="recruitmentEmail" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-[#56AE67]" value="${profile?.recruitmentEmail || ''}" placeholder="hiring@company.com">
+                        </div>
+                    </div>
+                </div>
                 
                 <div class="flex justify-between mt-8 pt-4 border-t border-gray-200 dark:border-gray-600 sticky bottom-0 bg-white dark:bg-gray-800 -mx-6 px-6 pb-4">
                     <button type="button" onclick="closeModal()" 
@@ -2700,6 +2895,11 @@ async function saveCompanyProfile(event) {
             companySize: document.getElementById('companySize').value,
             description: document.getElementById('description').value,
             website: document.getElementById('website').value,
+            tagline: document.getElementById('tagline').value,
+            logo: document.getElementById('logo').value,
+            coverImage: document.getElementById('coverImage').value,
+            specialties: document.getElementById('specialties').value.split(',').map(s => s.trim()).filter(Boolean),
+            recruitmentEmail: document.getElementById('recruitmentEmail').value,
             address: {
                 street: document.getElementById('companyStreet').value,
                 city: document.getElementById('companyCity').value,

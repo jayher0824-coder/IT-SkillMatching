@@ -422,6 +422,11 @@ router.post('/company-accounts', protect, authorize('admin'), async (req, res) =
       companySize,
       description,
       website,
+      logo,
+      coverImage,
+      tagline,
+      specialties,
+      recruitmentEmail,
       companyAddress,
       contactFirstName,
       contactLastName,
@@ -477,7 +482,15 @@ router.post('/company-accounts', protect, authorize('admin'), async (req, res) =
         companySize,
         description: description.trim(),
         website: website ? website.trim() : '',
+        logo: logo ? logo.trim() : '',
+        coverImage: coverImage ? coverImage.trim() : '',
+        tagline: tagline ? tagline.trim() : '',
+        specialties: Array.isArray(specialties)
+          ? specialties.map((item) => String(item || '').trim()).filter(Boolean)
+          : String(specialties || '').split(',').map((item) => item.trim()).filter(Boolean),
+        recruitmentEmail: recruitmentEmail ? recruitmentEmail.trim().toLowerCase() : normalizedEmail,
         verified: true,
+        verificationStatus: 'verified',
         address: {
           street: street || '',
           city: city || '',

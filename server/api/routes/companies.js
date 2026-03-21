@@ -1,9 +1,196 @@
 const express = require('express');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
 const { protect, authorize } = require('../../auth/middleware/auth');
 const Company = require('../../database/models/Company');
 const Student = require('../../database/models/Student');
+const CompanyAnnouncement = require('../../database/models/CompanyAnnouncement');
 
 const router = express.Router();
+
+const ensureDir = (dir) => {
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+};
+
+const announcementStorage = multer.diskStorage({
+  destination: function (_req, _file, cb) {
+    const dest = path.join(__dirname, '..', '..', '..', 'client', 'public', 'assets', 'uploads', 'company-posts');
+    ensureDir(dest);
+    cb(null, dest);
+  },
+  filename: function (_req, file, cb) {
+    const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
+    cb(null, `announcement-${uniqueSuffix}${path.extname(file.originalname || '')}`);
+  },
+});
+
+const announcementUpload = multer({
+  storage: announcementStorage,
+  limits: { fileSize: 8 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    if (file.mimetype && file.mimetype.startsWith('image/')) {
+      cb(null, true);
+      return;
+    }
+    cb(new Error('Only image uploads are allowed for announcements'));
+  },
+});
+
+// @desc    Create company announcement
+// @route   POST /api/companies/announcements
+// @access  Private (Companies only)
+router.post('/announcements', protect, authorize('company'), announcementUpload.single('image'), async (req, res) => {
+  try {
+    const { title, content, category = 'announcement', audience = 'all', isPinned = 'false' } = req.body;
+
+    if (!title || !content) {
+      return res.status(400).json({
+        success: false,
+        message: 'Title and content are required',
+      });
+    }
+
+    const company = await Company.findOne({ user: req.user._id });
+    if (!company) {
+      return res.status(404).json({
+        success: false,
+        message: 'Company profile not found',
+      });
+    }
+
+    const imageUrl = req.file ? `/assets/uploads/company-posts/${req.file.filename}` : '';
+
+    const announcement = await CompanyAnnouncement.create({
+      company: company._id,
+      createdBy: req.user._id,
+      title: String(title).trim(),
+      content: String(content).trim(),
+      category,
+      audience,
+      isPinned: isPinned === true || isPinned === 'true',
+      imageUrl,
+      publishedAt: new Date(),
+    });
+
+    const populated = await CompanyAnnouncement.findById(announcement._id)
+      .populate('company', 'companyName logo')
+      .lean();
+
+    res.status(201).json({
+      success: true,
+      message: 'Announcement posted successfully',
+      data: populated,
+    });
+  } catch (error) {
+    console.error('Create announcement error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error',
+    });
+  }
+});
+
+// @desc    Get company announcements (own)
+// @route   GET /api/companies/announcements
+// @access  Private (Companies only)
+router.get('/announcements', protect, authorize('company'), async (req, res) => {
+  try {
+    const company = await Company.findOne({ user: req.user._id });
+    if (!company) {
+      return res.status(404).json({
+        success: false,
+        message: 'Company profile not found',
+      });
+    }
+
+    const announcements = await CompanyAnnouncement.find({ company: company._id, isActive: true })
+      .sort({ isPinned: -1, publishedAt: -1 })
+      .limit(50)
+      .lean();
+
+    res.json({
+      success: true,
+      count: announcements.length,
+      data: announcements,
+    });
+  } catch (error) {
+    console.error('Get company announcements error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error',
+    });
+  }
+});
+
+// @desc    Get latest public announcements for students/company/admin
+// @route   GET /api/companies/announcements/public
+// @access  Private
+router.get('/announcements/public', protect, async (req, res) => {
+  try {
+    const limit = Math.min(Number(req.query.limit) || 10, 30);
+    const announcements = await CompanyAnnouncement.find({ isActive: true })
+      .populate({
+        path: 'company',
+        select: 'companyName logo verified',
+        match: { verified: true },
+      })
+      .sort({ isPinned: -1, publishedAt: -1 })
+      .limit(limit)
+      .lean();
+
+    const visible = announcements.filter((item) => !!item.company);
+
+    res.json({
+      success: true,
+      count: visible.length,
+      data: visible,
+    });
+  } catch (error) {
+    console.error('Get public announcements error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error',
+    });
+  }
+});
+
+// @desc    Delete own announcement
+// @route   DELETE /api/companies/announcements/:id
+// @access  Private (Companies only)
+router.delete('/announcements/:id', protect, authorize('company'), async (req, res) => {
+  try {
+    const company = await Company.findOne({ user: req.user._id });
+    if (!company) {
+      return res.status(404).json({
+        success: false,
+        message: 'Company profile not found',
+      });
+    }
+
+    const announcement = await CompanyAnnouncement.findOne({ _id: req.params.id, company: company._id });
+    if (!announcement) {
+      return res.status(404).json({
+        success: false,
+        message: 'Announcement not found',
+      });
+    }
+
+    announcement.isActive = false;
+    await announcement.save();
+
+    res.json({
+      success: true,
+      message: 'Announcement removed',
+    });
+  } catch (error) {
+    console.error('Delete announcement error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error',
+    });
+  }
+});
 
 // @desc    Get company profile
 // @route   GET /api/companies/profile
@@ -44,6 +231,10 @@ router.put('/profile', protect, authorize('company'), async (req, res) => {
       description,
       website,
       logo,
+      coverImage,
+      tagline,
+      specialties,
+      recruitmentEmail,
       address,
       contactPerson,
       socialMedia,
@@ -61,6 +252,10 @@ router.put('/profile', protect, authorize('company'), async (req, res) => {
       company.description = description || company.description;
       company.website = website || company.website;
       company.logo = logo || company.logo;
+      company.coverImage = coverImage || company.coverImage;
+      company.tagline = tagline || company.tagline;
+      company.specialties = specialties || company.specialties;
+      company.recruitmentEmail = recruitmentEmail || company.recruitmentEmail;
       company.address = { ...company.address, ...address };
       company.contactPerson = { ...company.contactPerson, ...contactPerson };
       company.socialMedia = { ...company.socialMedia, ...socialMedia };
@@ -78,6 +273,10 @@ router.put('/profile', protect, authorize('company'), async (req, res) => {
         description,
         website,
         logo,
+        coverImage,
+        tagline,
+        specialties,
+        recruitmentEmail,
         address,
         contactPerson,
         socialMedia,

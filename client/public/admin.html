@@ -813,6 +813,11 @@
                 companySize: '11-50',
                 description: '',
                 website: '',
+                logo: '',
+                coverImage: '',
+                tagline: '',
+                specialties: '',
+                recruitmentEmail: '',
                 companyAddress: '',
                 contactFirstName: '',
                 contactLastName: '',
@@ -855,6 +860,11 @@
                             companySize: '11-50',
                             description: '',
                             website: '',
+                            logo: '',
+                            coverImage: '',
+                            tagline: '',
+                            specialties: '',
+                            recruitmentEmail: '',
                             companyAddress: '',
                             contactFirstName: '',
                             contactLastName: '',
@@ -917,6 +927,30 @@
                                     placeholder="https://company.com"
                                     style={{ width: '100%', padding: '10px', border: '1px solid #d1d5db', borderRadius: '6px' }} />
                             </div>
+                            <div>
+                                <label style={{ display: 'block', marginBottom: '8px', color: '#374151', fontWeight: '500' }}>Logo URL</label>
+                                <input name="logo" type="url" value={formData.logo} onChange={handleChange}
+                                    placeholder="https://.../logo.png"
+                                    style={{ width: '100%', padding: '10px', border: '1px solid #d1d5db', borderRadius: '6px' }} />
+                            </div>
+                            <div>
+                                <label style={{ display: 'block', marginBottom: '8px', color: '#374151', fontWeight: '500' }}>Cover Image URL</label>
+                                <input name="coverImage" type="url" value={formData.coverImage} onChange={handleChange}
+                                    placeholder="https://.../cover.jpg"
+                                    style={{ width: '100%', padding: '10px', border: '1px solid #d1d5db', borderRadius: '6px' }} />
+                            </div>
+                            <div>
+                                <label style={{ display: 'block', marginBottom: '8px', color: '#374151', fontWeight: '500' }}>Tagline</label>
+                                <input name="tagline" value={formData.tagline} onChange={handleChange}
+                                    placeholder="Building future-ready OJT opportunities"
+                                    style={{ width: '100%', padding: '10px', border: '1px solid #d1d5db', borderRadius: '6px' }} />
+                            </div>
+                            <div>
+                                <label style={{ display: 'block', marginBottom: '8px', color: '#374151', fontWeight: '500' }}>Recruitment Email</label>
+                                <input name="recruitmentEmail" type="email" value={formData.recruitmentEmail} onChange={handleChange}
+                                    placeholder="hiring@company.com"
+                                    style={{ width: '100%', padding: '10px', border: '1px solid #d1d5db', borderRadius: '6px' }} />
+                            </div>
                         </div>
 
                         <div style={{ marginTop: '16px' }}>
@@ -929,6 +963,13 @@
                             <label style={{ display: 'block', marginBottom: '8px', color: '#374151', fontWeight: '500' }}>Address (street, city, state, zip)</label>
                             <input name="companyAddress" value={formData.companyAddress} onChange={handleChange}
                                 placeholder="123 Main St, Valenzuela, NCR, 1440"
+                                style={{ width: '100%', padding: '10px', border: '1px solid #d1d5db', borderRadius: '6px' }} />
+                        </div>
+
+                        <div style={{ marginTop: '16px' }}>
+                            <label style={{ display: 'block', marginBottom: '8px', color: '#374151', fontWeight: '500' }}>Specialties (comma-separated)</label>
+                            <input name="specialties" value={formData.specialties} onChange={handleChange}
+                                placeholder="Web Development, Cloud, Data Analytics"
                                 style={{ width: '100%', padding: '10px', border: '1px solid #d1d5db', borderRadius: '6px' }} />
                         </div>
 
