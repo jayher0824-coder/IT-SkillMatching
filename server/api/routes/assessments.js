@@ -259,6 +259,7 @@ router.post('/:id/submit', protect, authorize('student'), async (req, res) => {
       webDevelopment: { score: 0, total: 0 },
       networking: { score: 0, total: 0 },
       problemSolving: { score: 0, total: 0 },
+      troubleshooting: { score: 0, total: 0 },
     };
 
     const processedAnswers = answers.map((answer, index) => {
@@ -1159,9 +1160,33 @@ router.get('/quiz-questions/:skill', protect, async (req, res) => {
     problemsolving: ['python', 'javascript', 'java'],
     networking: ['java', 'python', 'javascript'],
     database: ['sql', 'javascript', 'python'],
+    troubleshooting: ['networking', 'problemsolving'],
   };
 
   const categoryQuestionBanks = {
+    webdevelopment: {
+      easy: [
+        { question: 'What is the primary purpose of HTML in web development?', options: ['Structure content', 'Style the page', 'Store database records', 'Manage DNS'], correctAnswer: 'Structure content', difficulty: 'easy' },
+        { question: 'Which language is mainly used to style web pages?', options: ['CSS', 'SQL', 'Python', 'Bash'], correctAnswer: 'CSS', difficulty: 'easy' },
+        { question: 'What does JavaScript mainly add to a website?', options: ['Interactivity', 'Physical server hardware', 'Database indexing only', 'DNS routing'], correctAnswer: 'Interactivity', difficulty: 'easy' },
+        { question: 'Which protocol is used for secure web browsing?', options: ['HTTPS', 'FTP', 'SSH', 'Telnet'], correctAnswer: 'HTTPS', difficulty: 'easy' },
+        { question: 'What does responsive design focus on?', options: ['Adapting layout to different screen sizes', 'Only desktop support', 'Only page speed', 'Server-side cron jobs'], correctAnswer: 'Adapting layout to different screen sizes', difficulty: 'easy' }
+      ],
+      medium: [
+        { question: 'What is the purpose of a REST API in web apps?', options: ['Enable communication between client and server', 'Replace all CSS files', 'Compile JavaScript into SQL', 'Manage BIOS settings'], correctAnswer: 'Enable communication between client and server', difficulty: 'medium' },
+        { question: 'What does CORS control?', options: ['Cross-origin request permissions', 'Image compression quality', 'Database transaction isolation', 'CPU clock speed'], correctAnswer: 'Cross-origin request permissions', difficulty: 'medium' },
+        { question: 'Why is input validation important in web forms?', options: ['Prevent invalid and unsafe data', 'Increase font size automatically', 'Disable authentication', 'Reduce browser tabs'], correctAnswer: 'Prevent invalid and unsafe data', difficulty: 'medium' },
+        { question: 'What is a common use of browser localStorage?', options: ['Persist small client-side data', 'Run SQL joins', 'Host backend APIs', 'Replace TLS certificates'], correctAnswer: 'Persist small client-side data', difficulty: 'medium' },
+        { question: 'What does lazy loading improve on media-heavy pages?', options: ['Initial load performance', 'Database schema normalization', 'Compiler diagnostics', 'Package signatures'], correctAnswer: 'Initial load performance', difficulty: 'medium' }
+      ],
+      hard: [
+        { question: 'What is hydration in modern frontend frameworks?', options: ['Attaching client-side behavior to server-rendered markup', 'Encrypting CSS assets', 'Compiling SQL into HTML', 'Scaling a database cluster'], correctAnswer: 'Attaching client-side behavior to server-rendered markup', difficulty: 'hard' },
+        { question: 'Which pattern helps prevent repeated API requests for unchanged data?', options: ['Caching with revalidation strategy', 'Disabling HTTP status codes', 'Inline all scripts globally', 'Polling every millisecond'], correctAnswer: 'Caching with revalidation strategy', difficulty: 'hard' },
+        { question: 'What is a key goal of Content Security Policy (CSP)?', options: ['Reduce XSS attack surface', 'Increase screen resolution', 'Store user passwords in localStorage', 'Bypass authentication'], correctAnswer: 'Reduce XSS attack surface', difficulty: 'hard' },
+        { question: 'Why are idempotent endpoints important for distributed systems?', options: ['Safe retries without duplicate side effects', 'Faster CSS parsing', 'Automatic database backups', 'Removing need for logs'], correctAnswer: 'Safe retries without duplicate side effects', difficulty: 'hard' },
+        { question: 'What is the best reason to use rate limiting on public APIs?', options: ['Protect service stability and prevent abuse', 'Disable HTTPS', 'Hide all errors from logs', 'Skip monitoring'], correctAnswer: 'Protect service stability and prevent abuse', difficulty: 'hard' }
+      ]
+    },
     networking: {
       easy: [
         { question: 'What does IP stand for in networking?', options: ['Internet Protocol', 'Internal Process', 'Integrated Port', 'Internet Package'], correctAnswer: 'Internet Protocol', difficulty: 'easy' },
@@ -1230,6 +1255,87 @@ router.get('/quiz-questions/:skill', protect, async (req, res) => {
         { question: 'What is the main challenge in NP-complete problems?', options: ['No known polynomial-time solution for all cases', 'They cannot be tested', 'They have no input', 'They are always unsolvable'], correctAnswer: 'No known polynomial-time solution for all cases', difficulty: 'hard' },
         { question: 'Why do heuristic algorithms exist?', options: ['To get good-enough solutions when exact methods are too costly', 'To guarantee optimality always', 'To replace all data structures', 'To avoid testing'], correctAnswer: 'To get good-enough solutions when exact methods are too costly', difficulty: 'hard' }
       ]
+    },
+    troubleshooting: {
+      easy: [
+        { question: 'What is the first step when troubleshooting an IT issue?', options: ['Clearly identify and reproduce the problem', 'Immediately reinstall the OS', 'Replace all hardware first', 'Ignore user reports'], correctAnswer: 'Clearly identify and reproduce the problem', difficulty: 'easy' },
+        { question: 'Why is checking cables and basic connectivity important first?', options: ['It quickly eliminates common root causes', 'It guarantees software bugs', 'It updates firmware automatically', 'It formats the drive'], correctAnswer: 'It quickly eliminates common root causes', difficulty: 'easy' },
+        { question: 'What does a good troubleshooting note include?', options: ['Symptoms, steps tried, and outcomes', 'Only the final guess', 'Random screenshots only', 'Personal opinions only'], correctAnswer: 'Symptoms, steps tried, and outcomes', difficulty: 'easy' },
+        { question: 'Which command is commonly used to test network reachability?', options: ['ping', 'mkdir', 'chmod', 'grep'], correctAnswer: 'ping', difficulty: 'easy' },
+        { question: 'Why should you verify if an issue is user-specific or system-wide?', options: ['It narrows scope and speeds root-cause analysis', 'It increases downtime', 'It replaces logging', 'It bypasses support workflows'], correctAnswer: 'It narrows scope and speeds root-cause analysis', difficulty: 'easy' }
+      ],
+      medium: [
+        { question: 'What is the benefit of isolating variables during troubleshooting?', options: ['It identifies the exact failing component', 'It adds more uncertainty', 'It prevents any testing', 'It disables audit logs'], correctAnswer: 'It identifies the exact failing component', difficulty: 'medium' },
+        { question: 'What is a rollback plan used for?', options: ['Safely revert changes if a fix causes issues', 'Delete all backups', 'Skip testing in production', 'Disable monitoring tools'], correctAnswer: 'Safely revert changes if a fix causes issues', difficulty: 'medium' },
+        { question: 'How can logs help in troubleshooting?', options: ['They provide time-based evidence of failures', 'They replace root-cause analysis', 'They always fix bugs automatically', 'They remove need for metrics'], correctAnswer: 'They provide time-based evidence of failures', difficulty: 'medium' },
+        { question: 'Why use a known-good baseline when diagnosing performance issues?', options: ['To compare and detect abnormal behavior', 'To force every metric to zero', 'To avoid capturing data', 'To bypass incident reviews'], correctAnswer: 'To compare and detect abnormal behavior', difficulty: 'medium' },
+        { question: 'What does intermittent issue mean?', options: ['Problem appears inconsistently over time', 'Problem occurs permanently with no variance', 'Issue only exists in documentation', 'Issue is always hardware-related'], correctAnswer: 'Problem appears inconsistently over time', difficulty: 'medium' }
+      ],
+      hard: [
+        { question: 'What is the most reliable way to confirm root cause?', options: ['Apply a targeted fix and verify symptoms disappear', 'Assume the most recent change is always wrong', 'Rely on intuition only', 'Skip validation after fix'], correctAnswer: 'Apply a targeted fix and verify symptoms disappear', difficulty: 'hard' },
+        { question: 'Which practice best reduces mean time to resolution (MTTR)?', options: ['Runbooks plus clear escalation paths', 'Ad-hoc random troubleshooting', 'Disabling alerts', 'Avoiding post-incident reviews'], correctAnswer: 'Runbooks plus clear escalation paths', difficulty: 'hard' },
+        { question: 'What is the value of correlation IDs in distributed troubleshooting?', options: ['Trace a single request across services', 'Encrypt user data at rest', 'Increase CPU frequency', 'Replace error handling'], correctAnswer: 'Trace a single request across services', difficulty: 'hard' },
+        { question: 'How should high-risk production fixes be released?', options: ['Incrementally with monitoring and rollback readiness', 'All-at-once without observability', 'Directly on all regions at once', 'Without change approval'], correctAnswer: 'Incrementally with monitoring and rollback readiness', difficulty: 'hard' },
+        { question: 'What is a post-incident review primarily for?', options: ['Learning systemic improvements, not assigning blame', 'Punishing operators', 'Deleting historical logs', 'Avoiding follow-up actions'], correctAnswer: 'Learning systemic improvements, not assigning blame', difficulty: 'hard' }
+      ]
+    }
+  };
+
+  const categoryCodingChallenges = {
+    troubleshooting: {
+      type: 'coding',
+      question: 'Coding Challenge: Implement a JavaScript function `findRootCause(logs)` that returns `"network"` if any log contains "timeout" or "dns", otherwise returns `"application"`.',
+      programmingLanguage: 'javascript',
+      codeTemplate: 'function findRootCause(logs) {\n  // logs is an array of strings\n  // Return "network" or "application"\n\n}\n',
+      testCases: [
+        { input: '["dns lookup failed", "retrying..."]', output: 'network' },
+        { input: '["service exception", "null reference"]', output: 'application' }
+      ],
+      difficulty: 'medium'
+    },
+    networking: {
+      type: 'coding',
+      question: 'Coding Challenge: Implement `countHealthyHosts(statuses)` that returns how many hosts are marked `"up"` in the input array.',
+      programmingLanguage: 'javascript',
+      codeTemplate: 'function countHealthyHosts(statuses) {\n  // statuses is an array like ["up", "down", "up"]\n\n}\n',
+      testCases: [
+        { input: '["up", "down", "up", "up"]', output: '3' },
+        { input: '["down", "down"]', output: '0' }
+      ],
+      difficulty: 'medium'
+    },
+    sql: {
+      type: 'coding',
+      question: 'Coding Challenge: Implement `topScore(scores)` that returns the highest numeric value from an array of SQL query execution times.',
+      programmingLanguage: 'javascript',
+      codeTemplate: 'function topScore(scores) {\n  // scores is an array of numbers\n\n}\n',
+      testCases: [
+        { input: '[120, 98, 240, 180]', output: '240' },
+        { input: '[15]', output: '15' }
+      ],
+      difficulty: 'medium'
+    },
+    webdevelopment: {
+      type: 'coding',
+      question: 'Coding Challenge: Implement `isSecureUrl(url)` that returns true only when a URL starts with `"https://"`.',
+      programmingLanguage: 'javascript',
+      codeTemplate: 'function isSecureUrl(url) {\n  // Return true if secure, otherwise false\n\n}\n',
+      testCases: [
+        { input: '"https://example.com"', output: 'true' },
+        { input: '"http://example.com"', output: 'false' }
+      ],
+      difficulty: 'medium'
+    },
+    problemsolving: {
+      type: 'coding',
+      question: 'Coding Challenge: Implement `firstDuplicate(nums)` that returns the first duplicated number encountered while scanning left-to-right, or -1 if none.',
+      programmingLanguage: 'javascript',
+      codeTemplate: 'function firstDuplicate(nums) {\n  // nums is an array of integers\n\n}\n',
+      testCases: [
+        { input: '[2, 1, 3, 5, 3, 2]', output: '3' },
+        { input: '[1, 2, 3]', output: '-1' }
+      ],
+      difficulty: 'medium'
     }
   };
 
@@ -1607,6 +1713,17 @@ router.get('/quiz-questions/:skill', protect, async (req, res) => {
     });
   }
 
+  const codingChallenge = categoryCodingChallenges[normalizedSkill];
+  if (codingChallenge) {
+    const hasCodingQuestion = selectedQuestions.some((q) => String(q?.type || '').toLowerCase() === 'coding');
+    if (!hasCodingQuestion) {
+      if (selectedQuestions.length >= takeCount && takeCount > 0) {
+        selectedQuestions = selectedQuestions.slice(0, takeCount - 1);
+      }
+      selectedQuestions.push({ ...codingChallenge });
+    }
+  }
+
   if (memoryOwner) {
     const selectedKeys = selectedQuestions.map(getQuestionKey);
     const mergedKeys = [...recentQuestionKeys, ...selectedKeys];
@@ -1628,9 +1745,22 @@ router.get('/quiz-questions/:skill', protect, async (req, res) => {
   }
 
   const safeQuestions = selectedQuestions.map((q) => {
+    const type = q.type || 'multiple-choice';
+    if (type === 'coding') {
+      return {
+        type: 'coding',
+        question: q.question,
+        difficulty: q.difficulty || normalizedDifficulty || 'medium',
+        programmingLanguage: q.programmingLanguage || 'javascript',
+        codeTemplate: q.codeTemplate || '',
+        testCases: Array.isArray(q.testCases) ? q.testCases : [],
+      };
+    }
+
     const options = Array.isArray(q.options) ? [...q.options] : [];
     const shuffledOptions = shuffle(options);
     return {
+      type: 'multiple-choice',
       question: q.question,
       options: shuffledOptions,
       difficulty: q.difficulty || normalizedDifficulty || 'medium',
@@ -1752,6 +1882,24 @@ function parseQuestionsFromMarkdown(markdown) {
 router.post('/quiz/result', protect, authorize('student'), async (req, res) => {
   try {
     const { skill, score, totalQuestions, questionsCorrect } = req.body;
+    const normalizedSkill = String(skill || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+
+    const skillCategoryMap = {
+      webdevelopment: 'webDevelopment',
+      webdev: 'webDevelopment',
+      problemsolving: 'problemSolving',
+      databasesql: 'sql',
+      troubleshooting: 'troubleshooting',
+    };
+
+    const canonicalSkill = skillCategoryMap[normalizedSkill] || String(skill || '').toLowerCase();
+
+    if (!canonicalSkill || !Number.isFinite(Number(totalQuestions)) || Number(totalQuestions) <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid quiz result payload',
+      });
+    }
     
     console.log('Saving quiz result:', {
       userId: req.user._id,
@@ -1766,20 +1914,21 @@ router.post('/quiz/result', protect, authorize('student'), async (req, res) => {
 
     // Create or get a quiz assessment record
     let assessment = await Assessment.findOne({ 
-      category: skill.toLowerCase(),
+      category: canonicalSkill,
       isActive: true 
     });
 
     // If no assessment exists for this skill, create a placeholder
     if (!assessment) {
       assessment = await Assessment.create({
-        title: `${skill} Quiz`,
-        description: `Quick quiz for ${skill} skills`,
-        category: skill.toLowerCase(),
+        title: `${canonicalSkill} Quiz`,
+        description: `Quick quiz for ${canonicalSkill} skills`,
+        category: canonicalSkill,
         isActive: true,
         passingScore: 60,
         questions: [],
-        timeLimit: 30
+        timeLimit: 30,
+        totalPoints: Number(totalQuestions)
       });
     }
 
@@ -1799,9 +1948,86 @@ router.post('/quiz/result', protect, authorize('student'), async (req, res) => {
       startedAt: new Date(Date.now() - 5 * 60000), // 5 minutes ago (approximate)
       completedAt: new Date(),
       categoryScores: {
-        [skill.toLowerCase()]: percentage
+        [canonicalSkill]: percentage
       }
     });
+
+    // Update student profile with aggregated, assessment-driven breakdown.
+    const allQuizResults = await AssessmentResult.find({ student: student._id })
+      .populate('assessment', 'category')
+      .sort({ completedAt: -1 });
+
+    const scoreBuckets = {};
+    let totalPercentage = 0;
+
+    allQuizResults.forEach((quizResult) => {
+      totalPercentage += Number(quizResult.percentage || 0);
+
+      const categoryScores = quizResult.categoryScores || {};
+      Object.entries(categoryScores).forEach(([rawKey, rawValue]) => {
+        const value = Number(rawValue);
+        if (!Number.isFinite(value)) return;
+
+        let key = String(rawKey || '').trim();
+        if (!key) return;
+
+        if (key.toLowerCase() === 'webdevelopment') key = 'webDevelopment';
+        if (key.toLowerCase() === 'problemsolving') key = 'problemSolving';
+
+        if (!scoreBuckets[key]) scoreBuckets[key] = [];
+        scoreBuckets[key].push(value);
+      });
+
+      if ((!categoryScores || Object.keys(categoryScores).length === 0) && quizResult.assessment?.category) {
+        const key = quizResult.assessment.category;
+        if (!scoreBuckets[key]) scoreBuckets[key] = [];
+        scoreBuckets[key].push(Number(quizResult.percentage || 0));
+      }
+    });
+
+    const averagedBreakdown = {};
+    Object.entries(scoreBuckets).forEach(([categoryKey, values]) => {
+      if (!values.length) return;
+      const avg = Math.round(values.reduce((sum, val) => sum + val, 0) / values.length);
+      averagedBreakdown[categoryKey] = avg;
+    });
+
+    if (Number.isFinite(averagedBreakdown.sql)) {
+      const databaseScores = [averagedBreakdown.sql];
+      if (Number.isFinite(averagedBreakdown.database)) databaseScores.push(averagedBreakdown.database);
+      averagedBreakdown.database = Math.round(databaseScores.reduce((sum, val) => sum + val, 0) / databaseScores.length);
+    }
+
+    student.assessmentCompleted = allQuizResults.length > 0;
+    student.assessmentScore = {
+      overall: Math.round(totalPercentage / allQuizResults.length),
+      breakdown: averagedBreakdown,
+    };
+
+    if (passed) {
+      const existingSkillIndex = student.skills.findIndex((s) => s.name === canonicalSkill);
+      let level = 'Beginner';
+      if (percentage >= 80) level = 'Expert';
+      else if (percentage >= 70) level = 'Advanced';
+      else if (percentage >= 60) level = 'Intermediate';
+
+      const skillData = {
+        name: canonicalSkill,
+        level,
+        verified: true,
+        score: percentage,
+      };
+
+      if (existingSkillIndex >= 0) {
+        if (percentage > Number(student.skills[existingSkillIndex].score || 0)) {
+          student.skills[existingSkillIndex] = skillData;
+        }
+      } else {
+        student.skills.push(skillData);
+      }
+    }
+
+    await student.save();
 
     // Populate the result before sending
     await result.populate('assessment', 'title description category');

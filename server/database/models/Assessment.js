@@ -30,7 +30,7 @@ const questionSchema = new mongoose.Schema({
   category: {
     type: String,
     enum: [
-      'programming', 'database', 'webDevelopment', 'networking', 'problemSolving', 
+      'programming', 'database', 'webDevelopment', 'networking', 'problemSolving', 'troubleshooting',
       'cloudComputing', 'devOps', 'security', 'systemDesign', 'dataStructures', 
       'algorithms', 'mobile', 'backend', 'frontend', 'apiDesign',
       // Programming Languages
@@ -81,7 +81,7 @@ const assessmentSchema = new mongoose.Schema({
   category: {
     type: String,
     enum: [
-      'general', 'programming', 'database', 'webDevelopment', 'networking', 'problemSolving', 
+      'general', 'programming', 'database', 'webDevelopment', 'networking', 'problemSolving', 'troubleshooting',
       'cloudComputing', 'devOps', 'security', 'systemDesign', 'dataStructures', 
       'algorithms', 'mobile', 'backend', 'frontend', 'apiDesign',
       // Programming Languages
@@ -149,6 +149,7 @@ const assessmentResultSchema = new mongoose.Schema({
     webDevelopment: Number,
     networking: Number,
     problemSolving: Number,
+    troubleshooting: Number,
     cloudComputing: Number,
     devOps: Number,
     security: Number,

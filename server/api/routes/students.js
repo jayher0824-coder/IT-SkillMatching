@@ -361,6 +361,7 @@ router.get('/job-matches', protect, authorize('student'), async (req, res) => {
         'database': ['sql', 'mysql', 'postgresql', 'mongodb', 'redis', 'oracle', 'database', 'nosql'],
         'networking': ['network', 'tcp/ip', 'security', 'firewall', 'vpn', 'routing'],
         'problemSolving': ['algorithm', 'data structure', 'optimization', 'debugging'],
+        'troubleshooting': ['troubleshoot', 'troubleshooting', 'incident', 'diagnostic', 'root cause', 'support'],
         'cloudComputing': ['aws', 'azure', 'gcp', 'cloud', 'docker', 'kubernetes'],
         'devOps': ['ci/cd', 'jenkins', 'gitlab', 'github actions', 'terraform', 'ansible'],
         'mobile': ['android', 'ios', 'react native', 'flutter', 'mobile'],

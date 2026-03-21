@@ -176,6 +176,36 @@ async function initializeApp() {
 function updateNavigation() {
     const navMenu = document.getElementById('nav-menu');
 
+    const buildDisplayNameFromEmail = (email) => {
+        if (!email || typeof email !== 'string' || !email.includes('@')) return '';
+        const localPart = email.split('@')[0].trim();
+        if (!localPart) return '';
+
+        // Convert handles like john_doe99 to John Doe99 for a friendlier welcome.
+        return localPart
+            .replace(/[._-]+/g, ' ')
+            .split(' ')
+            .filter(Boolean)
+            .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+            .join(' ')
+            .trim();
+    };
+
+    const getWelcomeDisplayName = (user) => {
+        if (!user) return 'User';
+
+        const candidates = [
+            user.companyName,
+            sessionStorage.getItem('companyName'),
+            user.name,
+            user.username,
+            user.firstName,
+            buildDisplayNameFromEmail(user.email),
+        ];
+
+        return candidates.find(value => typeof value === 'string' && value.trim()) || 'User';
+    };
+
     // Theme toggle button
     const themeToggleButton = `
         <button id="theme-toggle" onclick="toggleTheme()" class="text-gray-700 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white ml-4">
@@ -184,10 +214,12 @@ function updateNavigation() {
     `;
 
     if (currentUser) {
+        const welcomeName = getWelcomeDisplayName(currentUser);
+
         // Different navigation for students vs companies
         if (currentUser.role === 'student') {
             navMenu.innerHTML = `
-                <span class="text-gray-700 dark:text-gray-300">Welcome, ${currentUser.email}</span>
+                <span class="text-gray-700 dark:text-gray-300">Welcome, ${welcomeName}</span>
                 <button onclick="goToDashboard()" class="text-[#56AE67] hover:text-[#2d6b3c] dark:text-[#6bc481] dark:hover:text-[#7dd091]">
                     <i class="fas fa-tachometer-alt mr-1"></i>Dashboard
                 </button>
@@ -199,10 +231,8 @@ function updateNavigation() {
                 </button>
             `;
         } else if (currentUser.role === 'company') {
-            // Get company name from sessionStorage or use email as fallback
-            const companyName = currentUser.companyName || sessionStorage.getItem('companyName') || currentUser.email;
             navMenu.innerHTML = `
-                <span class="text-gray-700 dark:text-gray-300">Welcome, ${companyName}</span>
+                <span class="text-gray-700 dark:text-gray-300">Welcome, ${welcomeName}</span>
                 <button onclick="showSettingsModal()" class="text-[#56AE67] hover:text-[#2d6b3c] dark:text-[#6bc481] dark:hover:text-[#7dd091]">
                     <i class="fas fa-cog mr-1"></i>Settings
                 </button>
@@ -213,7 +243,7 @@ function updateNavigation() {
         } else {
             // Admin or other roles - show basic navigation
             navMenu.innerHTML = `
-                <span class="text-gray-700 dark:text-gray-300">Welcome, ${currentUser.email}</span>
+                <span class="text-gray-700 dark:text-gray-300">Welcome, ${welcomeName}</span>
                 <button onclick="showLandingPage()" class="text-[#56AE67] hover:text-[#2d6b3c] dark:text-[#6bc481] dark:hover:text-[#7dd091]">
                     <i class="fas fa-home mr-1"></i>Home
                 </button>

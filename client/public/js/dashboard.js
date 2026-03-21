@@ -106,6 +106,7 @@ const quizState = {
     answers: [], // Track user answers
     correctCount: 0, // Count correct answers
     difficulty: 'medium', // Store difficulty level
+    codingTestStatus: {},
 
     init(questions, skill, containerId, difficulty = 'medium') {
         this.questions = questions;
@@ -116,6 +117,7 @@ const quizState = {
         this.answers = [];
         this.correctCount = 0;
         this.difficulty = difficulty;
+        this.codingTestStatus = {};
         console.log('Quiz state initialized:', { skill, totalQuestions: questions.length, difficulty });
     },
 
@@ -177,6 +179,7 @@ const quizState = {
         this.answers = [];
         this.correctCount = 0;
         this.difficulty = 'medium';
+        this.codingTestStatus = {};
     }
 };
 
@@ -396,17 +399,25 @@ async function fetchSkillQuestions(skill, difficulty = 'medium') {
         // Format questions with additional properties
         questions = questions.map((q, idx) => ({
             id: idx + 1,
+            type: q.type || 'multiple-choice',
             question: q.question || '',
             options: Array.isArray(q.options) ? q.options : [],
             correctAnswer: q.correctAnswer || '',
             hint: `Think about the core concepts of ${skill}. Look for the most accurate answer.`,
-            difficulty: q.difficulty || difficulty || 'medium'
+            difficulty: q.difficulty || difficulty || 'medium',
+            programmingLanguage: q.programmingLanguage || 'javascript',
+            codeTemplate: q.codeTemplate || '',
+            testCases: Array.isArray(q.testCases) ? q.testCases : []
         }));
 
         // Filter out invalid questions
-        questions = questions.filter(
-            q => q.question && q.options && q.options.length >= 2 && q.correctAnswer && q.options.includes(q.correctAnswer)
-        );
+        questions = questions.filter(q => {
+            if (!q.question) return false;
+            if (q.type === 'coding') {
+                return q.programmingLanguage && q.testCases.length > 0;
+            }
+            return q.options && q.options.length >= 2 && q.correctAnswer && q.options.includes(q.correctAnswer);
+        });
 
         console.log(`Successfully processed ${questions.length} questions for ${skill}`);
         return questions;
@@ -551,7 +562,9 @@ async function showRandomSkillQuestion(skill, containerId, questionIndex = 0, di
             'webDevelopment': 'Web Development',
             'networking': 'Networking',
             'problemSolving': 'Problem Solving',
+            'troubleshooting': 'Troubleshooting',
             'database': 'Database Management',
+            'sql': 'Database SQL',
             'python': 'Python',
             'java': 'Java',
             'javascript': 'JavaScript',
@@ -606,18 +619,41 @@ async function showRandomSkillQuestion(skill, containerId, questionIndex = 0, di
                             </div>
                         </div>
                         
-                        <!-- Answer Options -->
+                        <!-- Answer Area -->
                         <div class="mb-8">
+        `;
+
+        if (q.type === 'coding') {
+            const starter = (q.codeTemplate || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            html += `
+                            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Solve this coding challenge:</h3>
+                            <div class="bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg p-4 mb-4">
+                                <p class="text-sm text-gray-700 dark:text-gray-300 mb-2"><strong>Language:</strong> ${q.programmingLanguage || 'javascript'}</p>
+                                <textarea id="coding-answer-${currentIdx}" class="w-full h-56 p-3 font-mono text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white" placeholder="Write your solution here...">${starter}</textarea>
+                                <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">Run tests first, then submit your challenge.</p>
+                            </div>
+                            <div class="flex flex-wrap gap-3" id="coding-actions-${currentIdx}">
+                                <button type="button" id="run-coding-tests-${currentIdx}" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-semibold">
+                                    <i class="fas fa-vial mr-2"></i>Run Tests
+                                </button>
+                                <button type="button" id="submit-coding-${currentIdx}" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-semibold">
+                                    <i class="fas fa-check mr-2"></i>Submit Challenge
+                                </button>
+                            </div>
+                            <div id="coding-test-results-${currentIdx}" class="mt-4"></div>
+            `;
+        } else {
+            html += `
                             <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Choose the correct answer:</h3>
                             <div class="space-y-3" id="answer-options-${currentIdx}">
-        `;
-        
-        q.options.forEach((opt, idx) => {
-            const selectedAnswer = opt.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-            const correctAnswer = q.correctAnswer.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-            const hint = q.hint.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-            
-            html += `
+            `;
+
+            q.options.forEach((opt, idx) => {
+                const selectedAnswer = opt.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+                const correctAnswer = q.correctAnswer.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+                const hint = q.hint.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+
+                html += `
                 <button type="button" class="answer-option w-full p-4 text-left bg-white dark:bg-gray-700 border-2 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg hover:border-green-500 hover:bg-green-50 dark:hover:bg-green-900/20 hover:shadow-lg transition transform hover:scale-102 font-semibold text-base"
                     data-option-id="option-${idx}"
                     data-selected-answer="${selectedAnswer}"
@@ -628,11 +664,15 @@ async function showRandomSkillQuestion(skill, containerId, questionIndex = 0, di
                         <span class="flex-1">${opt}</span>
                     </span>
                 </button>
-            `;
-        });
-        
-        html += `
+                `;
+            });
+
+            html += `
                             </div>
+            `;
+        }
+
+        html += `
                         </div>
                         
                         <!-- Feedback Area (Hidden by default) -->
@@ -665,6 +705,18 @@ async function showRandomSkillQuestion(skill, containerId, questionIndex = 0, di
                 answerQuestion(selectedAnswer, correctAnswer, hint);
             });
         });
+
+        if (q.type === 'coding') {
+            const runBtn = document.getElementById(`run-coding-tests-${currentIdx}`);
+            const submitBtn = document.getElementById(`submit-coding-${currentIdx}`);
+
+            if (runBtn) {
+                runBtn.addEventListener('click', () => runCodingChallengeTests(currentIdx));
+            }
+            if (submitBtn) {
+                submitBtn.addEventListener('click', () => submitCodingChallenge(currentIdx));
+            }
+        }
         
         // Scroll to top
         container.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -811,6 +863,133 @@ function answerQuestion(selectedAnswer, correctAnswer, hint) {
             }
         }, 2000);
     }
+}
+
+async function runCodingChallengeTests(currentIdx) {
+    const q = quizState.getCurrentQuestion();
+    if (!q || q.type !== 'coding') return;
+
+    const codeInput = document.getElementById(`coding-answer-${currentIdx}`);
+    const resultsArea = document.getElementById(`coding-test-results-${currentIdx}`);
+
+    if (!codeInput || !resultsArea) return;
+
+    const code = codeInput.value.trim();
+    if (!code) {
+        showToast('Please write code before running tests.', 'warning');
+        return;
+    }
+
+    resultsArea.innerHTML = `
+        <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-300 dark:border-blue-700 rounded-lg p-3 text-sm text-blue-700 dark:text-blue-300">
+            Running tests...
+        </div>
+    `;
+
+    try {
+        const response = await apiCall('/assessments/test-code', {
+            method: 'POST',
+            body: JSON.stringify({
+                code,
+                language: q.programmingLanguage || 'javascript',
+                testCases: Array.isArray(q.testCases) ? q.testCases : []
+            })
+        });
+
+        const testResults = Array.isArray(response?.results) ? response.results : [];
+        const passedCount = testResults.filter(r => r.passed).length;
+        const totalCount = testResults.length;
+
+        quizState.codingTestStatus = quizState.codingTestStatus || {};
+        quizState.codingTestStatus[currentIdx] = {
+            passed: totalCount > 0 && passedCount === totalCount,
+            response
+        };
+
+        resultsArea.innerHTML = `
+            <div class="bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg p-3">
+                <p class="font-semibold text-gray-900 dark:text-white mb-2">Test Results: ${passedCount}/${totalCount} passed</p>
+                <ul class="space-y-1 text-sm">
+                    ${testResults.map((r, idx) => `
+                        <li class="${r.passed ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}">
+                            ${r.passed ? '✅' : '❌'} Test ${idx + 1}
+                        </li>
+                    `).join('')}
+                </ul>
+            </div>
+        `;
+    } catch (error) {
+        console.error('Error running coding tests:', error);
+        resultsArea.innerHTML = `
+            <div class="bg-red-50 dark:bg-red-900/20 border border-red-300 dark:border-red-700 rounded-lg p-3 text-sm text-red-700 dark:text-red-300">
+                Failed to run tests. Please try again.
+            </div>
+        `;
+    }
+}
+
+async function submitCodingChallenge(currentIdx) {
+    const q = quizState.getCurrentQuestion();
+    if (!q || q.type !== 'coding') return;
+
+    const codeInput = document.getElementById(`coding-answer-${currentIdx}`);
+    const submitBtn = document.getElementById(`submit-coding-${currentIdx}`);
+    if (!codeInput || !submitBtn) return;
+
+    const code = codeInput.value.trim();
+    if (!code) {
+        showToast('Please write code before submitting.', 'warning');
+        return;
+    }
+
+    submitBtn.disabled = true;
+    submitBtn.classList.add('opacity-60', 'cursor-not-allowed');
+
+    await runCodingChallengeTests(currentIdx);
+
+    const status = quizState.codingTestStatus?.[currentIdx];
+    const isCorrect = !!status?.passed;
+    const feedbackArea = document.getElementById(`feedback-area-${currentIdx}`);
+
+    quizState.recordAnswer('[coding-challenge]', 'pass', isCorrect);
+    quizState.markAnswered();
+
+    if (isCorrect) {
+        quizGamification.addPoints(20);
+        updateGamificationDisplay();
+        if (feedbackArea) {
+            feedbackArea.innerHTML = `
+                <div class="bg-green-50 dark:bg-green-900/20 border-2 border-green-400 dark:border-green-600 rounded-lg p-6 text-center">
+                    <p class="text-2xl font-bold text-green-600 dark:text-green-400 mb-2">✅ Coding Challenge Passed!</p>
+                    <p class="text-lg text-green-700 dark:text-green-300 font-semibold">+20 Points!</p>
+                    <p class="text-sm text-green-600 dark:text-green-400 mt-3">Moving to next question...</p>
+                </div>
+            `;
+            feedbackArea.classList.remove('hidden');
+        }
+    } else {
+        if (feedbackArea) {
+            feedbackArea.innerHTML = `
+                <div class="bg-red-50 dark:bg-red-900/20 border-2 border-red-400 dark:border-red-600 rounded-lg p-6 text-center">
+                    <p class="text-2xl font-bold text-red-600 dark:text-red-400 mb-2">❌ Coding Challenge Not Passed</p>
+                    <p class="text-sm text-red-700 dark:text-red-300 mt-3">Try to improve your logic and retake this assessment.</p>
+                </div>
+            `;
+            feedbackArea.classList.remove('hidden');
+        }
+    }
+
+    setTimeout(() => {
+        if (quizState.nextQuestion()) {
+            const skill = quizState.currentSkill;
+            const containerId = quizState.containerId;
+            const nextIdx = quizState.getCurrentIndex();
+            const difficulty = quizState.difficulty || 'medium';
+            showRandomSkillQuestion(skill, containerId, nextIdx, difficulty);
+        } else {
+            saveQuizResult();
+        }
+    }, 2200);
 }
 
 /**
@@ -1105,7 +1284,7 @@ async function loadStudentDashboard() {
                             <div class="md:ml-4">
                                 <p class="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">${assessmentDisplayScore}%</p>
                                 <p class="text-gray-600 dark:text-gray-300 text-xs md:text-sm">Assessment Score</p>
-                                <p class="text-[11px] md:text-xs text-gray-500 dark:text-gray-400 mt-1">${assessmentResults.length > 0 ? `Avg of ${assessmentResults.length} attempts${bestAssessmentScore !== null ? ` • Best ${bestAssessmentScore}%` : ''}` : 'No completed assessments yet'}</p>
+                                <p class="text-[11px] md:text-xs text-gray-500 dark:text-gray-400 mt-1">${assessmentResults.length > 0 ? `Ave of ${assessmentResults.length} attempts${bestAssessmentScore !== null ? ` • Best ${bestAssessmentScore}%` : ''}` : 'No completed assessments yet'}</p>
                             </div>
                         </div>
                     </div>
@@ -1236,7 +1415,7 @@ async function loadStudentDashboard() {
                             <div class="flex justify-between items-center mb-6">
                                 <div>
                                     <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Skills Assessment</h2>
-                                    <p class="text-gray-600 dark:text-gray-300 mt-2">Choose a programming language to assess your abilities and get better job matches.</p>
+                                    <p class="text-gray-600 dark:text-gray-300 mt-2">Take 5 general IT skill assessments to build accurate, assessment-based career matching.</p>
                                 </div>
                                 <div id="gamification-badge" class="bg-gradient-to-r from-green-400 to-blue-500 rounded-lg p-4 text-white text-center shadow-lg">
                                     <div class="text-3xl font-bold">🏆</div>
@@ -1245,116 +1424,41 @@ async function loadStudentDashboard() {
                                 </div>
                             </div>
 
-                            <!-- Programming Languages -->
+                            <!-- General Skills -->
                             <div class="mb-8">
-                                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Programming Languages</h3>
+                                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">General Skills Assessment</h3>
                                 <div class="grid-container">
-                                    <div class="grid-item python" onclick="startCategoryAssessment('python')">
-                                        <i class="fab fa-python"></i>
-                                        <h3>Python</h3>
-                                        <p>Python programming, Django, Flask, data science.</p>
+                                    <div class="grid-item troubleshooting" onclick="startCategoryAssessment('troubleshooting')">
+                                        <i class="fas fa-tools"></i>
+                                        <h3>Troubleshooting</h3>
+                                        <p>Root-cause analysis, diagnostics, and incident resolution workflow.</p>
                                     </div>
-                                    <div class="grid-item java" onclick="startCategoryAssessment('java')">
-                                        <i class="fab fa-java"></i>
-                                        <h3>Java</h3>
-                                        <p>Java programming, Spring, enterprise applications.</p>
+                                    <div class="grid-item networking" onclick="startCategoryAssessment('networking')">
+                                        <i class="fas fa-network-wired"></i>
+                                        <h3>Networking</h3>
+                                        <p>TCP/IP, DNS, routing, security basics, and connectivity validation.</p>
                                     </div>
-                                    <div class="grid-item javascript" onclick="startCategoryAssessment('javascript')">
-                                        <i class="fab fa-js"></i>
-                                        <h3>JavaScript</h3>
-                                        <p>JavaScript, Node.js, modern web development.</p>
+                                    <div class="grid-item sql" onclick="startCategoryAssessment('sql')">
+                                        <i class="fas fa-database"></i>
+                                        <h3>Database SQL</h3>
+                                        <p>Querying, joins, normalization, transactions, and data integrity.</p>
                                     </div>
-                                    <div class="grid-item typescript" onclick="startCategoryAssessment('typescript')">
-                                        <i class="fas fa-code"></i>
-                                        <h3>TypeScript</h3>
-                                        <p>TypeScript, Angular, type-safe JavaScript.</p>
+                                    <div class="grid-item webDevelopment" onclick="startCategoryAssessment('webDevelopment')">
+                                        <i class="fas fa-globe"></i>
+                                        <h3>Web Development</h3>
+                                        <p>Frontend and backend web fundamentals, APIs, and secure web practices.</p>
                                     </div>
-                                    <div class="grid-item csharp" onclick="startCategoryAssessment('csharp')">
-                                        <i class="fas fa-code"></i>
-                                        <h3>C#</h3>
-                                        <p>C# programming, .NET, ASP.NET development.</p>
-                                    </div>
-                                    <div class="grid-item cpp" onclick="startCategoryAssessment('cpp')">
-                                        <i class="fas fa-code"></i>
-                                        <h3>C++</h3>
-                                        <p>C++ programming, system development, STL.</p>
-                                    </div>
-                                    <div class="grid-item c" onclick="startCategoryAssessment('c')">
-                                        <i class="fas fa-code"></i>
-                                        <h3>C</h3>
-                                        <p>C programming, embedded systems, low-level.</p>
-                                    </div>
-                                    <div class="grid-item php" onclick="startCategoryAssessment('php')">
-                                        <i class="fab fa-php"></i>
-                                        <h3>PHP</h3>
-                                        <p>PHP programming, Laravel, WordPress development.</p>
-                                    </div>
-                                    <div class="grid-item ruby" onclick="startCategoryAssessment('ruby')">
-                                        <i class="fas fa-gem"></i>
-                                        <h3>Ruby</h3>
-                                        <p>Ruby programming, Rails, web applications.</p>
-                                    </div>
-                                    <div class="grid-item go" onclick="startCategoryAssessment('go')">
-                                        <i class="fas fa-code"></i>
-                                        <h3>Go</h3>
-                                        <p>Go programming, microservices, concurrency.</p>
-                                    </div>
-                                    <div class="grid-item rust" onclick="startCategoryAssessment('rust')">
-                                        <i class="fas fa-code"></i>
-                                        <h3>Rust</h3>
-                                        <p>Rust programming, memory safety, performance.</p>
-                                    </div>
-                                    <div class="grid-item swift" onclick="startCategoryAssessment('swift')">
-                                        <i class="fab fa-swift"></i>
-                                        <h3>Swift</h3>
-                                        <p>Swift programming, iOS development, SwiftUI.</p>
-                                    </div>
-                                    <div class="grid-item kotlin" onclick="startCategoryAssessment('kotlin')">
-                                        <i class="fas fa-code"></i>
-                                        <h3>Kotlin</h3>
-                                        <p>Kotlin programming, Android development.</p>
-                                    </div>
-                                    <div class="grid-item objectivec" onclick="startCategoryAssessment('objectivec')">
-                                        <i class="fab fa-apple"></i>
-                                        <h3>Objective-C</h3>
-                                        <p>Objective-C, iOS/macOS legacy development.</p>
-                                    </div>
-                                    <div class="grid-item r" onclick="startCategoryAssessment('r')">
-                                        <i class="fab fa-r-project"></i>
-                                        <h3>R</h3>
-                                        <p>R programming, statistical computing, data analysis.</p>
-                                    </div>
-                                    <div class="grid-item scala" onclick="startCategoryAssessment('scala')">
-                                        <i class="fas fa-code"></i>
-                                        <h3>Scala</h3>
-                                        <p>Scala programming, functional programming.</p>
-                                    </div>
-                                    <div class="grid-item perl" onclick="startCategoryAssessment('perl')">
-                                        <i class="fas fa-code"></i>
-                                        <h3>Perl</h3>
-                                        <p>Perl programming, text processing, scripting.</p>
-                                    </div>
-                                    <div class="grid-item visualbasic" onclick="startCategoryAssessment('visualbasic')">
-                                        <i class="fas fa-code"></i>
-                                        <h3>Visual Basic</h3>
-                                        <p>VB.NET, Windows applications development.</p>
-                                    </div>
-                                    <div class="grid-item assembly" onclick="startCategoryAssessment('assembly')">
-                                        <i class="fas fa-microchip"></i>
-                                        <h3>Assembly</h3>
-                                        <p>Assembly language, low-level programming.</p>
-                                    </div>
-                                    <div class="grid-item matlab" onclick="startCategoryAssessment('matlab')">
-                                        <i class="fas fa-calculator"></i>
-                                        <h3>MATLAB</h3>
-                                        <p>MATLAB, numerical computing, Simulink.</p>
+                                    <div class="grid-item problemSolving" onclick="startCategoryAssessment('problemSolving')">
+                                        <i class="fas fa-lightbulb"></i>
+                                        <h3>Problem Solving</h3>
+                                        <p>Algorithms, analytical thinking, and structured solution design.</p>
                                     </div>
                                 </div>
                             </div>
 
                             <div class="mt-8 text-center">
                                 <p class="text-sm text-gray-500 dark:text-gray-400">
-                                    Complete language assessments to build your programming skill profile.
+                                    Complete all 5 to unlock more accurate skill verification and recommendation matching.
                                 </p>
                             </div>
                         </div>
@@ -1687,7 +1791,7 @@ async function loadCompanyDashboard() {
                             </div>
                             <div class="ml-4">
                                 <p class="text-2xl font-bold text-gray-900 dark:text-white">${analytics.averageApplicantScore || 0}%</p>
-                                <p class="text-gray-600 dark:text-gray-300 text-sm">Avg Applicant Score</p>
+                                <p class="text-gray-600 dark:text-gray-300 text-sm">Ave Applicant Score</p>
                             </div>
                         </div>
                     </div>
@@ -5636,38 +5740,19 @@ function toggleSettingsDropdown() {
 function startCategoryAssessment(category) {
     console.log('Starting assessment for category:', category);
     
-    // All categories and languages now use the new gamified quiz system
-    const allCategories = ['python', 'java', 'javascript', 'typescript', 'csharp', 'cpp', 'c', 'php', 'ruby', 'go', 'rust', 'swift', 'kotlin', 'objectivec', 'r', 'scala', 'perl', 'visualbasic', 'assembly', 'matlab', 'html', 'css', 'sql', 'programming', 'webDevelopment', 'networking', 'problemSolving', 'database'];
+    const allCategories = ['troubleshooting', 'networking', 'sql', 'webDevelopment', 'problemSolving'];
+
+    if (!allCategories.includes(category)) {
+        showToast('Unsupported assessment category selected.', 'error');
+        return;
+    }
     
     const skillNames = {
-        'python': 'Python',
-        'java': 'Java',
-        'javascript': 'JavaScript',
-        'typescript': 'TypeScript',
-        'csharp': 'C#',
-        'cpp': 'C++',
-        'c': 'C',
-        'php': 'PHP',
-        'ruby': 'Ruby',
-        'go': 'Go',
-        'rust': 'Rust',
-        'swift': 'Swift',
-        'kotlin': 'Kotlin',
-        'objectivec': 'Objective-C',
-        'r': 'R',
-        'scala': 'Scala',
-        'perl': 'Perl',
-        'visualbasic': 'Visual Basic',
-        'assembly': 'Assembly',
-        'matlab': 'MATLAB',
-        'html': 'HTML',
-        'css': 'CSS',
-        'sql': 'SQL',
-        'programming': 'Programming Fundamentals',
+        'troubleshooting': 'Troubleshooting',
+        'sql': 'Database SQL',
         'webDevelopment': 'Web Development',
         'networking': 'Networking',
-        'problemSolving': 'Problem Solving',
-        'database': 'Database Management'
+        'problemSolving': 'Problem Solving'
     };
     
     // Use each selected category/skill directly so different assessments don't share proxy question pools.
@@ -5778,34 +5863,11 @@ function proceedWithQuiz(skillToFetch, difficulty, category) {
     closeDifficultySelector();
     
     const skillNames = {
-        'python': 'Python',
-        'java': 'Java',
-        'javascript': 'JavaScript',
-        'typescript': 'TypeScript',
-        'csharp': 'C#',
-        'cpp': 'C++',
-        'c': 'C',
-        'php': 'PHP',
-        'ruby': 'Ruby',
-        'go': 'Go',
-        'rust': 'Rust',
-        'swift': 'Swift',
-        'kotlin': 'Kotlin',
-        'objectivec': 'Objective-C',
-        'r': 'R',
-        'scala': 'Scala',
-        'perl': 'Perl',
-        'visualbasic': 'Visual Basic',
-        'assembly': 'Assembly',
-        'matlab': 'MATLAB',
-        'html': 'HTML',
-        'css': 'CSS',
-        'sql': 'SQL',
-        'programming': 'Programming Fundamentals',
+        'troubleshooting': 'Troubleshooting',
+        'sql': 'Database SQL',
         'webDevelopment': 'Web Development',
         'networking': 'Networking',
-        'problemSolving': 'Problem Solving',
-        'database': 'Database Management'
+        'problemSolving': 'Problem Solving'
     };
     
     // Hide all sections and show assessment section with skill quiz
@@ -6194,7 +6256,9 @@ function showAssessmentResults(resultData) {
             database: 'Database',
             webDevelopment: 'Web Development',
             networking: 'Networking',
-            problemSolving: 'Problem Solving'
+            problemSolving: 'Problem Solving',
+            troubleshooting: 'Troubleshooting',
+            sql: 'Database SQL'
         };
         
         let categoriesHTML = '';
@@ -6242,7 +6306,9 @@ function showAssessmentResults(resultData) {
                 database: 'Database',
                 webDevelopment: 'Web Development',
                 networking: 'Networking',
-                problemSolving: 'Problem Solving'
+                problemSolving: 'Problem Solving',
+                troubleshooting: 'Troubleshooting',
+                sql: 'Database SQL'
             };
             
             skillsHTML += `
@@ -6278,7 +6344,9 @@ function displayLearningRecommendations(categoryScores) {
         database: 'Database',
         webDevelopment: 'Web Development',
         networking: 'Networking',
-        problemSolving: 'Problem Solving'
+        problemSolving: 'Problem Solving',
+        troubleshooting: 'Troubleshooting',
+        sql: 'Database SQL'
     };
     
     // Find areas that need improvement (< 60%)
@@ -6360,6 +6428,12 @@ function getLearningResources(category) {
             { title: 'MongoDB University', url: 'https://university.mongodb.com/', icon: 'fas fa-leaf' },
             { title: 'Database Design - Coursera', url: 'https://www.coursera.org/learn/database-design', icon: 'fas fa-graduation-cap' }
         ],
+        sql: [
+            { title: 'SQL Tutorial - W3Schools', url: 'https://www.w3schools.com/sql/', icon: 'fas fa-database' },
+            { title: 'SQLBolt Interactive SQL Lessons', url: 'https://sqlbolt.com/', icon: 'fas fa-laptop-code' },
+            { title: 'Mode SQL Tutorial', url: 'https://mode.com/sql-tutorial/', icon: 'fas fa-table' },
+            { title: 'PostgreSQL Documentation', url: 'https://www.postgresql.org/docs/', icon: 'fas fa-book' }
+        ],
         webDevelopment: [
             { title: 'HTML & CSS - MDN Web Docs', url: 'https://developer.mozilla.org/en-US/docs/Learn', icon: 'fab fa-html5' },
             { title: 'React Tutorial - Official Docs', url: 'https://react.dev/learn', icon: 'fab fa-react' },
@@ -6377,6 +6451,12 @@ function getLearningResources(category) {
             { title: 'HackerRank Challenges', url: 'https://www.hackerrank.com/', icon: 'fas fa-trophy' },
             { title: 'Project Euler - Math Problems', url: 'https://projecteuler.net/', icon: 'fas fa-calculator' },
             { title: 'Codewars Kata', url: 'https://www.codewars.com/', icon: 'fas fa-fighter-jet' }
+        ],
+        troubleshooting: [
+            { title: 'Google IT Support Troubleshooting Basics', url: 'https://www.coursera.org/professional-certificates/google-it-support', icon: 'fas fa-tools' },
+            { title: 'Microsoft Troubleshooting Methodology', url: 'https://learn.microsoft.com/', icon: 'fas fa-wrench' },
+            { title: 'Linux Troubleshooting Guide', url: 'https://www.redhat.com/sysadmin', icon: 'fab fa-linux' },
+            { title: 'Network Troubleshooting - Cisco NetAcad', url: 'https://www.netacad.com/', icon: 'fas fa-network-wired' }
         ]
     };
     
@@ -7423,6 +7503,157 @@ if (document.readyState === 'loading') {
 // CAREER PATH RECOMMENDATIONS
 // ============================================
 
+const ASSESSMENT_CATEGORY_LABELS = {
+    webDevelopment: 'Web Development',
+    problemSolving: 'Problem Solving',
+    troubleshooting: 'Troubleshooting',
+    database: 'Database',
+    sql: 'Database SQL',
+    networking: 'Networking',
+    programming: 'Programming',
+    python: 'Python',
+    java: 'Java',
+    javascript: 'JavaScript',
+    typescript: 'TypeScript',
+    csharp: 'C#',
+    cpp: 'C++',
+    c: 'C',
+    php: 'PHP',
+    ruby: 'Ruby',
+    go: 'Go',
+    rust: 'Rust',
+    swift: 'Swift',
+    kotlin: 'Kotlin',
+    objectivec: 'Objective-C',
+    r: 'R',
+    scala: 'Scala',
+    perl: 'Perl',
+    visualbasic: 'Visual Basic',
+    assembly: 'Assembly',
+    matlab: 'MATLAB',
+    html: 'HTML',
+    css: 'CSS'
+};
+
+function normalizeAssessmentCategoryKey(rawKey) {
+    const key = String(rawKey || '').trim();
+    if (!key) return '';
+
+    const compact = key.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const aliases = {
+        webdevelopment: 'webDevelopment',
+        webdev: 'webDevelopment',
+        problemsolving: 'problemSolving',
+        databasesql: 'sql',
+        cplusplus: 'cpp',
+        csharp: 'csharp',
+        objectivec: 'objectivec',
+        visualbasic: 'visualbasic'
+    };
+
+    return aliases[compact] || key;
+}
+
+function getAssessmentCategoryLabel(categoryKey) {
+    const normalized = normalizeAssessmentCategoryKey(categoryKey);
+    if (ASSESSMENT_CATEGORY_LABELS[normalized]) {
+        return ASSESSMENT_CATEGORY_LABELS[normalized];
+    }
+
+    const readable = String(normalized || categoryKey || '')
+        .replace(/([a-z])([A-Z])/g, '$1 $2')
+        .replace(/[_-]+/g, ' ')
+        .trim();
+
+    return readable
+        .split(' ')
+        .filter(Boolean)
+        .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+        .join(' ') || 'Unknown Skill';
+}
+
+function buildAssessmentAnalytics(assessments = []) {
+    const sortedAssessments = [...assessments].sort((a, b) => new Date(a.completedAt) - new Date(b.completedAt));
+    const categoryProgress = {};
+    let totalScore = 0;
+    let validScoreCount = 0;
+
+    sortedAssessments.forEach((assessment) => {
+        const percentage = Number(assessment?.percentage);
+        if (Number.isFinite(percentage)) {
+            totalScore += percentage;
+            validScoreCount += 1;
+        }
+
+        const completedAt = new Date(assessment?.completedAt || Date.now());
+        const pointDate = completedAt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+
+        const entries = Object.entries(assessment?.categoryScores || {});
+        if (entries.length > 0) {
+            entries.forEach(([rawCategory, rawScore]) => {
+                const score = Number(rawScore);
+                if (!Number.isFinite(score)) return;
+
+                const category = normalizeAssessmentCategoryKey(rawCategory);
+                if (!category) return;
+
+                if (!categoryProgress[category]) categoryProgress[category] = [];
+                categoryProgress[category].push({
+                    score,
+                    date: pointDate,
+                    timestamp: completedAt.getTime()
+                });
+            });
+            return;
+        }
+
+        const fallbackCategory = normalizeAssessmentCategoryKey(assessment?.assessment?.category);
+        if (fallbackCategory && Number.isFinite(percentage)) {
+            if (!categoryProgress[fallbackCategory]) categoryProgress[fallbackCategory] = [];
+            categoryProgress[fallbackCategory].push({
+                score: percentage,
+                date: pointDate,
+                timestamp: completedAt.getTime()
+            });
+        }
+    });
+
+    const categoryAverages = {};
+    const improvements = {};
+
+    Object.entries(categoryProgress).forEach(([category, points]) => {
+        if (!points.length) return;
+        const avg = Math.round(points.reduce((sum, p) => sum + p.score, 0) / points.length);
+        categoryAverages[category] = avg;
+
+        if (points.length >= 2) {
+            improvements[category] = points[points.length - 1].score - points[0].score;
+        }
+    });
+
+    if (Number.isFinite(categoryAverages.sql)) {
+        const dbParts = [categoryAverages.sql];
+        if (Number.isFinite(categoryAverages.database)) dbParts.push(categoryAverages.database);
+        categoryAverages.database = Math.round(dbParts.reduce((sum, score) => sum + score, 0) / dbParts.length);
+    }
+
+    const strongestCategory = Object.entries(categoryAverages)
+        .sort((a, b) => b[1] - a[1])[0] || null;
+
+    return {
+        sortedAssessments,
+        categoryProgress,
+        categoryAverages,
+        improvements,
+        totalAssessments: sortedAssessments.length,
+        overallAverage: validScoreCount > 0 ? Math.round(totalScore / validScoreCount) : 0,
+        latestScore: sortedAssessments.length > 0 ? Number(sortedAssessments[sortedAssessments.length - 1]?.percentage || 0) : 0,
+        strongestCategory,
+        strongestCategoryLabel: strongestCategory ? getAssessmentCategoryLabel(strongestCategory[0]) : 'N/A',
+        strongestCategoryScore: strongestCategory ? strongestCategory[1] : 0,
+    };
+}
+
 async function loadCareerPaths() {
     const careerPathsContent = document.getElementById('career-paths-content');
     if (!careerPathsContent) return;
@@ -7436,37 +7667,14 @@ async function loadCareerPaths() {
 
         const profile = profileResponse.data;
         const assessments = assessmentResponse.data || [];
-
-        // Get latest assessment scores - handle both direct and nested structures
-        let categoryScores = {};
-        let hasCompletedAssessments = false;
-        
-        if (assessments.length > 0) {
-            hasCompletedAssessments = true;
-            const latestAssessment = assessments[0];
-            
-            // Try to get categoryScores from different possible locations
-            categoryScores = latestAssessment.categoryScores || 
-                           latestAssessment.breakdown || 
-                           {};
-            
-            // If categoryScores is empty, create a basic score distribution from assessments
-            if (Object.keys(categoryScores).length === 0 && latestAssessment.percentage) {
-                // Use the overall percentage as a baseline for all career categories
-                categoryScores = {
-                    webDevelopment: latestAssessment.percentage,
-                    programming: latestAssessment.percentage,
-                    database: latestAssessment.percentage,
-                    networking: latestAssessment.percentage,
-                    problemSolving: latestAssessment.percentage
-                };
-            }
-        }
+        const analytics = buildAssessmentAnalytics(assessments);
+        const categoryScores = analytics.categoryAverages;
+        const hasCompletedAssessments = analytics.totalAssessments > 0;
 
         // Generate career recommendations based on skills and scores
         const careerPaths = generateCareerRecommendations(profile, categoryScores, hasCompletedAssessments);
 
-        if (careerPaths.length === 0 && !hasCompletedAssessments) {
+        if (!hasCompletedAssessments) {
             careerPathsContent.innerHTML = `
                 <div class="text-center py-8">
                     <div class="text-gray-400 text-5xl mb-4">
@@ -7484,6 +7692,11 @@ async function loadCareerPaths() {
         careerPathsContent.innerHTML = `
             <div class="mb-8">
                 <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-4">Career Growth Potential</h3>
+                <div class="mb-4 p-4 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700">
+                    <p class="text-sm text-blue-800 dark:text-blue-300">
+                        Generated from <strong>${analytics.totalAssessments}</strong> completed assessments. Current overall ave: <strong>${analytics.overallAverage}%</strong>.
+                    </p>
+                </div>
                 <div class="bg-white dark:bg-gray-800 rounded-lg p-6 shadow">
                     <canvas id="careerGrowthChart" height="80"></canvas>
                 </div>
@@ -7539,7 +7752,7 @@ async function loadCareerPaths() {
                         
                         <div class="pt-4 border-t border-${path.color}-200 dark:border-${path.color}-800">
                             <div class="flex items-center justify-between text-sm">
-                                <span class="text-gray-600 dark:text-gray-400">Avg. Salary:</span>
+                                <span class="text-gray-600 dark:text-gray-400">Ave. Salary:</span>
                                 <span class="font-bold text-gray-900 dark:text-white">${path.salary}</span>
                             </div>
                             <div class="flex items-center justify-between text-sm mt-2">
@@ -7608,7 +7821,7 @@ function generateCareerRecommendations(profile, categoryScores, hasCompletedAsse
             color: 'indigo',
             description: 'Analyze data to help businesses make informed decisions using SQL, Python, and visualization tools.',
             requiredSkills: ['SQL', 'Python', 'Data Visualization', 'Statistics', 'Excel'],
-            primaryCategories: ['database', 'programming', 'problemSolving'],
+            primaryCategories: ['database', 'sql', 'programming', 'problemSolving'],
             salary: '₱25,000 - ₱50,000',
             demand: 'Very High'
         },
@@ -7618,7 +7831,7 @@ function generateCareerRecommendations(profile, categoryScores, hasCompletedAsse
             color: 'red',
             description: 'Manage and maintain computer networks, ensuring connectivity, security, and optimal performance.',
             requiredSkills: ['TCP/IP', 'Network Security', 'Cisco', 'Troubleshooting', 'Protocols'],
-            primaryCategories: ['networking'],
+            primaryCategories: ['networking', 'troubleshooting'],
             salary: '₱22,000 - ₱45,000',
             demand: 'Medium'
         },
@@ -7646,14 +7859,9 @@ function generateCareerRecommendations(profile, categoryScores, hasCompletedAsse
             }
         });
 
-        // If no specific category scores found but student has completed assessments, 
-        // give a baseline match score
         let matchScore = 0;
         if (categoryCount > 0) {
             matchScore = Math.round(totalScore / categoryCount);
-        } else if (hasCompletedAssessments) {
-            // Give all paths a baseline score when assessments are completed
-            matchScore = 50;
         }
 
         // Determine skill gap
@@ -7693,7 +7901,7 @@ function initializeCareerGrowthChart(careerPaths) {
             data: {
                 labels: careerPaths.slice(0, 5).map(path => path.title),
                 datasets: [{
-                    label: 'Match Score',
+                    label: 'Career Match Score (%)',
                     data: careerPaths.slice(0, 5).map(path => path.matchScore),
                     borderColor: '#56AE67',
                     backgroundColor: 'rgba(86, 174, 103, 0.1)',
@@ -7710,6 +7918,10 @@ function initializeCareerGrowthChart(careerPaths) {
                 plugins: {
                     legend: {
                         display: false
+                    },
+                    title: {
+                        display: true,
+                        text: 'Career Match Score (%)'
                     }
                 },
                 scales: {
@@ -7752,6 +7964,7 @@ function drawSimpleCareerChart(canvas, careerPaths) {
             <text x="50" y="115" font-size="12" text-anchor="end">50</text>
             <text x="50" y="65" font-size="12" text-anchor="end">75</text>
             <text x="50" y="15" font-size="12" text-anchor="end">100</text>
+            <text x="20" y="120" font-size="11" text-anchor="middle" transform="rotate(-90 20 120)">Career Match Score (%)</text>
             
             <!-- Career path bars -->
             ${careerPaths.slice(0, 4).map((path, idx) => {
@@ -7874,8 +8087,9 @@ async function loadSkillProgress() {
     try {
         const response = await apiCall('/assessments/results/me');
         const assessments = response.data || [];
+        const analytics = buildAssessmentAnalytics(assessments);
 
-        if (assessments.length === 0) {
+        if (analytics.totalAssessments === 0) {
             skillProgressContent.innerHTML = `
                 <div class="text-center py-8">
                     <div class="text-gray-400 text-5xl mb-4">
@@ -7891,40 +8105,19 @@ async function loadSkillProgress() {
             return;
         }
 
-        // Sort assessments by date (oldest to newest)
-        const sortedAssessments = [...assessments].sort((a, b) => 
-            new Date(a.completedAt) - new Date(b.completedAt)
-        );
+        const categoryProgress = analytics.categoryProgress;
+        const improvements = analytics.improvements;
+        const graphCategories = Object.keys(categoryProgress)
+            .filter(category => categoryProgress[category].length > 0)
+            .sort((a, b) => {
+                const aLatest = categoryProgress[a][categoryProgress[a].length - 1]?.score || 0;
+                const bLatest = categoryProgress[b][categoryProgress[b].length - 1]?.score || 0;
+                return bLatest - aLatest;
+            });
 
-        // Track progress for each category
-        const categoryNames = {
-            programming: 'Programming',
-            database: 'Database',
-            webDevelopment: 'Web Development',
-            networking: 'Networking',
-            problemSolving: 'Problem Solving'
-        };
-
-        const categoryProgress = {};
-        Object.keys(categoryNames).forEach(category => {
-            categoryProgress[category] = sortedAssessments
-                .filter(a => a.categoryScores && a.categoryScores[category] !== undefined)
-                .map(a => ({
-                    score: a.categoryScores[category],
-                    date: new Date(a.completedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-                }));
-        });
-
-        // Calculate improvements
-        const improvements = {};
-        Object.keys(categoryProgress).forEach(category => {
-            const scores = categoryProgress[category];
-            if (scores.length >= 2) {
-                const firstScore = scores[0].score;
-                const lastScore = scores[scores.length - 1].score;
-                improvements[category] = lastScore - firstScore;
-            }
-        });
+        const avgImprovement = Object.values(improvements).length > 0
+            ? Math.round(Object.values(improvements).reduce((a, b) => a + b, 0) / Object.values(improvements).length)
+            : null;
 
         skillProgressContent.innerHTML = `
             <!-- Overall Stats -->
@@ -7933,7 +8126,7 @@ async function loadSkillProgress() {
                     <div class="flex items-center justify-between">
                         <div>
                             <p class="text-sm text-white font-medium">Total Assessments</p>
-                            <p class="text-3xl font-bold text-white mt-2">${assessments.length}</p>
+                            <p class="text-3xl font-bold text-white mt-2">${analytics.totalAssessments}</p>
                         </div>
                         <i class="fas fa-clipboard-check text-4xl text-blue-100"></i>
                     </div>
@@ -7941,8 +8134,8 @@ async function loadSkillProgress() {
                 <div class="bg-green-500 dark:bg-green-700 rounded-lg p-6 border-2 border-green-600 dark:border-green-600">
                     <div class="flex items-center justify-between">
                         <div>
-                            <p class="text-sm text-white font-medium">Latest Score</p>
-                            <p class="text-3xl font-bold text-white mt-2">${sortedAssessments[sortedAssessments.length - 1].percentage}%</p>
+                            <p class="text-sm text-white font-medium">Overall Average</p>
+                            <p class="text-3xl font-bold text-white mt-2">${analytics.overallAverage}%</p>
                         </div>
                         <i class="fas fa-chart-line text-4xl text-green-100"></i>
                     </div>
@@ -7950,31 +8143,32 @@ async function loadSkillProgress() {
                 <div class="bg-purple-500 dark:bg-purple-700 rounded-lg p-6 border-2 border-purple-600 dark:border-purple-600">
                     <div class="flex items-center justify-between">
                         <div>
-                            <p class="text-sm text-white font-medium">Avg. Improvement</p>
+                            <p class="text-sm text-white font-medium">Strongest Skill</p>
                             <p class="text-3xl font-bold text-white mt-2">
-                                ${Object.values(improvements).length > 0 ? 
-                                    '+' + Math.round(Object.values(improvements).reduce((a, b) => a + b, 0) / Object.values(improvements).length) + '%' 
-                                    : 'N/A'}
+                                ${analytics.strongestCategoryLabel === 'N/A' ? 'N/A' : `${analytics.strongestCategoryLabel} (${analytics.strongestCategoryScore}%)`}
                             </p>
+                            <p class="text-xs text-purple-100 mt-2">Ave. Improvement (per skill): ${avgImprovement === null ? 'N/A' : `${avgImprovement > 0 ? '+' : ''}${avgImprovement}%`}</p>
+                            <p class="text-[11px] text-purple-100 mt-1">This is based on first score vs latest score for each tracked skill/language.</p>
                         </div>
                         <i class="fas fa-trophy text-4xl text-purple-100"></i>
                     </div>
                 </div>
             </div>
 
-            <!-- Category Progress -->
+            <!-- Skill/Language Progress -->
             <div class="space-y-6">
-                ${Object.keys(categoryProgress).filter(cat => categoryProgress[cat].length > 0).map(category => {
+                ${graphCategories.map(category => {
                     const data = categoryProgress[category];
                     const latestScore = data[data.length - 1].score;
                     const improvement = improvements[category] || 0;
                     const improvementClass = improvement > 0 ? 'text-green-600 dark:text-green-400' : improvement < 0 ? 'text-red-600 dark:text-red-400' : 'text-gray-600 dark:text-gray-400';
                     const improvementIcon = improvement > 0 ? 'fa-arrow-up' : improvement < 0 ? 'fa-arrow-down' : 'fa-minus';
+                    const title = getAssessmentCategoryLabel(category);
 
                     return `
                         <div class="bg-white dark:bg-gray-700 rounded-lg p-6 shadow">
                             <div class="flex items-center justify-between mb-4">
-                                <h3 class="text-lg font-bold text-gray-900 dark:text-white">${categoryNames[category]}</h3>
+                                <h3 class="text-lg font-bold text-gray-900 dark:text-white">${title}</h3>
                                 <div class="flex items-center space-x-4">
                                     <span class="text-2xl font-bold text-gray-900 dark:text-white">${latestScore}%</span>
                                     ${data.length >= 2 ? `
@@ -7985,8 +8179,9 @@ async function loadSkillProgress() {
                                     ` : ''}
                                 </div>
                             </div>
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mb-3">${data.length} attempt${data.length > 1 ? 's' : ''} tracked</p>
                             
-                            <!-- Progress Chart -->
+                            <!-- Per-skill/language graph -->
                             <div class="relative h-32 flex items-end space-x-2">
                                 ${data.map((point, idx) => {
                                     const height = point.score;

@@ -94,6 +94,7 @@ const studentSchema = new mongoose.Schema({
       webDevelopment: Number,
       networking: Number,
       problemSolving: Number,
+      troubleshooting: Number,
       cloudComputing: Number,
       devOps: Number,
       security: Number,
