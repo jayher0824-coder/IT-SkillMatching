@@ -6,6 +6,8 @@ let authToken = null;
 let currentPage = 'landing';
 let isDarkMode = false;
 
+let globalAntiCopyEnabled = false;
+
 // API Base URL (use shared window.API_BASE if provided by helpers.js)
 const API_BASE = (typeof window !== 'undefined' && window.API_BASE) ? window.API_BASE : '/api';
 
@@ -22,6 +24,8 @@ function isTokenExpired(token) {
 
 // Initialize the application
 document.addEventListener('DOMContentLoaded', function() {
+    enableGlobalAntiCopyPasteProtection();
+
     if (validateAPIConfiguration()) {
         initializeApp();
     } else {
@@ -29,6 +33,55 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
 });
+
+function enableGlobalAntiCopyPasteProtection() {
+    if (globalAntiCopyEnabled) return;
+    globalAntiCopyEnabled = true;
+
+    const stopEvent = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        return false;
+    };
+
+    const onKeyDown = (e) => {
+        const key = String(e.key || '').toLowerCase();
+        const ctrlOrCmd = e.ctrlKey || e.metaKey;
+
+        // Block common copy/paste/select shortcuts globally.
+        if (ctrlOrCmd && ['c', 'v', 'x', 'a', 's', 'u', 'p'].includes(key)) {
+            return stopEvent(e);
+        }
+
+        // Block print screen where supported.
+        if (key === 'printscreen') {
+            return stopEvent(e);
+        }
+
+        return true;
+    };
+
+    document.addEventListener('copy', stopEvent, true);
+    document.addEventListener('cut', stopEvent, true);
+    document.addEventListener('paste', stopEvent, true);
+    document.addEventListener('contextmenu', stopEvent, true);
+    document.addEventListener('selectstart', stopEvent, true);
+    document.addEventListener('dragstart', stopEvent, true);
+    document.addEventListener('keydown', onKeyDown, true);
+
+    const style = document.createElement('style');
+    style.id = 'global-anti-copy-style';
+    style.textContent = `
+        * {
+            -webkit-user-select: none !important;
+            -moz-user-select: none !important;
+            -ms-user-select: none !important;
+            user-select: none !important;
+            -webkit-touch-callout: none !important;
+        }
+    `;
+    document.head.appendChild(style);
+}
 
 async function initializeApp() {
     // Show loading overlay

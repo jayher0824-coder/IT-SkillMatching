@@ -775,18 +775,20 @@ router.post('/test-code', protect, async (req, res) => {
       });
     }
 
-    // Simulate test execution results with some realism
+    const hasMeaningfulCode = hasMeaningfulImplementation(code, language);
+
+    // Simulate test execution results with safer behavior
     const results = testCases.map((testCase, index) => {
-      // For real implementation, this would execute the code
-      // For now, we'll show that valid code structure might pass
-      const passed = true; // Would be actual execution result
+      // For real implementation, this would execute the code.
+      // In simulation mode, only code with meaningful implementation can pass.
+      const passed = hasMeaningfulCode;
       
       return {
         testCase: index + 1,
         passed: passed,
         input: testCase.input,
         expected: testCase.output,
-        output: testCase.output,
+        output: passed ? testCase.output : 'Error: Incomplete implementation',
         executionTime: Math.random() * 100
       };
     });
@@ -870,6 +872,33 @@ function checkCodeStructure(code, language) {
 
   // Check if code contains at least one language-specific keyword
   return keywords.some(keyword => lowerCode.includes(keyword));
+}
+
+function hasMeaningfulImplementation(code, language) {
+  const normalizedCode = String(code || '').trim();
+  if (!normalizedCode) return false;
+
+  // Remove comments and whitespace to detect untouched templates.
+  const withoutBlockComments = normalizedCode.replace(/\/\*[\s\S]*?\*\//g, '');
+  const withoutLineComments = withoutBlockComments.replace(/\/\/.*$/gm, '');
+  const compact = withoutLineComments.replace(/\s+/g, '');
+
+  if (compact.length < 20) return false;
+
+  // Detect empty function body patterns such as: function x(...) { }
+  const emptyJsFunction = /function\s+[a-zA-Z_$][\w$]*\s*\([^)]*\)\s*\{\s*\}/.test(withoutLineComments);
+  const emptyPyFunction = /def\s+[a-zA-Z_][\w]*\s*\([^)]*\):\s*(pass)?\s*$/m.test(withoutLineComments);
+
+  if (emptyJsFunction || emptyPyFunction) return false;
+
+  const lowerCode = withoutLineComments.toLowerCase();
+  if (language && ['javascript', 'typescript'].includes(String(language).toLowerCase())) {
+    // Require at least one implementation signal for JS/TS submissions.
+    return ['return ', 'if ', 'for ', 'while ', '.filter(', '.map(', '.reduce(', 'new set', 'new map']
+      .some((token) => lowerCode.includes(token));
+  }
+
+  return true;
 }
 
 // @desc    Get supported programming languages for code testing
@@ -1116,7 +1145,8 @@ router.get('/quiz-questions/:skill', protect, async (req, res) => {
     ? String(difficulty).toLowerCase()
     : null;
 
-  const QUESTIONS_PER_QUIZ = 5;
+  const QUESTIONS_PER_QUIZ = 10;
+  const TARGET_PER_DIFFICULTY = 10;
   const MEMORY_WINDOW = 40;
 
   const shuffle = (arr) => [...arr].sort(() => Math.random() - 0.5);
@@ -1601,7 +1631,6 @@ router.get('/quiz-questions/:skill', protect, async (req, res) => {
   let resolvedBank = normalizeBank(skillToQuestions[normalizedSkill]);
 
   if (strictLanguageSkills.has(normalizedSkill)) {
-    const TARGET_PER_DIFFICULTY = 10;
     const starter = normalizeBank(starterLanguageBanks[normalizedSkill]);
     resolvedBank = {
       easy: uniqueByQuestion([...(resolvedBank.easy || []), ...(starter.easy || [])]),
@@ -1661,6 +1690,17 @@ router.get('/quiz-questions/:skill', protect, async (req, res) => {
     resolvedBank = normalizeBank(universalProgrammingFallback);
   }
 
+  // Ensure every skill can serve >5 questions per chosen difficulty.
+  const fallbackBank = normalizeBank(universalProgrammingFallback);
+  ['easy', 'medium', 'hard'].forEach((difficultyKey) => {
+    if (resolvedBank[difficultyKey].length < TARGET_PER_DIFFICULTY) {
+      resolvedBank[difficultyKey] = uniqueByQuestion([
+        ...resolvedBank[difficultyKey],
+        ...fallbackBank[difficultyKey].slice(0, TARGET_PER_DIFFICULTY - resolvedBank[difficultyKey].length),
+      ]);
+    }
+  });
+
   const primaryPool = uniqueByQuestion(
     normalizedDifficulty
       ? resolvedBank[normalizedDifficulty]
@@ -1680,8 +1720,11 @@ router.get('/quiz-questions/:skill', protect, async (req, res) => {
     });
   }
 
-  const takeCount = Math.min(QUESTIONS_PER_QUIZ, allSkillQuestions.length);
-  const memoryBucket = `${normalizedSkill}:all`;
+  const takeCount = Math.min(
+    QUESTIONS_PER_QUIZ,
+    normalizedDifficulty ? primaryPool.length : allSkillQuestions.length
+  );
+  const memoryBucket = `${normalizedSkill}:${normalizedDifficulty || 'all'}`;
 
   // Serve unseen questions first, then cycle once pool is exhausted.
   let recentQuestionKeys = [];
@@ -1701,7 +1744,10 @@ router.get('/quiz-questions/:skill', protect, async (req, res) => {
 
   if (selectedQuestions.length < takeCount) {
     const alreadySelected = new Set(selectedQuestions.map(getQuestionKey));
-    const filler = shuffle(unseenAnyDifficulty.filter((q) => !alreadySelected.has(getQuestionKey(q))))
+    const fallbackPool = normalizedDifficulty
+      ? primaryPool
+      : allSkillQuestions;
+    const filler = shuffle(fallbackPool.filter((q) => !alreadySelected.has(getQuestionKey(q))))
       .slice(0, takeCount - selectedQuestions.length);
     selectedQuestions = [...selectedQuestions, ...filler];
   }
@@ -1720,7 +1766,10 @@ router.get('/quiz-questions/:skill', protect, async (req, res) => {
       if (selectedQuestions.length >= takeCount && takeCount > 0) {
         selectedQuestions = selectedQuestions.slice(0, takeCount - 1);
       }
-      selectedQuestions.push({ ...codingChallenge });
+      selectedQuestions.push({
+        ...codingChallenge,
+        difficulty: normalizedDifficulty || codingChallenge.difficulty || 'medium',
+      });
     }
   }
 

@@ -12,23 +12,65 @@ const quizGamification = {
     level: 1,
     badges: [],
 
+    getStorageKey() {
+        try {
+            const userData = JSON.parse(sessionStorage.getItem('userData') || '{}');
+            const userId = userData?._id || userData?.id || 'anonymous';
+            return `quizGamification:${userId}`;
+        } catch (_e) {
+            return 'quizGamification:anonymous';
+        }
+    },
+
+    saveToLocal() {
+        try {
+            localStorage.setItem(this.getStorageKey(), JSON.stringify({
+                points: Number(this.points || 0),
+                level: Number(this.level || 1),
+                badges: Array.isArray(this.badges) ? this.badges : []
+            }));
+        } catch (_e) {
+            // Ignore localStorage failures silently.
+        }
+    },
+
+    loadFromLocal() {
+        try {
+            const raw = localStorage.getItem(this.getStorageKey());
+            if (!raw) return;
+            const parsed = JSON.parse(raw);
+            this.points = Number(parsed?.points || 0);
+            this.level = Number(parsed?.level || 1);
+            this.badges = Array.isArray(parsed?.badges) ? parsed.badges : [];
+        } catch (_e) {
+            // Ignore malformed local cache.
+        }
+    },
+
+    async syncAbsolutePointsToBackend() {
+        const token = sessionStorage.getItem('authToken');
+        if (!token) return;
+        await fetch('/api/students/gamification', {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+                points: Number(this.points || 0),
+                setAbsolute: true
+            })
+        });
+    },
+
     async addPoints(points) {
         this.points += points;
         this.checkLevelUp();
+        this.saveToLocal();
         
         // Sync with backend
         try {
-            const token = sessionStorage.getItem('authToken');
-            if (token) {
-                await fetch('/api/students/gamification', {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify({ points })
-                });
-            }
+            await this.syncAbsolutePointsToBackend();
         } catch (e) {
             console.log('Note: Gamification sync skipped (offline or API error)');
         }
@@ -40,6 +82,7 @@ const quizGamification = {
             this.level++;
             const levelBadge = `Level ${this.level} Achieved!`;
             this.badges.push(levelBadge);
+            this.saveToLocal();
             this.saveBadgeToBackend(levelBadge);
         }
     },
@@ -63,6 +106,9 @@ const quizGamification = {
     },
 
     async loadFromBackend() {
+        // Load cached points first so progress survives backend/server restarts.
+        this.loadFromLocal();
+
         try {
             const token = sessionStorage.getItem('authToken');
             if (token) {
@@ -74,9 +120,27 @@ const quizGamification = {
                 if (response.ok) {
                     const data = await response.json();
                     if (data.success) {
-                        this.points = data.data.points || 0;
-                        this.level = data.data.level || 1;
-                        this.badges = data.data.badges || [];
+                        const serverPoints = Number(data?.data?.points || 0);
+                        const serverLevel = Number(data?.data?.level || 1);
+                        const serverBadges = Array.isArray(data?.data?.badges) ? data.data.badges : [];
+
+                        const mergedPoints = Math.max(Number(this.points || 0), serverPoints);
+                        const mergedLevel = Math.max(
+                            Number(this.level || 1),
+                            serverLevel,
+                            Math.floor(mergedPoints / 100) + 1
+                        );
+                        const mergedBadges = Array.from(new Set([...(this.badges || []), ...serverBadges]));
+
+                        this.points = mergedPoints;
+                        this.level = mergedLevel;
+                        this.badges = mergedBadges;
+                        this.saveToLocal();
+
+                        // Heal backend if local cache has newer points.
+                        if (mergedPoints > serverPoints) {
+                            await this.syncAbsolutePointsToBackend();
+                        }
                     }
                 }
             }
@@ -880,6 +944,12 @@ async function runCodingChallengeTests(currentIdx) {
         return;
     }
 
+    const starterCode = String(q.codeTemplate || '').trim();
+    if (starterCode && code === starterCode) {
+        showToast('Please modify the starter code before running tests.', 'warning');
+        return;
+    }
+
     resultsArea.innerHTML = `
         <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-300 dark:border-blue-700 rounded-lg p-3 text-sm text-blue-700 dark:text-blue-300">
             Running tests...
@@ -939,6 +1009,12 @@ async function submitCodingChallenge(currentIdx) {
     const code = codeInput.value.trim();
     if (!code) {
         showToast('Please write code before submitting.', 'warning');
+        return;
+    }
+
+    const starterCode = String(q.codeTemplate || '').trim();
+    if (starterCode && code === starterCode) {
+        showToast('Please change the starter code before submitting.', 'warning');
         return;
     }
 
@@ -1415,12 +1491,119 @@ async function loadStudentDashboard() {
                             <div class="flex justify-between items-center mb-6">
                                 <div>
                                     <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Skills Assessment</h2>
-                                    <p class="text-gray-600 dark:text-gray-300 mt-2">Take 5 general IT skill assessments to build accurate, assessment-based career matching.</p>
+                                    <p class="text-gray-600 dark:text-gray-300 mt-2">Take programming language assessments and 5 general IT skill assessments for better matching.</p>
                                 </div>
                                 <div id="gamification-badge" class="bg-gradient-to-r from-green-400 to-blue-500 rounded-lg p-4 text-white text-center shadow-lg">
                                     <div class="text-3xl font-bold">🏆</div>
                                     <div class="text-sm font-semibold mt-2"><span id="points-display">0</span> Points</div>
                                     <div class="text-sm font-semibold">Level <span id="level-display">1</span></div>
+                                </div>
+                            </div>
+
+                            <!-- Programming Languages -->
+                            <div class="mb-8">
+                                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Programming Languages</h3>
+                                <div class="grid-container">
+                                    <div class="grid-item python" onclick="startCategoryAssessment('python')">
+                                        <i class="fab fa-python"></i>
+                                        <h3>Python</h3>
+                                        <p>Python programming, Django, Flask, data science.</p>
+                                    </div>
+                                    <div class="grid-item java" onclick="startCategoryAssessment('java')">
+                                        <i class="fab fa-java"></i>
+                                        <h3>Java</h3>
+                                        <p>Java programming, Spring, enterprise applications.</p>
+                                    </div>
+                                    <div class="grid-item javascript" onclick="startCategoryAssessment('javascript')">
+                                        <i class="fab fa-js"></i>
+                                        <h3>JavaScript</h3>
+                                        <p>JavaScript, Node.js, modern web development.</p>
+                                    </div>
+                                    <div class="grid-item typescript" onclick="startCategoryAssessment('typescript')">
+                                        <i class="fas fa-code"></i>
+                                        <h3>TypeScript</h3>
+                                        <p>TypeScript, Angular, type-safe JavaScript.</p>
+                                    </div>
+                                    <div class="grid-item csharp" onclick="startCategoryAssessment('csharp')">
+                                        <i class="fas fa-code"></i>
+                                        <h3>C#</h3>
+                                        <p>C# programming, .NET, ASP.NET development.</p>
+                                    </div>
+                                    <div class="grid-item cpp" onclick="startCategoryAssessment('cpp')">
+                                        <i class="fas fa-code"></i>
+                                        <h3>C++</h3>
+                                        <p>C++ programming, system development, STL.</p>
+                                    </div>
+                                    <div class="grid-item c" onclick="startCategoryAssessment('c')">
+                                        <i class="fas fa-code"></i>
+                                        <h3>C</h3>
+                                        <p>C programming, embedded systems, low-level.</p>
+                                    </div>
+                                    <div class="grid-item php" onclick="startCategoryAssessment('php')">
+                                        <i class="fab fa-php"></i>
+                                        <h3>PHP</h3>
+                                        <p>PHP programming, Laravel, WordPress development.</p>
+                                    </div>
+                                    <div class="grid-item ruby" onclick="startCategoryAssessment('ruby')">
+                                        <i class="fas fa-gem"></i>
+                                        <h3>Ruby</h3>
+                                        <p>Ruby programming, Rails, web applications.</p>
+                                    </div>
+                                    <div class="grid-item go" onclick="startCategoryAssessment('go')">
+                                        <i class="fas fa-code"></i>
+                                        <h3>Go</h3>
+                                        <p>Go programming, microservices, concurrency.</p>
+                                    </div>
+                                    <div class="grid-item rust" onclick="startCategoryAssessment('rust')">
+                                        <i class="fas fa-code"></i>
+                                        <h3>Rust</h3>
+                                        <p>Rust programming, memory safety, performance.</p>
+                                    </div>
+                                    <div class="grid-item swift" onclick="startCategoryAssessment('swift')">
+                                        <i class="fab fa-swift"></i>
+                                        <h3>Swift</h3>
+                                        <p>Swift programming, iOS development, SwiftUI.</p>
+                                    </div>
+                                    <div class="grid-item kotlin" onclick="startCategoryAssessment('kotlin')">
+                                        <i class="fas fa-code"></i>
+                                        <h3>Kotlin</h3>
+                                        <p>Kotlin programming, Android development.</p>
+                                    </div>
+                                    <div class="grid-item objectivec" onclick="startCategoryAssessment('objectivec')">
+                                        <i class="fab fa-apple"></i>
+                                        <h3>Objective-C</h3>
+                                        <p>Objective-C, iOS/macOS legacy development.</p>
+                                    </div>
+                                    <div class="grid-item r" onclick="startCategoryAssessment('r')">
+                                        <i class="fab fa-r-project"></i>
+                                        <h3>R</h3>
+                                        <p>R programming, statistical computing, data analysis.</p>
+                                    </div>
+                                    <div class="grid-item scala" onclick="startCategoryAssessment('scala')">
+                                        <i class="fas fa-code"></i>
+                                        <h3>Scala</h3>
+                                        <p>Scala programming, functional programming.</p>
+                                    </div>
+                                    <div class="grid-item perl" onclick="startCategoryAssessment('perl')">
+                                        <i class="fas fa-code"></i>
+                                        <h3>Perl</h3>
+                                        <p>Perl programming, text processing, scripting.</p>
+                                    </div>
+                                    <div class="grid-item visualbasic" onclick="startCategoryAssessment('visualbasic')">
+                                        <i class="fas fa-code"></i>
+                                        <h3>Visual Basic</h3>
+                                        <p>VB.NET, Windows applications development.</p>
+                                    </div>
+                                    <div class="grid-item assembly" onclick="startCategoryAssessment('assembly')">
+                                        <i class="fas fa-microchip"></i>
+                                        <h3>Assembly</h3>
+                                        <p>Assembly language, low-level programming.</p>
+                                    </div>
+                                    <div class="grid-item matlab" onclick="startCategoryAssessment('matlab')">
+                                        <i class="fas fa-calculator"></i>
+                                        <h3>MATLAB</h3>
+                                        <p>MATLAB, numerical computing, Simulink.</p>
+                                    </div>
                                 </div>
                             </div>
 
@@ -1458,7 +1641,7 @@ async function loadStudentDashboard() {
 
                             <div class="mt-8 text-center">
                                 <p class="text-sm text-gray-500 dark:text-gray-400">
-                                    Complete all 5 to unlock more accurate skill verification and recommendation matching.
+                                    Complete language and general assessments to unlock more accurate skill verification and recommendation matching.
                                 </p>
                             </div>
                         </div>
@@ -5740,7 +5923,7 @@ function toggleSettingsDropdown() {
 function startCategoryAssessment(category) {
     console.log('Starting assessment for category:', category);
     
-    const allCategories = ['troubleshooting', 'networking', 'sql', 'webDevelopment', 'problemSolving'];
+    const allCategories = ['python', 'java', 'javascript', 'typescript', 'csharp', 'cpp', 'c', 'php', 'ruby', 'go', 'rust', 'swift', 'kotlin', 'objectivec', 'r', 'scala', 'perl', 'visualbasic', 'assembly', 'matlab', 'html', 'css', 'sql', 'programming', 'webDevelopment', 'networking', 'problemSolving', 'database', 'troubleshooting'];
 
     if (!allCategories.includes(category)) {
         showToast('Unsupported assessment category selected.', 'error');
@@ -5748,11 +5931,35 @@ function startCategoryAssessment(category) {
     }
     
     const skillNames = {
+        'python': 'Python',
+        'java': 'Java',
+        'javascript': 'JavaScript',
+        'typescript': 'TypeScript',
+        'csharp': 'C#',
+        'cpp': 'C++',
+        'c': 'C',
+        'php': 'PHP',
+        'ruby': 'Ruby',
+        'go': 'Go',
+        'rust': 'Rust',
+        'swift': 'Swift',
+        'kotlin': 'Kotlin',
+        'objectivec': 'Objective-C',
+        'r': 'R',
+        'scala': 'Scala',
+        'perl': 'Perl',
+        'visualbasic': 'Visual Basic',
+        'assembly': 'Assembly',
+        'matlab': 'MATLAB',
+        'html': 'HTML',
+        'css': 'CSS',
         'troubleshooting': 'Troubleshooting',
         'sql': 'Database SQL',
+        'programming': 'Programming Fundamentals',
         'webDevelopment': 'Web Development',
         'networking': 'Networking',
-        'problemSolving': 'Problem Solving'
+        'problemSolving': 'Problem Solving',
+        'database': 'Database Management'
     };
     
     // Use each selected category/skill directly so different assessments don't share proxy question pools.
@@ -5863,11 +6070,35 @@ function proceedWithQuiz(skillToFetch, difficulty, category) {
     closeDifficultySelector();
     
     const skillNames = {
+        'python': 'Python',
+        'java': 'Java',
+        'javascript': 'JavaScript',
+        'typescript': 'TypeScript',
+        'csharp': 'C#',
+        'cpp': 'C++',
+        'c': 'C',
+        'php': 'PHP',
+        'ruby': 'Ruby',
+        'go': 'Go',
+        'rust': 'Rust',
+        'swift': 'Swift',
+        'kotlin': 'Kotlin',
+        'objectivec': 'Objective-C',
+        'r': 'R',
+        'scala': 'Scala',
+        'perl': 'Perl',
+        'visualbasic': 'Visual Basic',
+        'assembly': 'Assembly',
+        'matlab': 'MATLAB',
+        'html': 'HTML',
+        'css': 'CSS',
         'troubleshooting': 'Troubleshooting',
         'sql': 'Database SQL',
+        'programming': 'Programming Fundamentals',
         'webDevelopment': 'Web Development',
         'networking': 'Networking',
-        'problemSolving': 'Problem Solving'
+        'problemSolving': 'Problem Solving',
+        'database': 'Database Management'
     };
     
     // Hide all sections and show assessment section with skill quiz
