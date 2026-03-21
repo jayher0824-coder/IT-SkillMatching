@@ -7965,6 +7965,17 @@ async function loadCareerPaths() {
                                 `).join('')}
                             </div>
                         </div>
+
+                        <div class="mb-4">
+                            <h4 class="font-semibold text-gray-900 dark:text-white mb-2 text-sm">Assessment Scores Used:</h4>
+                            <div class="flex flex-wrap gap-2">
+                                ${(path.assessmentBreakdown || []).map(item => `
+                                    <span class="text-xs px-2 py-1 rounded border ${item.score !== null ? `bg-${path.color}-100/70 dark:bg-${path.color}-900/30 text-${path.color}-900 dark:text-${path.color}-300 border-${path.color}-300 dark:border-${path.color}-700` : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 border-gray-300 dark:border-gray-600'}">
+                                        ${item.label}: ${item.score !== null ? `${item.score}%` : '--'}
+                                    </span>
+                                `).join('')}
+                            </div>
+                        </div>
                         
                         ${path.skillGap.length > 0 ? `
                             <div class="mb-4">
@@ -8023,6 +8034,7 @@ function generateCareerRecommendations(profile, categoryScores, hasCompletedAsse
             description: 'Build complete web applications from front-end to back-end, working with databases, servers, and user interfaces.',
             requiredSkills: ['HTML/CSS', 'JavaScript', 'React/Vue', 'Node.js', 'SQL', 'REST APIs'],
             primaryCategories: ['webDevelopment', 'programming', 'database'],
+            assessmentCategories: ['html', 'css', 'javascript', 'typescript', 'sql', 'webDevelopment'],
             salary: '₱30,000 - ₱60,000',
             demand: 'Very High'
         },
@@ -8033,6 +8045,7 @@ function generateCareerRecommendations(profile, categoryScores, hasCompletedAsse
             description: 'Create beautiful and responsive user interfaces, focusing on user experience and visual design.',
             requiredSkills: ['HTML5', 'CSS3', 'JavaScript', 'React', 'Responsive Design', 'UI/UX'],
             primaryCategories: ['webDevelopment', 'programming'],
+            assessmentCategories: ['html', 'css', 'javascript', 'typescript', 'webDevelopment', 'problemSolving'],
             salary: '₱25,000 - ₱50,000',
             demand: 'High'
         },
@@ -8043,6 +8056,7 @@ function generateCareerRecommendations(profile, categoryScores, hasCompletedAsse
             description: 'Build server-side logic, databases, and APIs that power applications behind the scenes.',
             requiredSkills: ['Node.js/Python', 'SQL', 'REST APIs', 'Authentication', 'Server Management'],
             primaryCategories: ['programming', 'database'],
+            assessmentCategories: ['python', 'java', 'javascript', 'sql', 'database', 'troubleshooting'],
             salary: '₱28,000 - ₱55,000',
             demand: 'High'
         },
@@ -8053,6 +8067,7 @@ function generateCareerRecommendations(profile, categoryScores, hasCompletedAsse
             description: 'Analyze data to help businesses make informed decisions using SQL, Python, and visualization tools.',
             requiredSkills: ['SQL', 'Python', 'Data Visualization', 'Statistics', 'Excel'],
             primaryCategories: ['database', 'sql', 'programming', 'problemSolving'],
+            assessmentCategories: ['sql', 'python', 'r', 'database', 'problemSolving'],
             salary: '₱25,000 - ₱50,000',
             demand: 'Very High'
         },
@@ -8063,6 +8078,7 @@ function generateCareerRecommendations(profile, categoryScores, hasCompletedAsse
             description: 'Manage and maintain computer networks, ensuring connectivity, security, and optimal performance.',
             requiredSkills: ['TCP/IP', 'Network Security', 'Cisco', 'Troubleshooting', 'Protocols'],
             primaryCategories: ['networking', 'troubleshooting'],
+            assessmentCategories: ['networking', 'troubleshooting'],
             salary: '₱22,000 - ₱45,000',
             demand: 'Medium'
         },
@@ -8073,6 +8089,7 @@ function generateCareerRecommendations(profile, categoryScores, hasCompletedAsse
             description: 'Design and develop software solutions, write clean code, and solve complex technical problems.',
             requiredSkills: ['Java/Python', 'OOP', 'Algorithms', 'Git', 'Testing', 'Problem Solving'],
             primaryCategories: ['programming', 'problemSolving'],
+            assessmentCategories: ['python', 'java', 'javascript', 'cpp', 'c', 'problemSolving', 'programming'],
             salary: '₱30,000 - ₱70,000',
             demand: 'Very High'
         }
@@ -8083,7 +8100,11 @@ function generateCareerRecommendations(profile, categoryScores, hasCompletedAsse
         let totalScore = 0;
         let categoryCount = 0;
 
-        path.primaryCategories.forEach(category => {
+        const scoringCategories = Array.isArray(path.assessmentCategories) && path.assessmentCategories.length
+            ? path.assessmentCategories
+            : path.primaryCategories;
+
+        scoringCategories.forEach(category => {
             if (categoryScores[category] !== undefined && categoryScores[category] > 0) {
                 totalScore += categoryScores[category];
                 categoryCount++;
@@ -8101,10 +8122,17 @@ function generateCareerRecommendations(profile, categoryScores, hasCompletedAsse
             !userSkills.some(userSkill => userSkill.includes(skill.toLowerCase().split('/')[0]))
         );
 
+        const assessmentBreakdown = scoringCategories.map((categoryKey) => ({
+            key: categoryKey,
+            label: getAssessmentCategoryLabel(categoryKey),
+            score: Number.isFinite(categoryScores[categoryKey]) ? Math.round(categoryScores[categoryKey]) : null
+        }));
+
         return {
             ...path,
             matchScore,
-            skillGap
+            skillGap,
+            assessmentBreakdown
         };
     }).sort((a, b) => b.matchScore - a.matchScore);
 }
