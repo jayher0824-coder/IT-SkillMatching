@@ -16,7 +16,7 @@ const ensureDir = (dir) => {
 
 const announcementStorage = multer.diskStorage({
   destination: function (_req, _file, cb) {
-    const dest = path.join(__dirname, '..', '..', '..', 'client', 'public', 'assets', 'uploads', 'company-posts');
+    const dest = path.join(__dirname, '..', '..', 'assets', 'uploads', 'company-posts');
     ensureDir(dest);
     cb(null, dest);
   },
@@ -84,7 +84,7 @@ router.post('/announcements', protect, authorize('company'), announcementUpload.
       });
     }
 
-    const imageUrl = req.file ? `/assets/uploads/company-posts/${req.file.filename}` : '';
+    const imageUrl = req.file ? `/uploads/company-posts/${req.file.filename}` : '';
 
     const announcement = await CompanyAnnouncement.create({
       company: company._id,
