@@ -10,3 +10,5 @@ Allow: /
 Allow: /index.html
 Allow: /dashboard.html
 Allow: /messages.html
+
+Sitemap: https://it-ojt-platform.onrender.com/sitemap.xml

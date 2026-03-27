@@ -8162,23 +8162,45 @@ const ASSESSMENT_CATEGORY_LABELS = {
     css: 'CSS'
 };
 
+const ASSESSMENT_CATEGORY_COMPACT_KEYS = Object.keys(ASSESSMENT_CATEGORY_LABELS).reduce((acc, key) => {
+    acc[key.toLowerCase().replace(/[^a-z0-9]/g, '')] = key;
+    return acc;
+}, {});
+
 function normalizeAssessmentCategoryKey(rawKey) {
     const key = String(rawKey || '').trim();
     if (!key) return '';
 
-    const compact = key.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const lower = key.toLowerCase();
+    let compact = key.toLowerCase().replace(/[^a-z0-9]/g, '');
     const aliases = {
         webdevelopment: 'webDevelopment',
         webdev: 'webDevelopment',
         problemsolving: 'problemSolving',
         databasesql: 'sql',
+        javaprogramming: 'java',
+        javascriptprogramming: 'javascript',
+        pythonprogramming: 'python',
+        typescriptprogramming: 'typescript',
         cplusplus: 'cpp',
+        cpp: 'cpp',
+        csharpnet: 'csharp',
+        csharpprogramming: 'csharp',
         csharp: 'csharp',
         objectivec: 'objectivec',
-        visualbasic: 'visualbasic'
+        visualbasic: 'visualbasic',
+        vb: 'visualbasic'
     };
 
-    return aliases[compact] || key;
+    // Handle textual variants before compact aliasing (e.g., "C# Programming Assessment").
+    if (lower.includes('c#') || /\bc\s*sharp\b/.test(lower)) return 'csharp';
+
+    // Strip common suffix words so "java programming assessment" maps to "java".
+    compact = compact
+        .replace(/(assessment|quiz|test|exam|result|results|score|scores)+$/g, '')
+        .replace(/(programming)+$/g, '');
+
+    return aliases[compact] || ASSESSMENT_CATEGORY_COMPACT_KEYS[compact] || key;
 }
 
 function getAssessmentCategoryLabel(categoryKey) {
@@ -8421,6 +8443,34 @@ async function loadCareerPaths() {
     }
 }
 
+const LANGUAGE_CATEGORY_KEYS = new Set([
+    'python', 'java', 'javascript', 'typescript', 'csharp', 'cpp', 'c', 'php', 'ruby', 'go', 'rust',
+    'swift', 'kotlin', 'objectivec', 'r', 'scala', 'perl', 'visualbasic', 'assembly', 'matlab'
+]);
+
+const CAREER_PATH_LANGUAGE_HINTS = {
+    'Full Stack Developer': ['javascript', 'typescript', 'python', 'java', 'php', 'ruby', 'go'],
+    'Frontend Developer': ['javascript', 'typescript'],
+    'Backend Developer': ['python', 'java', 'javascript', 'typescript', 'csharp', 'php', 'ruby', 'go', 'rust'],
+    'Data Analyst': ['python', 'r'],
+    'Software Engineer': ['python', 'java', 'javascript', 'typescript', 'csharp', 'cpp', 'c', 'go', 'rust']
+};
+
+function inferRelevantLanguageCategories(path, categoryScores = {}) {
+    const scoredLanguages = Object.entries(categoryScores)
+        .filter(([rawKey, rawValue]) => {
+            const key = normalizeAssessmentCategoryKey(rawKey);
+            const value = Number(rawValue);
+            return LANGUAGE_CATEGORY_KEYS.has(key) && Number.isFinite(value) && value > 0;
+        })
+        .map(([rawKey]) => normalizeAssessmentCategoryKey(rawKey));
+
+    if (!scoredLanguages.length) return [];
+
+    const hintedLanguages = CAREER_PATH_LANGUAGE_HINTS[path.title] || [];
+    return scoredLanguages.filter(lang => hintedLanguages.includes(lang));
+}
+
 function generateCareerRecommendations(profile, categoryScores, hasCompletedAssessments = false) {
     const careerPaths = [
         {
@@ -8485,7 +8535,7 @@ function generateCareerRecommendations(profile, categoryScores, hasCompletedAsse
             description: 'Design and develop software solutions, write clean code, and solve complex technical problems.',
             requiredSkills: ['Java/Python', 'OOP', 'Algorithms', 'Git', 'Testing', 'Problem Solving'],
             primaryCategories: ['programming', 'problemSolving'],
-            assessmentCategories: ['python', 'java', 'javascript', 'cpp', 'c', 'problemSolving', 'programming'],
+            assessmentCategories: ['python', 'java', 'javascript', 'csharp', 'cpp', 'c', 'problemSolving', 'programming'],
             salary: '₱30,000 - ₱70,000',
             demand: 'Very High'
         }
@@ -8496,13 +8546,17 @@ function generateCareerRecommendations(profile, categoryScores, hasCompletedAsse
         let totalScore = 0;
         let categoryCount = 0;
 
-        const scoringCategories = Array.isArray(path.assessmentCategories) && path.assessmentCategories.length
+        const scoringCategories = (Array.isArray(path.assessmentCategories) && path.assessmentCategories.length
             ? path.assessmentCategories
-            : path.primaryCategories;
+            : path.primaryCategories)
+            .map(category => normalizeAssessmentCategoryKey(category))
+            .filter(Boolean);
 
         scoringCategories.forEach(category => {
-            if (categoryScores[category] !== undefined && categoryScores[category] > 0) {
-                totalScore += categoryScores[category];
+            const normalizedCategory = normalizeAssessmentCategoryKey(category);
+            const score = Number(categoryScores[normalizedCategory]);
+            if (Number.isFinite(score) && score > 0) {
+                totalScore += score;
                 categoryCount++;
             }
         });
@@ -8518,11 +8572,19 @@ function generateCareerRecommendations(profile, categoryScores, hasCompletedAsse
             !userSkills.some(userSkill => userSkill.includes(skill.toLowerCase().split('/')[0]))
         );
 
-        const assessmentBreakdown = scoringCategories.map((categoryKey) => ({
+        const inferredLanguageCategories = inferRelevantLanguageCategories(path, categoryScores);
+        const breakdownCategories = [...new Set([...scoringCategories, ...inferredLanguageCategories])];
+
+        const assessmentBreakdown = breakdownCategories.map((categoryKey) => {
+            const normalizedKey = normalizeAssessmentCategoryKey(categoryKey);
+            const score = Number(categoryScores[normalizedKey]);
+
+            return {
             key: categoryKey,
             label: getAssessmentCategoryLabel(categoryKey),
-            score: Number.isFinite(categoryScores[categoryKey]) ? Math.round(categoryScores[categoryKey]) : null
-        }));
+            score: Number.isFinite(score) ? Math.round(score) : null
+        };
+        });
 
         return {
             ...path,

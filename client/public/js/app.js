@@ -2594,7 +2594,7 @@ function closeAllJobsModal() {
     }
 }
 
-async function showAllApplications() {
+async function showAllApplicationsLegacy() {
     if (!currentUser || currentUser.role !== 'student') {
         showToast('Only students can view applications', 'error');
         return;
@@ -2903,7 +2903,11 @@ async function withdrawApplication(applicationId) {
         if (response.success) {
             showToast('Application withdrawn successfully', 'success');
             // Refresh applications list
-            showAllApplications();
+            if (typeof window.showAllApplications === 'function') {
+                window.showAllApplications();
+            } else {
+                showAllApplicationsLegacy();
+            }
         } else {
             showToast(response.message || 'Failed to withdraw application', 'error');
         }
