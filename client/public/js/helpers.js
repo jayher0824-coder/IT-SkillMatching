@@ -31,11 +31,26 @@ function validateAPIConfiguration() {
 
 // API Call Helper Function
 async function apiCall(endpoint, options = {}) {
+    const { retry, ...fetchOptions } = options;
+    const method = (fetchOptions.method || 'GET').toUpperCase();
+    const maxRetries = Number.isInteger(retry) ? Math.max(0, retry) : (method === 'GET' ? 1 : 0);
+
+    const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+    const isRetryableStatus = (status) => [408, 425, 429, 500, 502, 503, 504].includes(status);
+    const isRetryableError = (error) => {
+        if (error && Number.isInteger(error.status)) {
+            return isRetryableStatus(error.status);
+        }
+
+        const msg = String(error?.message || '').toLowerCase();
+        return msg.includes('failed to fetch') || msg.includes('network') || msg.includes('timeout');
+    };
+
     const config = {
-        ...options,
+        ...fetchOptions,
         headers: {
             'Content-Type': 'application/json',
-            ...options.headers,
+            ...fetchOptions.headers,
         },
     };
 
@@ -45,72 +60,97 @@ async function apiCall(endpoint, options = {}) {
         config.headers['Authorization'] = `Bearer ${authToken}`;
     }
 
-    try {
-        // If body is FormData, let the browser set the Content-Type (including boundary)
-        if (config.body instanceof FormData) {
-            delete config.headers['Content-Type'];
-        }
-
-        const API_BASE = window.API_BASE || '/api';
-        const fullUrl = API_BASE + endpoint;
-        console.log('API Request:', { url: fullUrl, method: config.method || 'GET', hasBody: !!config.body });
-        
-        const response = await fetch(fullUrl, config);
-
-        console.log('API Response:', { status: response.status, statusText: response.statusText, ok: response.ok });
-
-        // Try to parse JSON safely
-        let text = null;
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
         try {
-            text = await response.text();
-        } catch (e) {
-            // ignore
-        }
+            // If body is FormData, let the browser set the Content-Type (including boundary)
+            if (config.body instanceof FormData) {
+                delete config.headers['Content-Type'];
+            }
 
-        let data = null;
-        if (text) {
+            const API_BASE = window.API_BASE || '/api';
+            const fullUrl = API_BASE + endpoint;
+            console.log('API Request:', { url: fullUrl, method: config.method || 'GET', hasBody: !!config.body, attempt: attempt + 1 });
+
+            const response = await fetch(fullUrl, config);
+
+            console.log('API Response:', { status: response.status, statusText: response.statusText, ok: response.ok });
+
+            // Try to parse JSON safely
+            let text = null;
             try {
-                data = JSON.parse(text);
+                text = await response.text();
             } catch (e) {
-                // non-JSON response
-                data = null;
-                
+                // ignore
             }
-        }
 
-        if (!response.ok) {
-            // Handle validation errors array from express-validator
-            let message = 'API call failed';
-            if (data && data.errors && Array.isArray(data.errors)) {
-                message = data.errors.map(err => err.msg || err.message).join('; ');
-                console.error('Validation errors:', data.errors);
-            } else if (data && data.message) {
-                message = data.message;
-                console.error('API error message:', data.message);
-            } else {
-                message = response.statusText || 'API call failed';
+            let data = null;
+            if (text) {
+                try {
+                    data = JSON.parse(text);
+                } catch (e) {
+                    // non-JSON response
+                    data = null;
+                }
             }
-            console.error('Full error response:', data);
-            const err = new Error(message);
-            err.status = response.status;
-            err.response = data;
-            throw err;
-        }
 
-        // Return response as-is from server (server provides envelope: { success, token, user, data, message })
-        if (!data) {
-            throw new Error('Empty response from server');
-        }
+            if (!response.ok) {
+                // Handle validation errors array from express-validator
+                let message = 'API call failed';
+                if (data && data.errors && Array.isArray(data.errors)) {
+                    message = data.errors.map(err => err.msg || err.message).join('; ');
+                    console.error('Validation errors:', data.errors);
+                } else if (data && data.message) {
+                    message = data.message;
+                    console.error('API error message:', data.message);
+                } else if (text && text.trim()) {
+                    message = text.trim();
+                } else if (response.statusText) {
+                    message = response.statusText;
+                }
 
-        // If success is explicitly false, throw error
-        if (data.success === false) {
-            throw new Error(data.message || 'API call failed');
-        }
+                console.error('Full error response:', data || text);
+                const err = new Error(message);
+                err.status = response.status;
+                err.response = data;
 
-        return data;
-    } catch (error) {
-        console.error('API call error:', error);
-        throw error;
+                if (attempt < maxRetries && isRetryableStatus(response.status)) {
+                    await sleep(300 * (attempt + 1));
+                    continue;
+                }
+
+                throw err;
+            }
+
+            // Return response as-is from server (server provides envelope: { success, token, user, data, message })
+            if (!data) {
+                const err = new Error('Empty response from server');
+                if (attempt < maxRetries) {
+                    await sleep(300 * (attempt + 1));
+                    continue;
+                }
+                throw err;
+            }
+
+            // If success is explicitly false, throw error
+            if (data.success === false) {
+                const err = new Error(data.message || 'API call failed');
+                if (attempt < maxRetries && isRetryableError(err)) {
+                    await sleep(300 * (attempt + 1));
+                    continue;
+                }
+                throw err;
+            }
+
+            return data;
+        } catch (error) {
+            if (attempt < maxRetries && isRetryableError(error)) {
+                await sleep(300 * (attempt + 1));
+                continue;
+            }
+
+            console.error('API call error:', error);
+            throw error;
+        }
     }
 }
 

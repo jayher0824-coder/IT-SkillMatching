@@ -6,6 +6,7 @@ const { protect, authorize } = require('../../auth/middleware/auth');
 const Company = require('../../database/models/Company');
 const Student = require('../../database/models/Student');
 const CompanyAnnouncement = require('../../database/models/CompanyAnnouncement');
+const NotificationService = require('../../services/notificationService');
 
 const router = express.Router();
 
@@ -34,6 +35,30 @@ const announcementUpload = multer({
       return;
     }
     cb(new Error('Only image uploads are allowed for announcements'));
+  },
+});
+
+const profileStorage = multer.diskStorage({
+  destination: function (_req, _file, cb) {
+    const dest = path.join(__dirname, '..', '..', '..', 'client', 'public', 'assets', 'uploads', 'company-profiles');
+    ensureDir(dest);
+    cb(null, dest);
+  },
+  filename: function (_req, file, cb) {
+    const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
+    cb(null, `company-profile-${uniqueSuffix}${path.extname(file.originalname || '')}`);
+  },
+});
+
+const profileUpload = multer({
+  storage: profileStorage,
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    if (file.mimetype && file.mimetype.startsWith('image/')) {
+      cb(null, true);
+      return;
+    }
+    cb(new Error('Only image uploads are allowed for company profile media'));
   },
 });
 
@@ -76,6 +101,33 @@ router.post('/announcements', protect, authorize('company'), announcementUpload.
     const populated = await CompanyAnnouncement.findById(announcement._id)
       .populate('company', 'companyName logo')
       .lean();
+
+    if (['all', 'students'].includes(audience)) {
+      try {
+        const students = await Student.find({ user: { $exists: true, $ne: null } }).select('user');
+        const titleForNotif = String(title).trim();
+        const messageForNotif = `${company.companyName} posted: ${titleForNotif}`;
+
+        for (const student of students) {
+          if (!student.user) continue;
+          await NotificationService.create({
+            recipient: student.user,
+            type: 'system',
+            title: 'New Company Announcement',
+            message: messageForNotif,
+            link: '/index.html',
+            data: {
+              companyId: company._id,
+              companyName: company.companyName,
+              announcementId: announcement._id,
+              category,
+            },
+          });
+        }
+      } catch (notifErr) {
+        console.error('Announcement notification error:', notifErr);
+      }
+    }
 
     res.status(201).json({
       success: true,
@@ -129,12 +181,12 @@ router.get('/announcements', protect, authorize('company'), async (req, res) => 
 router.get('/announcements/public', protect, async (req, res) => {
   try {
     const limit = Math.min(Number(req.query.limit) || 10, 30);
-    const announcements = await CompanyAnnouncement.find({ isActive: true })
-      .populate({
-        path: 'company',
-        select: 'companyName logo verified',
-        match: { verified: true },
-      })
+    const audienceFilter = req.user?.role === 'student'
+      ? { audience: { $in: ['all', 'students'] } }
+      : {};
+
+    const announcements = await CompanyAnnouncement.find({ isActive: true, ...audienceFilter })
+      .populate('company', 'companyName logo verified')
       .sort({ isPinned: -1, publishedAt: -1 })
       .limit(limit)
       .lean();
@@ -222,8 +274,30 @@ router.get('/profile', protect, authorize('company'), async (req, res) => {
 // @desc    Create/Update company profile
 // @route   PUT /api/companies/profile
 // @access  Private (Companies only)
-router.put('/profile', protect, authorize('company'), async (req, res) => {
+router.put('/profile', protect, authorize('company'), profileUpload.fields([
+  { name: 'logoFile', maxCount: 1 },
+  { name: 'coverImageFile', maxCount: 1 },
+]), async (req, res) => {
   try {
+    const parseMaybeJson = (value, fallback = {}) => {
+      if (!value) return fallback;
+      if (typeof value === 'object') return value;
+      try {
+        return JSON.parse(value);
+      } catch (_err) {
+        return fallback;
+      }
+    };
+
+    const parseCsv = (value) => {
+      if (!value) return [];
+      if (Array.isArray(value)) return value.map(item => String(item).trim()).filter(Boolean);
+      return String(value).split(',').map(item => item.trim()).filter(Boolean);
+    };
+
+    const logoFile = req.files?.logoFile?.[0] || null;
+    const coverImageFile = req.files?.coverImageFile?.[0] || null;
+
     const {
       companyName,
       industry,
@@ -232,6 +306,8 @@ router.put('/profile', protect, authorize('company'), async (req, res) => {
       website,
       logo,
       coverImage,
+      logoExisting,
+      coverImageExisting,
       tagline,
       specialties,
       recruitmentEmail,
@@ -242,6 +318,15 @@ router.put('/profile', protect, authorize('company'), async (req, res) => {
       companyValues,
     } = req.body;
 
+    const parsedAddress = parseMaybeJson(address, {});
+    const parsedContactPerson = parseMaybeJson(contactPerson, {});
+    const parsedSocialMedia = parseMaybeJson(socialMedia, {});
+    const parsedSpecialties = parseCsv(specialties);
+    const parsedBenefits = parseCsv(benefits);
+
+    const uploadedLogoPath = logoFile ? `/assets/uploads/company-profiles/${logoFile.filename}` : '';
+    const uploadedCoverPath = coverImageFile ? `/assets/uploads/company-profiles/${coverImageFile.filename}` : '';
+
     let company = await Company.findOne({ user: req.user._id });
 
     if (company) {
@@ -251,15 +336,15 @@ router.put('/profile', protect, authorize('company'), async (req, res) => {
       company.companySize = companySize || company.companySize;
       company.description = description || company.description;
       company.website = website || company.website;
-      company.logo = logo || company.logo;
-      company.coverImage = coverImage || company.coverImage;
+      company.logo = uploadedLogoPath || logo || logoExisting || company.logo;
+      company.coverImage = uploadedCoverPath || coverImage || coverImageExisting || company.coverImage;
       company.tagline = tagline || company.tagline;
-      company.specialties = specialties || company.specialties;
+      company.specialties = parsedSpecialties.length > 0 ? parsedSpecialties : company.specialties;
       company.recruitmentEmail = recruitmentEmail || company.recruitmentEmail;
-      company.address = { ...company.address, ...address };
-      company.contactPerson = { ...company.contactPerson, ...contactPerson };
-      company.socialMedia = { ...company.socialMedia, ...socialMedia };
-      company.benefits = benefits || company.benefits;
+      company.address = { ...company.address, ...parsedAddress };
+      company.contactPerson = { ...company.contactPerson, ...parsedContactPerson };
+      company.socialMedia = { ...company.socialMedia, ...parsedSocialMedia };
+      company.benefits = parsedBenefits.length > 0 ? parsedBenefits : company.benefits;
       company.companyValues = companyValues || company.companyValues;
 
       await company.save();
@@ -272,15 +357,15 @@ router.put('/profile', protect, authorize('company'), async (req, res) => {
         companySize,
         description,
         website,
-        logo,
-        coverImage,
+        logo: uploadedLogoPath || logo || logoExisting || '',
+        coverImage: uploadedCoverPath || coverImage || coverImageExisting || '',
         tagline,
-        specialties,
+        specialties: parsedSpecialties,
         recruitmentEmail,
-        address,
-        contactPerson,
-        socialMedia,
-        benefits,
+        address: parsedAddress,
+        contactPerson: parsedContactPerson,
+        socialMedia: parsedSocialMedia,
+        benefits: parsedBenefits,
         companyValues,
       });
     }

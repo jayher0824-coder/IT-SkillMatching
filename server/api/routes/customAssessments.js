@@ -323,9 +323,17 @@ router.get('/submission/:submissionId', protect, async (req, res) => {
 // @access  Private (Company)
 router.get('/job/:jobId/submissions', protect, authorize('company'), async (req, res) => {
     try {
+        if (!mongoose.Types.ObjectId.isValid(req.params.jobId)) {
+            return res.status(400).json({ success: false, message: 'Invalid job ID format' });
+        }
+
         const job = await Job.findById(req.params.jobId).populate('company');
         if (!job) {
             return res.status(404).json({ success: false, message: 'Job not found' });
+        }
+
+        if (!job.company || !job.company.user) {
+            return res.status(404).json({ success: false, message: 'Job company link is missing' });
         }
 
         if (job.company.user.toString() !== req.user._id.toString()) {

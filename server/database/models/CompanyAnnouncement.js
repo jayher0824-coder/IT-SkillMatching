@@ -36,7 +36,7 @@ const companyAnnouncementSchema = new mongoose.Schema({
   },
   audience: {
     type: String,
-    enum: ['all', 'applicants', 'shortlisted'],
+    enum: ['all', 'students', 'applicants', 'shortlisted'],
     default: 'all',
   },
   isPinned: {

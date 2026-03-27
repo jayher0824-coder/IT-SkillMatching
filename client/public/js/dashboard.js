@@ -1192,6 +1192,92 @@ function showQuizCompletion(score, skill) {
 // STUDENT DASHBOARD LOADING
 // ============================================
 
+function normalizeMatchToken(value) {
+    return String(value || '')
+        .toLowerCase()
+        .replace(/[^a-z0-9+#.\s-]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+}
+
+function buildStudentSkillTokens(studentProfile) {
+    const verifiedSkills = (studentProfile?.skills || [])
+        .filter(skill => skill && skill.verified)
+        .map(skill => normalizeMatchToken(skill.name))
+        .filter(Boolean);
+
+    const assessedBreakdown = Object.entries(studentProfile?.assessmentScore?.breakdown || {})
+        .filter(([, score]) => Number(score) >= 60)
+        .map(([category]) => normalizeMatchToken(category));
+
+    return new Set([...verifiedSkills, ...assessedBreakdown]);
+}
+
+function calculateStudentJobMatch(job, studentProfile) {
+    const skillTokens = buildStudentSkillTokens(studentProfile);
+    const preferences = studentProfile?.preferences || {};
+    const preferredJobTypes = (preferences.jobTypes || []).map(type => normalizeMatchToken(type));
+    const preferredLocations = (preferences.locations || []).map(loc => normalizeMatchToken(loc));
+
+    const requiredSkills = (job?.skillsRequired || [])
+        .map(skill => normalizeMatchToken(skill?.name))
+        .filter(Boolean);
+
+    const requiredSet = new Set(requiredSkills);
+    let score = 0;
+
+    if (requiredSet.size > 0) {
+        let overlapCount = 0;
+        requiredSet.forEach(skillName => {
+            if (skillTokens.has(skillName)) overlapCount += 1;
+        });
+
+        score += Math.round((overlapCount / requiredSet.size) * 60);
+    }
+
+    const jobType = normalizeMatchToken(job?.jobType);
+    if (preferredJobTypes.length > 0) {
+        if (preferredJobTypes.includes(jobType)) score += 20;
+    } else {
+        score += 8;
+    }
+
+    const isRemote = !!job?.location?.remote;
+    const city = normalizeMatchToken(job?.location?.city);
+    const state = normalizeMatchToken(job?.location?.state);
+    const locationHit = preferredLocations.some(loc => !!loc && (city.includes(loc) || state.includes(loc)));
+
+    if (preferences.remote && isRemote) {
+        score += 12;
+    } else if (preferredLocations.length === 0) {
+        score += 8;
+    } else if (locationHit) {
+        score += 12;
+    }
+
+    const categoryKeywords = Array.from(skillTokens).filter(Boolean);
+    const titleAndDescription = normalizeMatchToken(`${job?.title || ''} ${job?.description || ''}`);
+    if (categoryKeywords.some(keyword => titleAndDescription.includes(keyword))) {
+        score += 8;
+    }
+
+    return Math.max(0, Math.min(100, score));
+}
+
+function rankJobsForStudent(jobs, studentProfile) {
+    return (jobs || [])
+        .map(job => ({
+            ...job,
+            _matchScore: calculateStudentJobMatch(job, studentProfile),
+        }))
+        .sort((a, b) => {
+            if ((b._matchScore || 0) !== (a._matchScore || 0)) {
+                return (b._matchScore || 0) - (a._matchScore || 0);
+            }
+            return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
+        });
+}
+
 async function loadStudentDashboard() {
     // Hide other pages and show student dashboard
     document.getElementById('landing-page').classList.add('hidden');
@@ -1217,6 +1303,14 @@ async function loadStudentDashboard() {
         
         // Filter out jobs with missing company data to prevent errors
         const validJobs = jobs.filter(job => job && job.company && job.company.companyName);
+        const rankedJobs = rankJobsForStudent(validJobs, studentProfile);
+        const stronglyMatchedJobs = rankedJobs.filter(job => (job._matchScore || 0) >= 25);
+        const recommendedJobs = (stronglyMatchedJobs.length > 0 ? stronglyMatchedJobs : rankedJobs).slice(0, 3);
+
+        window.studentJobRankingCache = {
+            generatedAt: Date.now(),
+            jobs: rankedJobs.map(job => ({ id: job._id, score: job._matchScore || 0 }))
+        };
         
         // Filter out applications with null or missing job references
         const validApplications = applications.filter(app => app && app.job && app.job.title);
@@ -1389,18 +1483,21 @@ async function loadStudentDashboard() {
                                     Recommended For You
                                 </h3>
                                 <p class="text-gray-600 dark:text-gray-300 text-xs md:text-sm mt-1">
-                                    ${studentProfile?.assessmentScore?.overall ? 
-                                        'AI-matched based on your assessment results and skills' : 
-                                        'Complete your assessment for personalized recommendations'}
+                                    ${recommendedJobs.length > 0 ?
+                                        'Matched using your verified skills, assessment scores, and preferences' :
+                                        'No strong matches yet. Complete profile and assessments for better recommendations.'}
                                 </p>
                             </div>
                             <div class="p-6">
-                                ${validJobs.length > 0 ?
-                                    validJobs.slice(0, 3).map(job => `
+                                ${recommendedJobs.length > 0 ?
+                                    recommendedJobs.map(job => `
                                         <div class="border-2 border-gray-200 dark:border-gray-700 rounded-lg p-4 mb-4 hover:border-[#56AE67] dark:hover:border-[#6bc481] cursor-pointer transition" onclick="viewJob('${job._id}')">
                                             <div class="flex items-start justify-between">
                                                 <div class="flex-1">
-                                                    <h4 class="font-semibold text-gray-900 dark:text-white">${job.title}</h4>
+                                                    <div class="flex items-center gap-2 flex-wrap">
+                                                        <h4 class="font-semibold text-gray-900 dark:text-white">${job.title}</h4>
+                                                        <span class="text-xs px-2 py-1 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-800 dark:text-emerald-300 rounded-full">${job._matchScore || 0}% match</span>
+                                                    </div>
                                                     <p class="text-gray-600 dark:text-gray-300 text-sm mt-1">${job.company.companyName}</p>
                                                     <div class="flex items-center mt-2 space-x-4">
                                                         <span class="text-xs px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 rounded">${capitalizeFirst(job.jobType)}</span>
@@ -1415,10 +1512,10 @@ async function loadStudentDashboard() {
                                     `).join('')
                                     : '<p class="text-gray-500 dark:text-gray-400 text-center py-8">No jobs available at the moment. Check back later!</p>'
                                 }
-                                ${validJobs.length > 3 ? `
+                                ${rankedJobs.length > 3 ? `
                                     <div class="text-center pt-4">
                                         <button onclick="showAllJobs()" class="text-[#56AE67] hover:text-[#2d6b3c] text-sm font-medium">
-                                            View All ${validJobs.length} Jobs
+                                            View All ${rankedJobs.length} Jobs
                                         </button>
                                     </div>
                                 ` : ''}
@@ -2149,8 +2246,7 @@ async function loadCompanyDashboard() {
                                     </select>
                                     <select id="announcement-audience" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-[#56AE67] dark:bg-gray-700 dark:text-white dark:border-gray-600">
                                         <option value="all">All Students</option>
-                                        <option value="applicants">Applicants</option>
-                                        <option value="shortlisted">Shortlisted</option>
+                                        <option value="students">Students Dashboard Only</option>
                                     </select>
                                 </div>
                                 <div>
@@ -2345,7 +2441,7 @@ async function loadStudentAnnouncementsWidget() {
     if (!target) return;
 
     try {
-        const response = await apiCall('/companies/announcements/public?limit=6');
+        const response = await apiCall('/companies/announcements/public?limit=8');
         const posts = response?.success ? (response.data || []) : [];
 
         if (!posts.length) {
@@ -2361,6 +2457,7 @@ async function loadStudentAnnouncementsWidget() {
                 </div>
                 <h4 class="text-sm font-semibold text-gray-900 dark:text-white">${post.title || 'Announcement'}</h4>
                 <p class="text-xs text-gray-600 dark:text-gray-300 mt-1 line-clamp-3">${post.content || ''}</p>
+                ${post.imageUrl ? `<img src="${post.imageUrl}" alt="Announcement image" class="w-full mt-2 rounded-lg border border-gray-200 dark:border-gray-700" style="max-height:130px; object-fit:cover;">` : ''}
                 <p class="text-xs text-[#56AE67] dark:text-[#6bc481] mt-2 font-medium">${post.company?.companyName || 'Company'}</p>
             </div>
         `).join('');
@@ -2757,12 +2854,18 @@ function showCompanyProfile() {
                             <input type="text" id="tagline" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-[#56AE67]" value="${profile?.tagline || ''}" placeholder="Building future-ready OJT opportunities">
                         </div>
                         <div class="mb-4">
-                            <label class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">Logo URL</label>
-                            <input type="url" id="logo" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-[#56AE67]" value="${profile?.logo || ''}" placeholder="https://.../logo.png">
+                            <label class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">Company Logo</label>
+                            ${profile?.logo ? `<img src="${profile.logo}" alt="Company logo" class="h-14 w-14 rounded-lg object-cover border border-gray-200 dark:border-gray-600 mb-2">` : ''}
+                            <input type="file" id="logoFile" accept="image/*" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-[#56AE67] dark:bg-gray-700 dark:text-white dark:border-gray-600">
+                            <input type="hidden" id="logoExisting" value="${profile?.logo || ''}">
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Upload PNG/JPG logo (max 5MB).</p>
                         </div>
                         <div class="mb-4">
-                            <label class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">Cover Image URL</label>
-                            <input type="url" id="coverImage" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-[#56AE67]" value="${profile?.coverImage || ''}" placeholder="https://.../cover.jpg">
+                            <label class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">Cover Image</label>
+                            ${profile?.coverImage ? `<img src="${profile.coverImage}" alt="Company cover" class="h-24 w-full rounded-lg object-cover border border-gray-200 dark:border-gray-600 mb-2">` : ''}
+                            <input type="file" id="coverImageFile" accept="image/*" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-[#56AE67] dark:bg-gray-700 dark:text-white dark:border-gray-600">
+                            <input type="hidden" id="coverImageExisting" value="${profile?.coverImage || ''}">
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Upload a banner image for your profile (max 5MB).</p>
                         </div>
                     </div>
                     
@@ -2889,35 +2992,41 @@ async function saveCompanyProfile(event) {
     submitBtn.disabled = true;
     
     try {
-        const formData = {
-            companyName: document.getElementById('companyName').value,
-            industry: document.getElementById('industry').value,
-            companySize: document.getElementById('companySize').value,
-            description: document.getElementById('description').value,
-            website: document.getElementById('website').value,
-            tagline: document.getElementById('tagline').value,
-            logo: document.getElementById('logo').value,
-            coverImage: document.getElementById('coverImage').value,
-            specialties: document.getElementById('specialties').value.split(',').map(s => s.trim()).filter(Boolean),
-            recruitmentEmail: document.getElementById('recruitmentEmail').value,
-            address: {
-                street: document.getElementById('companyStreet').value,
-                city: document.getElementById('companyCity').value,
-                state: document.getElementById('companyState').value,
-                country: document.getElementById('companyCountry').value,
-            },
-            contactPerson: {
-                firstName: document.getElementById('contactFirstName').value,
-                lastName: document.getElementById('contactLastName').value,
-                title: document.getElementById('contactTitle').value,
-                phone: document.getElementById('contactPhone').value,
-            },
-            benefits: document.getElementById('benefits').value.split(',').map(b => b.trim()).filter(b => b),
-        };
-        
+        const logoFile = document.getElementById('logoFile')?.files?.[0] || null;
+        const coverImageFile = document.getElementById('coverImageFile')?.files?.[0] || null;
+
+        const formData = new FormData();
+        formData.append('companyName', document.getElementById('companyName').value);
+        formData.append('industry', document.getElementById('industry').value);
+        formData.append('companySize', document.getElementById('companySize').value);
+        formData.append('description', document.getElementById('description').value);
+        formData.append('website', document.getElementById('website').value);
+        formData.append('tagline', document.getElementById('tagline').value);
+        formData.append('logoExisting', document.getElementById('logoExisting')?.value || '');
+        formData.append('coverImageExisting', document.getElementById('coverImageExisting')?.value || '');
+        formData.append('specialties', document.getElementById('specialties').value);
+        formData.append('recruitmentEmail', document.getElementById('recruitmentEmail').value);
+        formData.append('address', JSON.stringify({
+            street: document.getElementById('companyStreet').value,
+            city: document.getElementById('companyCity').value,
+            state: document.getElementById('companyState').value,
+            country: document.getElementById('companyCountry').value,
+        }));
+        formData.append('contactPerson', JSON.stringify({
+            firstName: document.getElementById('contactFirstName').value,
+            lastName: document.getElementById('contactLastName').value,
+            title: document.getElementById('contactTitle').value,
+            phone: document.getElementById('contactPhone').value,
+        }));
+        formData.append('benefits', document.getElementById('benefits').value);
+
+        if (logoFile) formData.append('logoFile', logoFile);
+        if (coverImageFile) formData.append('coverImageFile', coverImageFile);
+
         await apiCall('/companies/profile', {
             method: 'PUT',
-            body: JSON.stringify(formData)
+            body: formData,
+            retry: 1
         });
         
         showToast('Company profile updated successfully!', 'success');
@@ -3798,8 +3907,12 @@ function viewJob(jobId) {
 
 async function viewAssessmentResults(jobId) {
     try {
+        if (!jobId || jobId === 'undefined' || jobId === 'null') {
+            throw new Error('Invalid job selected. Please refresh the dashboard and try again.');
+        }
+
         // Fetch assessment submissions for this job
-        const response = await apiCall(`/custom-assessments/job/${jobId}/submissions`);
+        const response = await apiCall(`/custom-assessments/job/${jobId}/submissions`, { retry: 2 });
         
         console.log('Assessment submissions response:', response);
         
@@ -3822,7 +3935,10 @@ async function viewAssessmentResults(jobId) {
         
     } catch (error) {
         console.error('Error loading assessment results:', error);
-        showToast('Failed to load assessment results: ' + error.message, 'error');
+        const message = error?.status === 429
+            ? 'Too many requests right now. Please wait a few seconds and try again.'
+            : (error?.message || 'Unable to load assessment results.');
+        showToast('Failed to load assessment results: ' + message, 'error');
     }
 }
 
@@ -4204,7 +4320,7 @@ function showAllJobs() {
     apiCall('/jobs')
         .then(response => {
             console.log('Jobs response:', response);
-            const jobs = response.data || response.success ? response.data : [];
+            const jobs = (response && response.success && Array.isArray(response.data)) ? response.data : [];
             console.log('Total jobs fetched:', jobs.length);
             
             if (!Array.isArray(jobs)) {
@@ -4221,6 +4337,14 @@ function showAllJobs() {
             const validJobs = jobs.filter(job => {
                 console.log(`Job: ${job.title}, status: ${job.status}, numberOfPositions: ${job.numberOfPositions}, company: ${job.company ? 'yes' : 'no'}`);
                 return job.status === 'active' && job.numberOfPositions > 0 && job.company;
+            });
+
+            const scoreMap = new Map((window.studentJobRankingCache?.jobs || []).map(item => [item.id, item.score]));
+            validJobs.sort((a, b) => {
+                const scoreA = Number(scoreMap.get(a._id) || 0);
+                const scoreB = Number(scoreMap.get(b._id) || 0);
+                if (scoreB !== scoreA) return scoreB - scoreA;
+                return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
             });
             
             console.log('Valid jobs after filtering:', validJobs.length);
@@ -4242,7 +4366,10 @@ function showAllJobs() {
                             <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:shadow-md transition cursor-pointer" onclick="viewJob('${job._id}')">
                                 <div class="flex justify-between items-start mb-2">
                                     <div>
-                                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">${job.title}</h3>
+                                        <div class="flex items-center gap-2 flex-wrap">
+                                            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">${job.title}</h3>
+                                            ${scoreMap.has(job._id) ? `<span class="text-xs px-2 py-1 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-800 dark:text-emerald-300 rounded-full">${scoreMap.get(job._id)}% match</span>` : ''}
+                                        </div>
                                         <p class="text-gray-600 dark:text-gray-300 text-sm">${job.company.companyName}</p>
                                     </div>
                                     <button onclick="event.stopPropagation(); viewJob('${job._id}')" class="text-[#56AE67] hover:text-[#2d6b3c] text-sm font-medium">
