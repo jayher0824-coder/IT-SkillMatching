@@ -134,6 +134,8 @@ const studentSchema = new mongoose.Schema({
   resume: {
     filename: String,
     path: String,
+    mimeType: String,
+    data: String,
     uploadedAt: Date,
   },
   avatar: {

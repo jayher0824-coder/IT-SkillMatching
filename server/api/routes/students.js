@@ -294,13 +294,23 @@ router.post('/upload-resume', protect, authorize('student'), upload.single('resu
 
     const student = await getOrCreateStudentProfile(req.user._id);
 
+    const fileBuffer = fs.readFileSync(req.file.path);
+
     student.resume = {
       filename: req.file.originalname,
       path: req.file.path,
+      mimeType: req.file.mimetype,
+      data: fileBuffer.toString('base64'),
       uploadedAt: new Date(),
     };
 
     await student.save();
+
+    try {
+      fs.unlinkSync(req.file.path);
+    } catch (cleanupError) {
+      console.warn('Unable to cleanup uploaded resume temp file:', cleanupError.message);
+    }
 
     res.json({
       success: true,
@@ -316,6 +326,44 @@ router.post('/upload-resume', protect, authorize('student'), upload.single('resu
       success: false,
       message: 'Server error',
     });
+  }
+});
+
+// @desc    Stream logged-in student's resume
+// @route   GET /api/students/resume
+// @access  Private (Students only)
+router.get('/resume', protect, authorize('student'), async (req, res) => {
+  try {
+    const student = await getOrCreateStudentProfile(req.user._id);
+    const resume = student.resume || {};
+
+    if (resume.data) {
+      const mimeType = resume.mimeType || 'application/pdf';
+      const safeName = String(resume.filename || 'resume').replace(/[\r\n"]/g, '');
+
+      res.setHeader('Content-Type', mimeType);
+      res.setHeader('Content-Disposition', `inline; filename="${safeName}"`);
+      return res.send(Buffer.from(resume.data, 'base64'));
+    }
+
+    const fileCandidates = [];
+    if (resume.path) fileCandidates.push(path.resolve(resume.path));
+
+    const normalizedFileName = String(resume.path || resume.filename || '').split(/[/\\]/).pop();
+    if (normalizedFileName) {
+      fileCandidates.push(path.join(__dirname, '..', '..', 'assets', 'uploads', 'resumes', normalizedFileName));
+      fileCandidates.push(path.join(__dirname, '..', '..', '..', 'client', 'assets', 'uploads', 'resumes', normalizedFileName));
+    }
+
+    const existingPath = fileCandidates.find(candidate => candidate && fs.existsSync(candidate));
+    if (!existingPath) {
+      return res.status(404).json({ success: false, message: 'Resume file not found' });
+    }
+
+    return res.sendFile(existingPath);
+  } catch (error) {
+    console.error('Error streaming resume:', error);
+    return res.status(500).json({ success: false, message: 'Server error' });
   }
 });
 

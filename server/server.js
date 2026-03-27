@@ -69,6 +69,13 @@ const limiter = rateLimit({
   message: 'Too many requests, please try again later.',
   standardHeaders: true,
   legacyHeaders: false,
+  skip: (req) => {
+    if (req.method !== 'GET') return false;
+
+    const apiPath = String(req.path || '');
+    // Allow frequent dashboard read polling without exhausting the write/action quota.
+    return apiPath === '/auth/me' || apiPath.startsWith('/notifications');
+  },
   keyGenerator: (req) => {
     const authHeader = String(req.headers.authorization || '');
     const token = authHeader.toLowerCase().startsWith('bearer ')

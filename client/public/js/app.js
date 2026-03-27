@@ -2697,6 +2697,21 @@ async function viewJob(jobId) {
         // Normalize boolean value - handle string "true"/"false" from database
         const hasRequiredAssessment = job.requireCustomAssessment === true || job.requireCustomAssessment === 'true';
         const hasAssessmentId = job.customAssessment != null && job.customAssessment !== '';
+
+        const companyDisplayName = job.companyName || job.company?.companyName || 'Company';
+        const jobTypeDisplay = capitalizeFirst(job.jobType || job.type || 'ojt');
+        const locationDisplay = (() => {
+            if (!job.location) return 'Remote';
+            if (typeof job.location === 'string') return job.location;
+            if (typeof job.location === 'object') {
+                const parts = [job.location.city, job.location.state, job.location.country].filter(Boolean);
+                let label = parts.join(', ') || 'Remote';
+                if (job.location.remote) label += ' (Remote)';
+                if (job.location.hybrid) label += ' (Hybrid)';
+                return label;
+            }
+            return 'Remote';
+        })();
         
         console.log('Normalized hasRequiredAssessment:', hasRequiredAssessment);
         console.log('Normalized hasAssessmentId:', hasAssessmentId);
@@ -2728,15 +2743,15 @@ async function viewJob(jobId) {
             <div class="space-y-6">
                 <div>
                     <h3 class="text-3xl font-bold text-gray-900 dark:text-white mb-2">${job.title}</h3>
-                    <p class="text-xl text-gray-600 dark:text-gray-300 mb-4">${job.companyName}</p>
+                    <p class="text-xl text-gray-600 dark:text-gray-300 mb-4">${companyDisplayName}</p>
                     <div class="grid grid-cols-2 gap-4 mb-6">
                         <div>
                             <p class="text-sm text-gray-500 dark:text-gray-400">Location</p>
-                            <p class="font-medium text-gray-900 dark:text-white">${job.location}</p>
+                            <p class="font-medium text-gray-900 dark:text-white">${locationDisplay}</p>
                         </div>
                         <div>
                             <p class="text-sm text-gray-500 dark:text-gray-400">Job Type</p>
-                            <p class="font-medium text-gray-900 dark:text-white">${job.type}</p>
+                            <p class="font-medium text-gray-900 dark:text-white">${jobTypeDisplay}</p>
                         </div>
                         <div>
                             <p class="text-sm text-gray-500 dark:text-gray-400">Posted</p>

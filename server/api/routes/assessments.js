@@ -27,6 +27,77 @@ async function getOrCreateStudentProfile(userId) {
   });
 }
 
+const PROGRAMMING_LANGUAGE_KEYS = {
+  javascript: 'javascript',
+  typescript: 'typescript',
+  python: 'python',
+  java: 'java',
+  csharp: 'csharp',
+  cpp: 'cpp',
+  c: 'c',
+  php: 'php',
+  ruby: 'ruby',
+  go: 'go',
+  rust: 'rust',
+  swift: 'swift',
+  kotlin: 'kotlin',
+  objectivec: 'objectivec',
+  r: 'r',
+  scala: 'scala',
+  perl: 'perl',
+  visualbasic: 'visualbasic',
+  assembly: 'assembly',
+  matlab: 'matlab',
+  sql: 'sql',
+  html: 'html',
+  css: 'css',
+};
+
+function normalizeCategoryKey(value) {
+  return String(value || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+
+function getSkillLevelFromScore(score) {
+  if (score >= 80) return 'Expert';
+  if (score >= 70) return 'Advanced';
+  if (score >= 60) return 'Intermediate';
+  return 'Beginner';
+}
+
+function upsertVerifiedSkill(student, rawSkillName, rawScore) {
+  const score = Number(rawScore || 0);
+  if (!Number.isFinite(score) || score < 60) return;
+
+  const normalized = normalizeCategoryKey(rawSkillName);
+  if (!normalized) return;
+
+  const canonicalName = PROGRAMMING_LANGUAGE_KEYS[normalized] || String(rawSkillName || '').toLowerCase();
+  const existingSkillIndex = (student.skills || []).findIndex((skill) => normalizeCategoryKey(skill?.name) === normalized);
+
+  const skillData = {
+    name: canonicalName,
+    level: getSkillLevelFromScore(score),
+    verified: true,
+    score,
+  };
+
+  if (existingSkillIndex >= 0) {
+    if (score > Number(student.skills[existingSkillIndex].score || 0)) {
+      student.skills[existingSkillIndex] = skillData;
+    }
+  } else {
+    student.skills.push(skillData);
+  }
+}
+
+function syncVerifiedProgrammingLanguageSkills(student, categoryScores) {
+  Object.entries(categoryScores || {}).forEach(([key, value]) => {
+    const normalized = normalizeCategoryKey(key);
+    if (!PROGRAMMING_LANGUAGE_KEYS[normalized]) return;
+    upsertVerifiedSkill(student, PROGRAMMING_LANGUAGE_KEYS[normalized], value);
+  });
+}
+
 // @desc    Get available assessments
 // @route   GET /api/assessments
 // @access  Private
@@ -410,35 +481,12 @@ router.post('/:id/submit', protect, authorize('student'), async (req, res) => {
     student.gamification.points += Math.max(0, totalScore);
     student.gamification.level = Math.max(1, Math.floor(student.gamification.points / 100) + 1);
 
-    // Update student skills based on assessment results
-    // Only add/update the specific skill that was assessed (assessment.category)
-    if (passed && assessment.category) {
-      // Find if this skill already exists
-      const existingSkillIndex = student.skills.findIndex(s => s.name === assessment.category);
-      
-      // Determine skill level based on percentage
-      let level = 'Beginner';
-      if (percentage >= 80) level = 'Expert';
-      else if (percentage >= 70) level = 'Advanced';
-      else if (percentage >= 60) level = 'Intermediate';
-      
-      const skillData = {
-        name: assessment.category,
-        level,
-        verified: true,
-        score: percentage,
-      };
-      
-      if (existingSkillIndex >= 0) {
-        // Update existing skill only if new score is higher
-        if (percentage > (student.skills[existingSkillIndex].score || 0)) {
-          student.skills[existingSkillIndex] = skillData;
-        }
-      } else {
-        // Add new skill
-        student.skills.push(skillData);
-      }
+    // Keep the specific assessed skill update, and also verify all programming-language
+    // categories that reached >=60 in the current assessment breakdown.
+    if (assessment.category) {
+      upsertVerifiedSkill(student, assessment.category, percentage);
     }
+    syncVerifiedProgrammingLanguageSkills(student, finalCategoryScores);
     
     await student.save();
 
@@ -2053,28 +2101,8 @@ router.post('/quiz/result', protect, authorize('student'), async (req, res) => {
       breakdown: averagedBreakdown,
     };
 
-    if (passed) {
-      const existingSkillIndex = student.skills.findIndex((s) => s.name === canonicalSkill);
-      let level = 'Beginner';
-      if (percentage >= 80) level = 'Expert';
-      else if (percentage >= 70) level = 'Advanced';
-      else if (percentage >= 60) level = 'Intermediate';
-
-      const skillData = {
-        name: canonicalSkill,
-        level,
-        verified: true,
-        score: percentage,
-      };
-
-      if (existingSkillIndex >= 0) {
-        if (percentage > Number(student.skills[existingSkillIndex].score || 0)) {
-          student.skills[existingSkillIndex] = skillData;
-        }
-      } else {
-        student.skills.push(skillData);
-      }
-    }
+    upsertVerifiedSkill(student, canonicalSkill, percentage);
+    syncVerifiedProgrammingLanguageSkills(student, averagedBreakdown);
 
     await student.save();
 

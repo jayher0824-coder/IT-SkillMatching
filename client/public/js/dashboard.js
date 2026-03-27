@@ -1214,6 +1214,34 @@ function getResumePublicUrl(resume) {
     return fileName ? `/uploads/resumes/${encodeURIComponent(fileName)}` : '';
 }
 
+async function openOwnResume(event) {
+    if (event) event.preventDefault();
+
+    try {
+        const token = (typeof window.getStoredAuthToken === 'function')
+            ? window.getStoredAuthToken()
+            : (sessionStorage.getItem('authToken') || '').replace(/^Bearer\s+/i, '');
+
+        const response = await fetch('/api/students/resume', {
+            headers: token ? { Authorization: `Bearer ${token}` } : {}
+        });
+
+        if (!response.ok) {
+            throw new Error('Resume is unavailable right now. Please upload again and retry.');
+        }
+
+        const blob = await response.blob();
+        const blobUrl = URL.createObjectURL(blob);
+        window.open(blobUrl, '_blank', 'noopener,noreferrer');
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
+    } catch (error) {
+        console.error('Error opening resume:', error);
+        showToast(error.message || 'Unable to open resume', 'error');
+    }
+}
+
+window.openOwnResume = window.openOwnResume || openOwnResume;
+
 function buildStudentSkillTokens(studentProfile) {
     const verifiedSkills = (studentProfile?.skills || [])
         .filter(skill => skill && skill.verified)
@@ -1514,7 +1542,7 @@ async function loadStudentDashboard() {
                                                     </div>
                                                     <p class="text-gray-600 dark:text-gray-300 text-sm mt-1">${job.company.companyName}</p>
                                                     <div class="flex items-center mt-2 space-x-4">
-                                                        <span class="text-xs px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 rounded">${capitalizeFirst(job.jobType)}</span>
+                                                        <span class="text-xs px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 rounded">${capitalizeFirst(job.jobType || job.type || 'ojt')}</span>
                                                         ${job.location.remote ? '<span class="text-xs px-2 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-200 rounded">Remote</span>' : ''}
                                                     </div>
                                                 </div>
@@ -1572,13 +1600,6 @@ async function loadStudentDashboard() {
                                         </button>
                                     </div>
                                 ` : ''}
-                            </div>
-                        </div>
-
-                        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-                            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Company Announcements</h3>
-                            <div id="student-announcements-widget" class="space-y-3">
-                                <p class="text-sm text-gray-500 dark:text-gray-400">Loading company announcements...</p>
                             </div>
                         </div>
 
@@ -1863,7 +1884,6 @@ async function loadStudentDashboard() {
             loadStudentProfile();
             loadCareerPaths();
             loadSkillProgress();
-            loadStudentAnnouncementsWidget();
             
             // Attach messages navigation listeners
             const navMessagesBtn = document.getElementById('nav-messages');
@@ -2691,7 +2711,7 @@ window.showStudentProfileModal = function() {
                         <div class="text-sm text-gray-600 dark:text-gray-300">
                             <div class="font-semibold mb-1">Current Resume:</div>
                             ${profile?.resume
-                                ? `<a href="${getResumePublicUrl(profile.resume)}" target="_blank" class="text-[#56AE67] dark:text-[#6bc481] hover:underline break-all">${getResumeDisplayName(profile.resume)}</a>`
+                                ? `<a href="/api/students/resume" onclick="openOwnResume(event)" class="text-[#56AE67] dark:text-[#6bc481] hover:underline break-all">${getResumeDisplayName(profile.resume)}</a>`
                                 : '<span class="text-gray-500 dark:text-gray-400">No resume uploaded yet</span>'}
                         </div>
                     </div>
@@ -3554,7 +3574,7 @@ function viewJob(jobId) {
                                         <p class="text-lg text-gray-600 dark:text-gray-300 mb-2">${job.company.companyName}</p>
                                         <div class="flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-400">
                                             <span><i class="fas fa-map-marker-alt mr-1"></i>${job.location?.city || 'Remote'}, ${job.location?.state || ''}</span>
-                                            <span><i class="fas fa-clock mr-1"></i>${capitalizeFirst(job.jobType)}</span>
+                                            <span><i class="fas fa-clock mr-1"></i>${capitalizeFirst(job.jobType || job.type || 'ojt')}</span>
                                             <span><i class="fas fa-user-graduate mr-1"></i>${capitalizeFirst(job.experienceLevel)}</span>
                                         </div>
                                     </div>
@@ -3695,7 +3715,7 @@ function viewJob(jobId) {
                                     <div class="space-y-2 text-sm">
                                         <div class="flex justify-between">
                                             <span class="text-gray-600 dark:text-gray-400">Job Type:</span>
-                                            <span class="text-gray-900 dark:text-white capitalize">${job.jobType}</span>
+                                            <span class="text-gray-900 dark:text-white capitalize">${job.jobType || job.type || 'ojt'}</span>
                                         </div>
                                         <div class="flex justify-between">
                                             <span class="text-gray-600 dark:text-gray-400">Experience Level:</span>
@@ -3784,7 +3804,7 @@ function viewJob(jobId) {
                                         <p class="text-lg text-gray-600 dark:text-gray-300 mb-2">${job.company.companyName}</p>
                                         <div class="flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-400">
                                             <span><i class="fas fa-map-marker-alt mr-1"></i>${job.location?.city || 'Remote'}, ${job.location?.state || ''}</span>
-                                            <span><i class="fas fa-clock mr-1"></i>${capitalizeFirst(job.jobType)}</span>
+                                            <span><i class="fas fa-clock mr-1"></i>${capitalizeFirst(job.jobType || job.type || 'ojt')}</span>
                                             <span><i class="fas fa-user-graduate mr-1"></i>${capitalizeFirst(job.experienceLevel)}</span>
                                         </div>
                                     </div>
@@ -4412,7 +4432,7 @@ function showAllJobs() {
                                 </div>
                                 <div class="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 flex-wrap">
                                     <span><i class="fas fa-map-marker-alt mr-1"></i>${job.location?.city || 'Remote'}, ${job.location?.state || ''}</span>
-                                    <span><i class="fas fa-briefcase mr-1"></i>${capitalizeFirst(job.jobType)}</span>
+                                    <span><i class="fas fa-briefcase mr-1"></i>${capitalizeFirst(job.jobType || job.type || 'ojt')}</span>
                                     <span><i class="fas fa-user-graduate mr-1"></i>${capitalizeFirst(job.experienceLevel)}</span>
                                     ${job.location?.remote ? `<span class="bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-200 px-2 py-1 rounded">Remote</span>` : ''}
                                 </div>
@@ -5021,7 +5041,7 @@ function createStudentProfileViewModal(profile) {
                             Resume
                         </h3>
                         ${profile.resume
-                            ? `<a href="${getResumePublicUrl(profile.resume)}" target="_blank" class="inline-flex items-center text-[#56AE67] dark:text-[#6bc481] hover:underline break-all"><i class="fas fa-download mr-2"></i>${getResumeDisplayName(profile.resume)}</a>`
+                            ? `<a href="/api/students/resume" onclick="openOwnResume(event)" class="inline-flex items-center text-[#56AE67] dark:text-[#6bc481] hover:underline break-all"><i class="fas fa-download mr-2"></i>${getResumeDisplayName(profile.resume)}</a>`
                             : '<p class="text-gray-500 dark:text-gray-400">No resume uploaded</p>'}
                     </div>
                     
@@ -7168,7 +7188,7 @@ async function loadStudentProfile() {
                     </h3>
                     <div class="space-y-3">
                         ${profile.resume
-                            ? `<a href="${getResumePublicUrl(profile.resume)}" target="_blank" class="text-[#56AE67] dark:text-[#6bc481] hover:underline flex items-center break-all"><i class="fas fa-download mr-2"></i>${getResumeDisplayName(profile.resume)}</a>`
+                            ? `<a href="/api/students/resume" onclick="openOwnResume(event)" class="text-[#56AE67] dark:text-[#6bc481] hover:underline flex items-center break-all"><i class="fas fa-download mr-2"></i>${getResumeDisplayName(profile.resume)}</a>`
                             : '<p class="text-gray-500 dark:text-gray-400">No resume uploaded</p>'}
                     </div>
                 </div>
