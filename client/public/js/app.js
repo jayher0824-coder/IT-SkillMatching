@@ -2334,22 +2334,46 @@ function getAssessmentButtonInfo(hasAssessment, assessmentStatus) {
 
 async function showAllJobs() {
     try {
-        // Use job-matches API if user is a student for personalized recommendations
+        // Use job-matches API for students, but gracefully fall back to /jobs when unavailable.
         const isStudent = currentUser && currentUser.role === 'student';
-        const endpoint = isStudent ? '/students/job-matches' : '/jobs';
-        const response = await apiCall(endpoint);
-        const data = response.data || [];
-        
+        let endpoint = isStudent ? '/students/job-matches' : '/jobs';
+        let response = await apiCall(endpoint).catch(() => ({ success: false, data: [] }));
+        let data = Array.isArray(response?.data) ? response.data : [];
+
+        // Fallback path for students when match endpoint is empty/unavailable.
+        if (isStudent && data.length === 0) {
+            endpoint = '/jobs';
+            response = await apiCall('/jobs').catch(() => ({ success: false, data: [] }));
+            data = Array.isArray(response?.data) ? response.data : [];
+        }
+
         console.log('Jobs data received:', { isStudent, endpoint, dataLength: data.length, firstItem: data[0] });
-        
-        // Extract jobs from response (job-matches returns {job, matchScore, ...}, jobs API returns job objects directly)
+
+        // Extract jobs from response.
+        // - /students/job-matches returns [{ job, matchScore, matchedSkills, assessmentInfluenced }]
+        // - /jobs returns [job]
+        const rankingCache = new Map((window.studentJobRankingCache?.jobs || []).map(item => [item.id, Number(item.score || 0)]));
         let jobsWithMatches;
-        if (isStudent) {
-            // Student API returns array of {job, matchScore, matchedSkills, ...}
-            jobsWithMatches = data;
+        if (isStudent && endpoint === '/students/job-matches') {
+            jobsWithMatches = data
+                .filter(item => item && item.job)
+                .map(item => ({
+                    ...item,
+                    matchScore: Number(item.matchScore || rankingCache.get(item.job._id) || 0),
+                }));
         } else {
-            // Jobs API returns array of job objects directly
-            jobsWithMatches = data.map(j => ({job: j, matchScore: 0}));
+            jobsWithMatches = data
+                .filter(job => job && job.status === 'active' && job.company)
+                .map(job => ({
+                    job,
+                    matchScore: Number(rankingCache.get(job._id) || 0),
+                    matchedSkills: [],
+                    assessmentInfluenced: false,
+                }));
+        }
+
+        if (isStudent) {
+            jobsWithMatches.sort((a, b) => (Number(b.matchScore || 0) - Number(a.matchScore || 0)));
         }
 
         // Create modal if it doesn't exist
@@ -2372,7 +2396,7 @@ async function showAllJobs() {
                         <div class="px-6 py-3 bg-gradient-to-r from-[#56AE67]/10 to-[#3d8b4f]/10 border-b border-gray-200 dark:border-gray-700">
                             <p class="text-sm text-gray-700 dark:text-gray-300">
                                 <i class="fas fa-magic mr-2 text-[#56AE67]"></i>
-                                Jobs are ranked based on your assessment results and skill proficiency
+                                Jobs are ranked using your verified skills, assessment scores, and preferences
                             </p>
                         </div>
                     ` : ''}
@@ -2404,7 +2428,7 @@ async function showAllJobs() {
                 <div class="text-center py-16">
                     <i class="fas fa-briefcase text-gray-300 dark:text-gray-600 text-6xl mb-4"></i>
                     <p class="text-gray-500 dark:text-gray-400 text-lg">No jobs available at the moment.</p>
-                    <p class="text-gray-400 dark:text-gray-500 text-sm mt-2">${isStudent ? 'Complete your assessment to get personalized job recommendations!' : 'Check back later for new opportunities!'}</p>
+                    <p class="text-gray-400 dark:text-gray-500 text-sm mt-2">${isStudent ? 'We could not find active jobs matching your filters right now. Try checking again soon.' : 'Check back later for new opportunities!'}</p>
                 </div>
             `;
             return;
