@@ -292,13 +292,7 @@ router.post('/upload-resume', protect, authorize('student'), upload.single('resu
       });
     }
 
-    let student = await Student.findOne({ user: req.user._id });
-    if (!student) {
-      return res.status(404).json({
-        success: false,
-        message: 'Student profile not found',
-      });
-    }
+    const student = await getOrCreateStudentProfile(req.user._id);
 
     student.resume = {
       filename: req.file.originalname,
