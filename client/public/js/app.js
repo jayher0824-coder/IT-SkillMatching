@@ -768,7 +768,7 @@ function formatDate(dateString) {
 function formatSalary(salary) {
     if (!salary) return 'Not specified';
     
-    const { min, max, period = 'monthly', currency = 'USD' } = salary;
+    const { min, max, period = 'monthly', currency = 'PHP' } = salary;
     
     if (min && max) {
         return `${currency} ${min.toLocaleString()} - ${max.toLocaleString()} per ${period}`;
