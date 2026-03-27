@@ -2263,21 +2263,27 @@ async function loadCompanyDashboard() {
 
                         <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
                             <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Recent Feed Posts</h3>
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mb-3">Click any post to view full details.</p>
                             <div class="space-y-3">
-                                ${announcements.length > 0 ? announcements.slice(0, 5).map(post => `
-                                    <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-3">
+                                ${announcements.length > 0 ? (() => {
+                                    const companyPreviewPosts = announcements.slice(0, 5);
+                                    cacheAnnouncementPosts(companyPreviewPosts);
+                                    return companyPreviewPosts.map(post => `
+                                    <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-3 cursor-pointer hover:shadow-md transition" onclick="openAnnouncementPostModal('${post._id}')">
                                         <div class="flex items-start justify-between gap-2">
                                             <div>
                                                 <div class="text-sm font-semibold text-gray-900 dark:text-white">${post.title || 'Untitled Post'}</div>
                                                 <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">${(post.category || 'announcement').toUpperCase()} • ${formatDate(post.publishedAt || post.createdAt)}</div>
                                             </div>
-                                            <button onclick="deleteCompanyAnnouncement('${post._id}')" class="text-xs px-2 py-1 bg-red-50 text-red-700 rounded hover:bg-red-100 dark:bg-red-900/30 dark:text-red-300" title="Delete post">
+                                            <button onclick="event.stopPropagation(); deleteCompanyAnnouncement('${post._id}')" class="text-xs px-2 py-1 bg-red-50 text-red-700 rounded hover:bg-red-100 dark:bg-red-900/30 dark:text-red-300" title="Delete post">
                                                 <i class="fas fa-trash"></i>
                                             </button>
                                         </div>
                                         ${post.imageUrl ? `<img src="${post.imageUrl}" alt="Announcement image" class="w-full mt-2 rounded-lg border border-gray-200 dark:border-gray-700" style="max-height:120px; object-fit:cover;">` : ''}
+                                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-2 line-clamp-2">${post.content || ''}</p>
                                     </div>
-                                `).join('') : '<p class="text-sm text-gray-500 dark:text-gray-400">No announcements yet. Publish your first post.</p>'}
+                                `).join('');
+                                })() : '<p class="text-sm text-gray-500 dark:text-gray-400">No announcements yet. Publish your first post.</p>'}
                             </div>
                         </div>
 
@@ -2361,6 +2367,66 @@ async function loadCompanyDashboard() {
         `;
     }
 }
+
+window.announcementPostCache = window.announcementPostCache || {};
+
+function cacheAnnouncementPosts(posts) {
+    if (!Array.isArray(posts)) return;
+    posts.forEach(post => {
+        if (!post || !post._id) return;
+        window.announcementPostCache[post._id] = post;
+    });
+}
+
+window.openAnnouncementPostModal = function(announcementId) {
+    const post = window.announcementPostCache?.[announcementId];
+    if (!post) {
+        showToast('Unable to open this post. Please refresh and try again.', 'warning');
+        return;
+    }
+
+    const existingModal = document.getElementById('announcement-post-modal');
+    if (existingModal) existingModal.remove();
+
+    const modal = document.createElement('div');
+    modal.id = 'announcement-post-modal';
+    modal.className = 'fixed inset-0 z-50 bg-black bg-opacity-60 flex items-center justify-center p-4';
+
+    modal.innerHTML = `
+        <div class="bg-white dark:bg-gray-800 rounded-xl w-full max-w-2xl max-h-[90vh] overflow-hidden shadow-2xl">
+            <div class="flex items-center justify-between px-5 py-4 border-b border-gray-200 dark:border-gray-700">
+                <div>
+                    <div class="text-lg font-semibold text-gray-900 dark:text-white">${post.title || 'Announcement'}</div>
+                    <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        ${(post.category || 'announcement').toUpperCase()} • ${formatDate(post.publishedAt || post.createdAt)} • ${post.company?.companyName || 'Company'}
+                    </div>
+                </div>
+                <button onclick="closeAnnouncementPostModal()" class="text-gray-500 hover:text-gray-700 dark:text-gray-300 dark:hover:text-white">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <div class="p-5 overflow-y-auto" style="max-height: calc(90vh - 80px);">
+                ${post.imageUrl ? `
+                    <img src="${post.imageUrl}" alt="Announcement image" class="w-full rounded-lg border border-gray-200 dark:border-gray-700 mb-4" style="max-height:380px; object-fit:contain; background:#f8fafc;">
+                ` : ''}
+                <div class="text-sm text-gray-700 dark:text-gray-200 whitespace-pre-wrap leading-relaxed">${post.content || ''}</div>
+            </div>
+        </div>
+    `;
+
+    modal.addEventListener('click', (event) => {
+        if (event.target === modal) {
+            closeAnnouncementPostModal();
+        }
+    });
+
+    document.body.appendChild(modal);
+};
+
+window.closeAnnouncementPostModal = function() {
+    const modal = document.getElementById('announcement-post-modal');
+    if (modal) modal.remove();
+};
 
 window.submitCompanyAnnouncement = async function(event) {
     event.preventDefault();
@@ -2449,8 +2515,11 @@ async function loadStudentAnnouncementsWidget() {
             return;
         }
 
-        target.innerHTML = posts.slice(0, 4).map(post => `
-            <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-3">
+        const studentPreviewPosts = posts.slice(0, 4);
+        cacheAnnouncementPosts(studentPreviewPosts);
+
+        target.innerHTML = studentPreviewPosts.map(post => `
+            <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-3 cursor-pointer hover:shadow-md transition" onclick="openAnnouncementPostModal('${post._id}')">
                 <div class="flex items-center justify-between mb-2">
                     <span class="text-xs px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 rounded">${(post.category || 'announcement').toUpperCase()}</span>
                     <span class="text-xs text-gray-500 dark:text-gray-400">${formatDate(post.publishedAt || post.createdAt)}</span>
