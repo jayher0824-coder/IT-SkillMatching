@@ -47,6 +47,11 @@ function enableGlobalAntiCopyPasteProtection() {
         const key = String(e.key || '').toLowerCase();
         const ctrlOrCmd = e.ctrlKey || e.metaKey;
 
+        // Keep browser DevTools shortcuts available on dashboards.
+        if ((ctrlOrCmd && e.shiftKey && ['c', 'i', 'j'].includes(key)) || key === 'f12') {
+            return true;
+        }
+
         // Block common copy/paste/select shortcuts globally.
         if (ctrlOrCmd && ['c', 'v', 'x', 'a', 's', 'u', 'p'].includes(key)) {
             return stopEvent(e);
@@ -798,22 +803,6 @@ function formatDate(dateString) {
         month: 'short',
         day: 'numeric'
     });
-}
-
-function formatSalary(salary) {
-    if (!salary) return 'Not specified';
-    
-    const { min, max, period = 'monthly', currency = 'PHP' } = salary;
-    
-    if (min && max) {
-        return `${currency} ${min.toLocaleString()} - ${max.toLocaleString()} per ${period}`;
-    } else if (min) {
-        return `${currency} ${min.toLocaleString()}+ per ${period}`;
-    } else if (max) {
-        return `Up to ${currency} ${max.toLocaleString()} per ${period}`;
-    } else {
-        return 'Not specified';
-    }
 }
 
 function capitalizeFirst(str) {
@@ -2558,7 +2547,6 @@ async function showAllJobs() {
                             <p class="text-sm text-gray-700 dark:text-gray-300 line-clamp-2">${job.description}</p>
                         </div>
                         <div class="text-right ml-4">
-                            <p class="text-lg font-bold text-green-600 dark:text-green-400">${job.salary ? formatSalary(job.salary) : 'Competitive'}</p>
                             <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">${job.jobType || job.type}</p>
                         </div>
                     </div>
@@ -2667,9 +2655,7 @@ async function showAllApplicationsLegacy() {
                     </div>
                 </div>
                 <div class="flex justify-between items-center">
-                    <div class="text-sm text-gray-500 dark:text-gray-400">
-                        Salary: ${formatSalary(app.job.salary)}
-                    </div>
+                    <div></div>
                     <div class="space-x-2">
                         <button onclick="viewJob('${app.job._id}')" class="bg-[#56AE67] text-white px-4 py-2 rounded-lg hover:bg-[#3d8b4f] transition">
                             View Job
@@ -2747,10 +2733,6 @@ async function viewJob(jobId) {
                         <div>
                             <p class="text-sm text-gray-500 dark:text-gray-400">Location</p>
                             <p class="font-medium text-gray-900 dark:text-white">${job.location}</p>
-                        </div>
-                        <div>
-                            <p class="text-sm text-gray-500 dark:text-gray-400">Salary</p>
-                            <p class="font-medium text-gray-900 dark:text-white">${formatSalary(job.salary)}</p>
                         </div>
                         <div>
                             <p class="text-sm text-gray-500 dark:text-gray-400">Job Type</p>

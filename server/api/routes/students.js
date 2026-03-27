@@ -80,11 +80,13 @@ const upload = multer({
   },
   fileFilter: (req, file, cb) => {
     if (file.mimetype === 'application/pdf' || 
+        file.mimetype === 'image/png' ||
+        file.mimetype === 'image/x-png' ||
         file.mimetype === 'application/msword' || 
         file.mimetype === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
       cb(null, true);
     } else {
-      cb(new Error('Invalid file type. Only PDF and DOC files are allowed.'), false);
+      cb(new Error('Invalid file type. Only PDF, PNG, and DOC files are allowed.'), false);
     }
   },
 });
@@ -546,14 +548,7 @@ router.get('/job-matches', protect, authorize('student'), async (req, res) => {
 router.post('/apply/:jobId', protect, authorize('student'), async (req, res) => {
   try {
     const jobId = req.params.jobId;
-    const student = await Student.findOne({ user: req.user._id });
-
-    if (!student) {
-      return res.status(404).json({
-        success: false,
-        message: 'Student profile not found',
-      });
-    }
+    const student = await getOrCreateStudentProfile(req.user._id);
 
     const job = await Job.findById(jobId);
     if (!job) {
@@ -564,8 +559,8 @@ router.post('/apply/:jobId', protect, authorize('student'), async (req, res) => 
     }
 
     // Check if already applied
-    const existingApplication = student.applications.find(app => 
-      app.job.toString() === jobId
+    const existingApplication = (student.applications || []).find(app =>
+      app?.job && app.job.toString() === jobId
     );
 
     if (existingApplication) {
@@ -694,7 +689,9 @@ router.post('/apply/:jobId', protect, authorize('student'), async (req, res) => 
 // @access  Private (Students only)
 router.get('/applications', protect, authorize('student'), async (req, res) => {
   try {
-    const student = await Student.findOne({ user: req.user._id })
+    const primaryStudent = await getOrCreateStudentProfile(req.user._id);
+
+    const student = await Student.findById(primaryStudent._id)
       .populate({
         path: 'applications.job',
         populate: {
@@ -710,10 +707,14 @@ router.get('/applications', protect, authorize('student'), async (req, res) => {
       });
     }
 
+    const validApplications = (student.applications || [])
+      .filter(app => app && app.job)
+      .sort((a, b) => new Date(b.appliedAt) - new Date(a.appliedAt));
+
     res.json({
       success: true,
-      count: student.applications.length,
-      data: student.applications.sort((a, b) => new Date(b.appliedAt) - new Date(a.appliedAt)),
+      count: validApplications.length,
+      data: validApplications,
     });
   } catch (error) {
     console.error(error);

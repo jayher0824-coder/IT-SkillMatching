@@ -237,8 +237,10 @@ router.post('/', protect, authorize('company'), async (req, res) => {
 
     const jobData = {
       ...req.body,
+      jobType: 'ojt',
       company: company._id,
     };
+    delete jobData.salary;
 
     const job = await Job.create(jobData);
 
@@ -306,9 +308,15 @@ router.put('/:id', protect, authorize('company'), async (req, res) => {
       });
     }
 
+    const updateData = {
+      ...req.body,
+      jobType: 'ojt',
+    };
+    delete updateData.salary;
+
     const updatedJob = await Job.findByIdAndUpdate(
       req.params.id,
-      req.body,
+      updateData,
       {
         new: true,
         runValidators: true,

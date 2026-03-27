@@ -2230,60 +2230,9 @@ async function loadCompanyDashboard() {
 
                         <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
                             <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-3">Company Feed</h3>
-                            <p class="text-xs text-gray-500 dark:text-gray-400 mb-4">Post announcements, hiring updates, and image-based company news for students.</p>
-                            <form id="company-announcement-form" class="space-y-3" onsubmit="submitCompanyAnnouncement(event)">
-                                <input id="announcement-title" type="text" maxlength="120" required class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-[#56AE67] dark:bg-gray-700 dark:text-white dark:border-gray-600" placeholder="Post title">
-                                <textarea id="announcement-content" rows="3" maxlength="5000" required class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-[#56AE67] dark:bg-gray-700 dark:text-white dark:border-gray-600" placeholder="Share your announcement to student applicants..."></textarea>
-                                <div class="grid grid-cols-2 gap-2">
-                                    <select id="announcement-category" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-[#56AE67] dark:bg-gray-700 dark:text-white dark:border-gray-600">
-                                        <option value="announcement">Announcement</option>
-                                        <option value="hiring">Hiring</option>
-                                        <option value="event">Event</option>
-                                        <option value="deadline">Deadline</option>
-                                        <option value="result">Result</option>
-                                    </select>
-                                    <select id="announcement-audience" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-[#56AE67] dark:bg-gray-700 dark:text-white dark:border-gray-600">
-                                        <option value="all">All Platform Users</option>
-                                        <option value="students">Students Only</option>
-                                    </select>
-                                </div>
-                                <p class="text-xs text-gray-500 dark:text-gray-400">Audience controls visibility: choose Students Only for student dashboard feed only.</p>
-                                <div>
-                                    <label class="text-xs text-gray-600 dark:text-gray-400">Image (optional)</label>
-                                    <input id="announcement-image" type="file" accept="image/*" class="w-full mt-1 text-xs text-gray-700 dark:text-gray-300">
-                                </div>
-                                <label class="flex items-center text-xs text-gray-700 dark:text-gray-300">
-                                    <input id="announcement-pinned" type="checkbox" class="mr-2"> Pin this post
-                                </label>
-                                <button type="submit" id="company-announcement-submit" style="background-color: #56AE67; color: #ffffff;" class="w-full px-4 py-2 rounded-lg transition font-semibold border-2 border-[#2d6b3c] hover:opacity-90">Publish Announcement</button>
-                            </form>
-                            <div id="company-announcement-status" class="text-xs mt-3"></div>
-                        </div>
-
-                        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-                            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Recent Feed Posts</h3>
-                            <p class="text-xs text-gray-500 dark:text-gray-400 mb-3">Click any post to view full details.</p>
-                            <div class="space-y-3">
-                                ${announcements.length > 0 ? (() => {
-                                    const companyPreviewPosts = announcements.slice(0, 5);
-                                    cacheAnnouncementPosts(companyPreviewPosts);
-                                    return companyPreviewPosts.map(post => `
-                                    <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-3 cursor-pointer hover:shadow-md transition" onclick="openAnnouncementPostModal('${post._id}')">
-                                        <div class="flex items-start justify-between gap-2">
-                                            <div>
-                                                <div class="text-sm font-semibold text-gray-900 dark:text-white">${post.title || 'Untitled Post'}</div>
-                                                <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">${(post.category || 'announcement').toUpperCase()} • ${formatDate(post.publishedAt || post.createdAt)}</div>
-                                            </div>
-                                            <button onclick="event.stopPropagation(); deleteCompanyAnnouncement('${post._id}')" class="text-xs px-2 py-1 bg-red-50 text-red-700 rounded hover:bg-red-100 dark:bg-red-900/30 dark:text-red-300" title="Delete post">
-                                                <i class="fas fa-trash"></i>
-                                            </button>
-                                        </div>
-                                        ${post.imageUrl ? `<img src="${post.imageUrl}" alt="Announcement image" class="w-full mt-2 rounded-lg border border-gray-200 dark:border-gray-700" style="max-height:120px; object-fit:cover;">` : ''}
-                                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-2 line-clamp-2">${post.content || ''}</p>
-                                    </div>
-                                `).join('');
-                                })() : '<p class="text-sm text-gray-500 dark:text-gray-400">No announcements yet. Publish your first post.</p>'}
-                            </div>
+                            <p class="text-sm text-gray-600 dark:text-gray-300">
+                                Company feed is temporarily disabled.
+                            </p>
                         </div>
 
                         <!-- Quick Actions -->
@@ -2720,28 +2669,29 @@ window.showStudentProfileModal = function() {
                         </div>
                     </div>
                 </div>
+
+                <!-- Resume Upload -->
+                <div class="mt-6">
+                    <h4 class="font-semibold mb-3">Resume Upload</h4>
+                    <div class="grid md:grid-cols-2 gap-4 items-start">
+                        <div>
+                            <label class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">Resume File (PDF or PNG)</label>
+                            <input type="file" id="resumeFile" accept=".pdf,.png,application/pdf,image/png" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-[#56AE67] dark:bg-gray-700 dark:text-white dark:border-gray-600">
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Max 5MB. Use PDF for documents or PNG for image-based resume.</p>
+                        </div>
+                        <div class="text-sm text-gray-600 dark:text-gray-300">
+                            <div class="font-semibold mb-1">Current Resume:</div>
+                            ${profile?.resume?.filename
+                                ? `<a href="/uploads/resumes/${profile.resume.filename}" target="_blank" class="text-[#56AE67] dark:text-[#6bc481] hover:underline break-all">${profile.resume.filename}</a>`
+                                : '<span class="text-gray-500 dark:text-gray-400">No resume uploaded yet</span>'}
+                        </div>
+                    </div>
+                </div>
                 
                 <!-- Job Preferences -->
                 <div class="mt-6">
                     <h4 class="font-semibold mb-3">Job Preferences</h4>
                     <div class="grid md:grid-cols-2 gap-4">
-                        <div class="mb-4">
-                            <label class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">Job Types</label>
-                            <div class="space-y-2">
-                                <label class="flex items-center">
-                                    <input type="checkbox" value="full-time" ${profile?.preferences?.jobTypes?.includes('full-time') ? 'checked' : ''} class="mr-2"> Full-time
-                                </label>
-                                <label class="flex items-center">
-                                    <input type="checkbox" value="part-time" ${profile?.preferences?.jobTypes?.includes('part-time') ? 'checked' : ''} class="mr-2"> Part-time
-                                </label>
-                                <label class="flex items-center">
-                                    <input type="checkbox" value="internship" ${profile?.preferences?.jobTypes?.includes('internship') ? 'checked' : ''} class="mr-2"> Internship
-                                </label>
-                                <label class="flex items-center">
-                                    <input type="checkbox" value="ojt" ${profile?.preferences?.jobTypes?.includes('ojt') ? 'checked' : ''} class="mr-2"> OJT
-                                </label>
-                            </div>
-                        </div>
                         <div class="mb-4">
                             <label class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">Preferred Locations (comma-separated)</label>
                             <input type="text" id="locations" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-[#56AE67]" value="${profile?.preferences?.locations?.join(', ') || ''}" placeholder="Manila, Quezon City, Makati">
@@ -2838,13 +2788,8 @@ window.saveStudentProfile = async function(event) {
                 personalWebsite: document.getElementById('personalWebsite').value,
             },
             preferences: {
-                jobTypes: Array.from(document.querySelectorAll('input[type="checkbox"]:not(#remote):checked')).map(cb => cb.value),
                 locations: document.getElementById('locations').value.split(',').map(loc => loc.trim()).filter(loc => loc),
-                remote: document.getElementById('remote').checked,
-                salaryRange: {
-                    min: null,
-                    max: null
-                }
+                remote: document.getElementById('remote').checked
             }
         };
         
@@ -2854,6 +2799,17 @@ window.saveStudentProfile = async function(event) {
             method: 'PUT',
             body: JSON.stringify(formData)
         });
+
+        const resumeFile = document.getElementById('resumeFile')?.files?.[0] || null;
+        if (resumeFile) {
+            const resumeFormData = new FormData();
+            resumeFormData.append('resume', resumeFile);
+
+            await apiCall('/students/upload-resume', {
+                method: 'POST',
+                body: resumeFormData
+            });
+        }
         
         showToast('Profile updated successfully!', 'success');
         closeModal();
@@ -3148,15 +3104,10 @@ function showCreateJob() {
                         </select>
                     </div>
                     <div class="mb-4">
-                        <label class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">Job Type *</label>
-                        <select id="jobType" required class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-[#56AE67]">
-                            <option value="">Select Job Type</option>
-                            <option value="full-time">Full-time</option>
-                            <option value="part-time">Part-time</option>
-                            <option value="contract">Contract</option>
-                            <option value="internship">Internship</option>
-                            <option value="ojt">OJT</option>
-                        </select>
+                        <label class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">Program Type</label>
+                        <div class="w-full px-3 py-2 border rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200">
+                            OJT
+                        </div>
                     </div>
                     <div class="mb-4">
                         <label class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">Experience Level *</label>
@@ -3174,9 +3125,9 @@ function showCreateJob() {
                     </div>
                 </div>
                 
-                <!-- Location & Salary -->
+                <!-- Location -->
                 <div>
-                    <h4 class="font-semibold mb-3">Location & Compensation</h4>
+                    <h4 class="font-semibold mb-3">Location</h4>
                     <div class="mb-4">
                         <label class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">City</label>
                         <input type="text" id="jobCity" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-[#56AE67]" placeholder="e.g. Manila">
@@ -3193,13 +3144,6 @@ function showCreateJob() {
                         <div class="flex items-center mt-2">
                             <input type="checkbox" id="hybridWork" class="mr-2">
                             <label for="hybridWork" class="text-gray-700 dark:text-gray-300 text-sm">Hybrid Work Available</label>
-                        </div>
-                    </div>
-                    <div class="mb-4">
-                        <label class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">Salary Range (Monthly)</label>
-                        <div class="grid grid-cols-2 gap-2">
-                            <input type="number" id="salaryMin" placeholder="Min" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-[#56AE67]">
-                            <input type="number" id="salaryMax" placeholder="Max" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-[#56AE67]">
                         </div>
                     </div>
                 </div>
@@ -3354,17 +3298,13 @@ async function saveJob(event) {
             title: jobTitle,
             department: document.getElementById('jobDepartment').value,
             description: document.getElementById('jobDescription').value,
-            jobType: document.getElementById('jobType').value,
+            jobType: 'ojt',
             experienceLevel: document.getElementById('experienceLevel').value,
             location: {
                 city: document.getElementById('jobCity').value,
                 state: document.getElementById('jobState').value,
                 remote: document.getElementById('remoteWork').checked,
                 hybrid: document.getElementById('hybridWork').checked,
-            },
-            salary: {
-                min: document.getElementById('salaryMin').value ? parseInt(document.getElementById('salaryMin').value) : null,
-                max: document.getElementById('salaryMax').value ? parseInt(document.getElementById('salaryMax').value) : null,
             },
             requirements: document.getElementById('requirements').value
                 .split('\n')
@@ -3462,7 +3402,7 @@ function showAllApplications() {
                 const location = typeof app.job.location === 'string'
                     ? app.job.location
                     : (app.job.location?.city || 'Remote');
-                const jobType = app.job.jobType || app.job.type || 'full-time';
+                const jobType = app.job.jobType || app.job.type || 'ojt';
                 const description = app.job.description || 'No description available';
 
                 return `
@@ -3609,14 +3549,7 @@ function viewJob(jobId) {
                                             <span><i class="fas fa-user-graduate mr-1"></i>${capitalizeFirst(job.experienceLevel)}</span>
                                         </div>
                                     </div>
-                                    <div class="text-right">
-                                        ${job.salary?.min || job.salary?.max ? `
-                                            <div class="text-2xl font-bold text-green-600 dark:text-green-400">
-                                                ₱${job.salary.min ? job.salary.min.toLocaleString() : '0'} - ₱${job.salary.max ? job.salary.max.toLocaleString() : '0'}
-                                            </div>
-                                            <div class="text-sm text-gray-500 dark:text-gray-400">per month</div>
-                                        ` : ''}
-                                    </div>
+                                    <div class="text-right"></div>
                                 </div>
 
                                 <!-- Job Status and Actions -->
@@ -3846,14 +3779,7 @@ function viewJob(jobId) {
                                             <span><i class="fas fa-user-graduate mr-1"></i>${capitalizeFirst(job.experienceLevel)}</span>
                                         </div>
                                     </div>
-                                    <div class="text-right">
-                                        ${job.salary?.min || job.salary?.max ? `
-                                            <div class="text-2xl font-bold text-green-600 dark:text-green-400">
-                                                ₱${job.salary.min ? job.salary.min.toLocaleString() : '0'} - ₱${job.salary.max ? job.salary.max.toLocaleString() : '0'}
-                                            </div>
-                                            <div class="text-sm text-gray-500 dark:text-gray-400">per month</div>
-                                        ` : ''}
-                                    </div>
+                                    <div class="text-right"></div>
                                 </div>
                             </div>
 
@@ -4479,9 +4405,6 @@ function showAllJobs() {
                                     <span><i class="fas fa-map-marker-alt mr-1"></i>${job.location?.city || 'Remote'}, ${job.location?.state || ''}</span>
                                     <span><i class="fas fa-briefcase mr-1"></i>${capitalizeFirst(job.jobType)}</span>
                                     <span><i class="fas fa-user-graduate mr-1"></i>${capitalizeFirst(job.experienceLevel)}</span>
-                                    ${job.salary?.min || job.salary?.max ? `
-                                        <span><i class="fas fa-coins mr-1"></i>₱${job.salary.min ? job.salary.min.toLocaleString() : '0'} - ₱${job.salary.max ? job.salary.max.toLocaleString() : '0'}</span>
-                                    ` : ''}
                                     ${job.location?.remote ? `<span class="bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-200 px-2 py-1 rounded">Remote</span>` : ''}
                                 </div>
                                 <div class="mt-2 text-xs text-gray-500 dark:text-gray-400">
@@ -5146,20 +5069,7 @@ function createStudentProfileViewModal(profile) {
                                 <i class="fas fa-briefcase mr-2 text-[#56AE67]"></i>
                                 Job Preferences
                             </h3>
-                            <div class="grid md:grid-cols-3 gap-4">
-                                <div>
-                                    <p class="text-sm text-gray-500 dark:text-gray-400 mb-2">Job Types</p>
-                                    <div class="flex flex-wrap gap-2">
-                                        ${profile.preferences.jobTypes && profile.preferences.jobTypes.length > 0 
-                                            ? profile.preferences.jobTypes.map(type => `
-                                                <span class="bg-blue-100 dark:bg-blue-900 text-[#2d6b3c] dark:text-blue-200 px-3 py-1 rounded-full text-sm capitalize">
-                                                    ${type}
-                                                </span>
-                                            `).join('')
-                                            : '<span class="text-gray-500 dark:text-gray-400">Not specified</span>'
-                                        }
-                                    </div>
-                                </div>
+                            <div class="grid md:grid-cols-2 gap-4">
                                 <div>
                                     <p class="text-sm text-gray-500 dark:text-gray-400 mb-2">Preferred Locations</p>
                                     <div class="flex flex-wrap gap-2">
@@ -5284,17 +5194,11 @@ function createEditJobModal() {
                         
                         <div>
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                Work Type *
+                                Program Type
                             </label>
-                            <select id="edit-type" required class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:border-[#56AE67] dark:bg-gray-700 dark:text-white">
-                                <option value="">Select Type</option>
-                                <option value="Full-time">Full-time</option>
-                                <option value="Part-time">Part-time</option>
-                                <option value="Contract">Contract</option>
-                                <option value="Internship">Internship</option>
-                                <option value="Remote">Remote</option>
-                                <option value="Hybrid">Hybrid</option>
-                            </select>
+                            <div class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200">
+                                OJT
+                            </div>
                         </div>
                     </div>
                     
@@ -5314,16 +5218,6 @@ function createEditJobModal() {
                     </div>
                     
                     <div class="grid md:grid-cols-2 gap-6">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                Salary Range
-                            </label>
-                            <div class="grid grid-cols-2 gap-2">
-                                <input type="number" id="edit-salary-min" class="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:border-[#56AE67] dark:bg-gray-700 dark:text-white" placeholder="Min">
-                                <input type="number" id="edit-salary-max" class="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:border-[#56AE67] dark:bg-gray-700 dark:text-white" placeholder="Max">
-                            </div>
-                        </div>
-                        
                         <div>
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                 Status
@@ -5451,16 +5345,6 @@ function populateEditJobForm(job, jobId) {
     }
     document.getElementById('edit-location').value = locationString;
     
-    // Handle job type mapping
-    const jobTypeMapping = {
-        'full-time': 'Full-time',
-        'part-time': 'Part-time',
-        'contract': 'Contract',
-        'internship': 'Internship',
-        'ojt': 'Internship'
-    };
-    document.getElementById('edit-type').value = jobTypeMapping[job.jobType] || job.type || '';
-    
     document.getElementById('edit-description').value = job.description || '';
     
     // Handle skills - check both requiredSkills and skillsRequired
@@ -5476,8 +5360,6 @@ function populateEditJobForm(job, jobId) {
     }
     document.getElementById('edit-skills').value = skillsText;
     
-    document.getElementById('edit-salary-min').value = job.salary?.min || '';
-    document.getElementById('edit-salary-max').value = job.salary?.max || '';
     document.getElementById('edit-status').value = job.status || 'active';
     
     if (job.applicationDeadline) {
@@ -5525,7 +5407,6 @@ async function handleEditJobSubmit(event, jobId) {
         
         // Collect form data
         const locationInput = document.getElementById('edit-location').value.trim();
-        const typeInput = document.getElementById('edit-type').value;
         
         // Parse location string into object format
         let locationObj = {};
@@ -5548,21 +5429,11 @@ async function handleEditJobSubmit(event, jobId) {
             if (isHybrid) locationObj.hybrid = true;
         }
         
-        // Map job type to database format
-        const typeMapping = {
-            'Full-time': 'full-time',
-            'Part-time': 'part-time',
-            'Contract': 'contract',
-            'Internship': 'internship',
-            'Remote': 'full-time', // Default remote to full-time
-            'Hybrid': 'full-time'   // Default hybrid to full-time
-        };
-        
         const formData = {
             title: document.getElementById('edit-title').value,
             department: document.getElementById('edit-department').value,
             location: locationObj,
-            jobType: typeMapping[typeInput] || 'full-time',
+            jobType: 'ojt',
             experienceLevel: 'entry-level', // Default for OJT platform
             description: document.getElementById('edit-description').value,
             status: document.getElementById('edit-status').value
@@ -5581,16 +5452,6 @@ async function handleEditJobSubmit(event, jobId) {
                 priority: 'nice-to-have' 
             }));
             formData.requiredSkills = skillsArray; // For backward compatibility
-        }
-        
-        // Add salary if provided
-        const salaryMin = document.getElementById('edit-salary-min').value;
-        const salaryMax = document.getElementById('edit-salary-max').value;
-        if (salaryMin || salaryMax) {
-            formData.salary = {
-                min: salaryMin ? parseInt(salaryMin) : undefined,
-                max: salaryMax ? parseInt(salaryMax) : undefined
-            };
         }
         
         // Add deadline if provided
@@ -7321,20 +7182,7 @@ async function loadStudentProfile() {
                             <i class="fas fa-briefcase mr-2 text-[#56AE67]"></i>
                             Job Preferences
                         </h3>
-                        <div class="grid md:grid-cols-3 gap-4">
-                            <div>
-                                <p class="text-sm text-gray-600 dark:text-gray-300 mb-2">Job Types</p>
-                                <div class="flex flex-wrap gap-2">
-                                    ${profile.preferences.jobTypes && profile.preferences.jobTypes.length > 0 
-                                        ? profile.preferences.jobTypes.map(type => `
-                                            <span class="bg-blue-100 dark:bg-blue-900 text-[#2d6b3c] dark:text-blue-200 px-3 py-1 rounded-full text-sm">
-                                                ${type}
-                                            </span>
-                                        `).join('')
-                                        : '<span class="text-gray-500 dark:text-gray-400">Not specified</span>'
-                                    }
-                                </div>
-                            </div>
+                        <div class="grid md:grid-cols-2 gap-4">
                             <div>
                                 <p class="text-sm text-gray-600 dark:text-gray-300 mb-2">Preferred Locations</p>
                                 <div class="flex flex-wrap gap-2">
@@ -8446,10 +8294,6 @@ async function loadCareerPaths() {
                         
                         <div class="pt-4 border-t border-${path.color}-200 dark:border-${path.color}-800">
                             <div class="flex items-center justify-between text-sm">
-                                <span class="text-gray-600 dark:text-gray-400">Ave. Salary:</span>
-                                <span class="font-bold text-gray-900 dark:text-white">${path.salary}</span>
-                            </div>
-                            <div class="flex items-center justify-between text-sm mt-2">
                                 <span class="text-gray-600 dark:text-gray-400">Job Demand:</span>
                                 <span class="font-bold text-${path.color}-700 dark:text-${path.color}-400">${path.demand}</span>
                             </div>
@@ -8559,7 +8403,6 @@ function generateCareerRecommendations(profile, categoryScores, hasCompletedAsse
             requiredSkills: ['HTML/CSS', 'JavaScript', 'React/Vue', 'Node.js', 'SQL', 'REST APIs'],
             primaryCategories: ['webDevelopment', 'programming', 'database'],
             assessmentCategories: ['html', 'css', 'javascript', 'typescript', 'sql', 'webDevelopment'],
-            salary: '₱30,000 - ₱60,000',
             demand: 'Very High'
         },
         {
@@ -8570,7 +8413,6 @@ function generateCareerRecommendations(profile, categoryScores, hasCompletedAsse
             requiredSkills: ['HTML5', 'CSS3', 'JavaScript', 'React', 'Responsive Design', 'UI/UX'],
             primaryCategories: ['webDevelopment', 'programming'],
             assessmentCategories: ['html', 'css', 'javascript', 'typescript', 'webDevelopment', 'problemSolving'],
-            salary: '₱25,000 - ₱50,000',
             demand: 'High'
         },
         {
@@ -8581,7 +8423,6 @@ function generateCareerRecommendations(profile, categoryScores, hasCompletedAsse
             requiredSkills: ['Node.js/Python', 'SQL', 'REST APIs', 'Authentication', 'Server Management'],
             primaryCategories: ['programming', 'database'],
             assessmentCategories: ['python', 'java', 'javascript', 'sql', 'database', 'troubleshooting'],
-            salary: '₱28,000 - ₱55,000',
             demand: 'High'
         },
         {
@@ -8592,7 +8433,6 @@ function generateCareerRecommendations(profile, categoryScores, hasCompletedAsse
             requiredSkills: ['SQL', 'Python', 'Data Visualization', 'Statistics', 'Excel'],
             primaryCategories: ['database', 'sql', 'programming', 'problemSolving'],
             assessmentCategories: ['sql', 'python', 'r', 'database', 'problemSolving'],
-            salary: '₱25,000 - ₱50,000',
             demand: 'Very High'
         },
         {
@@ -8603,7 +8443,6 @@ function generateCareerRecommendations(profile, categoryScores, hasCompletedAsse
             requiredSkills: ['TCP/IP', 'Network Security', 'Cisco', 'Troubleshooting', 'Protocols'],
             primaryCategories: ['networking', 'troubleshooting'],
             assessmentCategories: ['networking', 'troubleshooting'],
-            salary: '₱22,000 - ₱45,000',
             demand: 'Medium'
         },
         {
@@ -8614,7 +8453,6 @@ function generateCareerRecommendations(profile, categoryScores, hasCompletedAsse
             requiredSkills: ['Java/Python', 'OOP', 'Algorithms', 'Git', 'Testing', 'Problem Solving'],
             primaryCategories: ['programming', 'problemSolving'],
             assessmentCategories: ['python', 'java', 'javascript', 'csharp', 'cpp', 'c', 'problemSolving', 'programming'],
-            salary: '₱30,000 - ₱70,000',
             demand: 'Very High'
         }
     ];

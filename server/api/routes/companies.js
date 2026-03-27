@@ -16,7 +16,7 @@ const ensureDir = (dir) => {
 
 const announcementStorage = multer.diskStorage({
   destination: function (_req, _file, cb) {
-    const dest = path.join(__dirname, '..', '..', 'assets', 'uploads', 'company-posts');
+    const dest = path.join(__dirname, '..', '..', '..', 'client', 'assets', 'uploads', 'company-posts');
     ensureDir(dest);
     cb(null, dest);
   },
@@ -538,7 +538,7 @@ router.get('/:id', async (req, res) => {
       .populate({
         path: 'jobs',
         match: { status: 'active' },
-        select: 'title jobType location salary createdAt',
+        select: 'title jobType location createdAt',
       })
       .select('-user');
 

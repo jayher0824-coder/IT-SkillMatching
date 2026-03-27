@@ -252,23 +252,6 @@ function formatDate(dateString) {
     });
 }
 
-// Format Salary
-function formatSalary(salary) {
-    if (!salary) return 'Not specified';
-
-    const { min, max, period = 'monthly', currency = 'PHP' } = salary;
-
-    if (min && max) {
-        return `${currency} ${min.toLocaleString()} - ${max.toLocaleString()} per ${period}`;
-    } else if (min) {
-        return `${currency} ${min.toLocaleString()}+ per ${period}`;
-    } else if (max) {
-        return `Up to ${currency} ${max.toLocaleString()} per ${period}`;
-    } else {
-        return 'Not specified';
-    }
-}
-
 // Capitalize First Letter
 function capitalizeFirst(str) {
     if (!str) return '';
@@ -285,7 +268,6 @@ if (typeof module !== 'undefined' && module.exports) {
         showToast,
         isTokenExpired,
         formatDate,
-        formatSalary,
         capitalizeFirst,
         loadNotificationBell
     };
@@ -336,7 +318,6 @@ if (typeof window !== 'undefined') {
     window.showToast = window.showToast || showToast;
     window.isTokenExpired = window.isTokenExpired || isTokenExpired;
     window.formatDate = window.formatDate || formatDate;
-    window.formatSalary = window.formatSalary || formatSalary;
     window.capitalizeFirst = window.capitalizeFirst || capitalizeFirst;
     window.loadNotificationBell = window.loadNotificationBell || loadNotificationBell;
 }

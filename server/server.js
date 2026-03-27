@@ -99,6 +99,8 @@ app.use('/dist', express.static(path.join(__dirname, '..', 'client', 'public', '
   maxAge: '1d',
   etag: false
 }));
+// Backward compatibility for company post images saved before uploads path fix.
+app.use('/uploads/company-posts', express.static(path.join(__dirname, 'assets', 'uploads', 'company-posts')));
 app.use('/uploads', express.static(path.join(__dirname, '..', 'client', 'assets', 'uploads')));
 app.use(passport.initialize());
 require('./auth/middleware/passport.js')(passport);
