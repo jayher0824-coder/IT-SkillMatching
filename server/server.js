@@ -66,9 +66,23 @@ app.use(helmet({
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 100, // Limit each IP to 100 requests per windowMs
-  message: 'Too many requests from this IP, please try again later.',
+  message: 'Too many requests, please try again later.',
   standardHeaders: true,
   legacyHeaders: false,
+  keyGenerator: (req) => {
+    const authHeader = String(req.headers.authorization || '');
+    const token = authHeader.toLowerCase().startsWith('bearer ')
+      ? authHeader.slice(7).trim()
+      : authHeader.trim();
+
+    if (token) {
+      // Use a short token suffix so authenticated users are rate-limited independently.
+      const tokenSuffix = token.slice(-24);
+      return `auth:${tokenSuffix}`;
+    }
+
+    return req.ip;
+  },
 });
 
 app.use('/api/', limiter);

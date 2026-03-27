@@ -1198,6 +1198,22 @@ function normalizeMatchToken(value) {
         .trim();
 }
 
+function getResumeFileName(resume) {
+    if (!resume) return '';
+    const source = String(resume.path || resume.filename || '');
+    return source.split(/[\\/]/).pop() || '';
+}
+
+function getResumeDisplayName(resume) {
+    if (!resume) return '';
+    return String(resume.filename || getResumeFileName(resume));
+}
+
+function getResumePublicUrl(resume) {
+    const fileName = getResumeFileName(resume);
+    return fileName ? `/uploads/resumes/${encodeURIComponent(fileName)}` : '';
+}
+
 function buildStudentSkillTokens(studentProfile) {
     const verifiedSkills = (studentProfile?.skills || [])
         .filter(skill => skill && skill.verified)
@@ -2228,13 +2244,6 @@ async function loadCompanyDashboard() {
                             </div>
                         ` : ''}
 
-                        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-                            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-3">Company Feed</h3>
-                            <p class="text-sm text-gray-600 dark:text-gray-300">
-                                Company feed is temporarily disabled.
-                            </p>
-                        </div>
-
                         <!-- Quick Actions -->
                         <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
                             <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Quick Actions</h3>
@@ -2681,8 +2690,8 @@ window.showStudentProfileModal = function() {
                         </div>
                         <div class="text-sm text-gray-600 dark:text-gray-300">
                             <div class="font-semibold mb-1">Current Resume:</div>
-                            ${profile?.resume?.filename
-                                ? `<a href="/uploads/resumes/${profile.resume.filename}" target="_blank" class="text-[#56AE67] dark:text-[#6bc481] hover:underline break-all">${profile.resume.filename}</a>`
+                            ${profile?.resume
+                                ? `<a href="${getResumePublicUrl(profile.resume)}" target="_blank" class="text-[#56AE67] dark:text-[#6bc481] hover:underline break-all">${getResumeDisplayName(profile.resume)}</a>`
                                 : '<span class="text-gray-500 dark:text-gray-400">No resume uploaded yet</span>'}
                         </div>
                     </div>
@@ -5004,6 +5013,17 @@ function createStudentProfileViewModal(profile) {
                             </div>
                         ` : '<p class="text-gray-500 dark:text-gray-400">No portfolio links</p>'}
                     </div>
+
+                    <!-- Resume -->
+                    <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+                            <i class="fas fa-file-alt mr-2 text-[#56AE67]"></i>
+                            Resume
+                        </h3>
+                        ${profile.resume
+                            ? `<a href="${getResumePublicUrl(profile.resume)}" target="_blank" class="inline-flex items-center text-[#56AE67] dark:text-[#6bc481] hover:underline break-all"><i class="fas fa-download mr-2"></i>${getResumeDisplayName(profile.resume)}</a>`
+                            : '<p class="text-gray-500 dark:text-gray-400">No resume uploaded</p>'}
+                    </div>
                     
                     <!-- Assessment Score -->
                     ${profile.assessmentScore ? `
@@ -7137,6 +7157,19 @@ async function loadStudentProfile() {
                                 </div>
                             ` : ''}
                         ` : '<p class="text-gray-500 dark:text-gray-400">No portfolio links</p>'}
+                    </div>
+                </div>
+
+                <!-- Resume -->
+                <div class="bg-white dark:bg-gray-700 rounded-lg p-6 shadow">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+                        <i class="fas fa-file-alt mr-2 text-[#56AE67]"></i>
+                        Resume
+                    </h3>
+                    <div class="space-y-3">
+                        ${profile.resume
+                            ? `<a href="${getResumePublicUrl(profile.resume)}" target="_blank" class="text-[#56AE67] dark:text-[#6bc481] hover:underline flex items-center break-all"><i class="fas fa-download mr-2"></i>${getResumeDisplayName(profile.resume)}</a>`
+                            : '<p class="text-gray-500 dark:text-gray-400">No resume uploaded</p>'}
                     </div>
                 </div>
                 
