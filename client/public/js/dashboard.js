@@ -1198,50 +1198,6 @@ function normalizeMatchToken(value) {
         .trim();
 }
 
-function getResumeFileName(resume) {
-    if (!resume) return '';
-    const source = String(resume.path || resume.filename || '');
-    return source.split(/[\\/]/).pop() || '';
-}
-
-function getResumeDisplayName(resume) {
-    if (!resume) return '';
-    return String(resume.filename || getResumeFileName(resume));
-}
-
-function getResumePublicUrl(resume) {
-    const fileName = getResumeFileName(resume);
-    return fileName ? `/uploads/resumes/${encodeURIComponent(fileName)}` : '';
-}
-
-async function openOwnResume(event) {
-    if (event) event.preventDefault();
-
-    try {
-        const token = (typeof window.getStoredAuthToken === 'function')
-            ? window.getStoredAuthToken()
-            : (sessionStorage.getItem('authToken') || '').replace(/^Bearer\s+/i, '');
-
-        const response = await fetch('/api/students/resume', {
-            headers: token ? { Authorization: `Bearer ${token}` } : {}
-        });
-
-        if (!response.ok) {
-            throw new Error('Resume is unavailable right now. Please upload again and retry.');
-        }
-
-        const blob = await response.blob();
-        const blobUrl = URL.createObjectURL(blob);
-        window.open(blobUrl, '_blank', 'noopener,noreferrer');
-        setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
-    } catch (error) {
-        console.error('Error opening resume:', error);
-        showToast(error.message || 'Unable to open resume', 'error');
-    }
-}
-
-window.openOwnResume = window.openOwnResume || openOwnResume;
-
 function buildStudentSkillTokens(studentProfile) {
     const verifiedSkills = (studentProfile?.skills || [])
         .filter(skill => skill && skill.verified)
@@ -2531,15 +2487,11 @@ function renderProfileCompleteness(profile) {
     const fields = [
         { key: 'firstName', label: 'Name' },
         { key: 'phone', label: 'Phone' },
-        { key: 'education', label: 'Education' },
-        { key: 'resume', label: 'Resume' },
-        { key: 'portfolio', label: 'Portfolio' }
+        { key: 'education', label: 'Education' }
     ];
     
     const completedFields = fields.filter(field => {
         if (field.key === 'education') return profile.education?.school;
-        if (field.key === 'resume') return profile.resume?.filename;
-        if (field.key === 'portfolio') return profile.portfolio?.githubUrl || profile.portfolio?.linkedinUrl;
         return profile[field.key];
     });
     
@@ -2699,24 +2651,6 @@ window.showStudentProfileModal = function() {
                     </div>
                 </div>
 
-                <!-- Resume Upload -->
-                <div class="mt-6">
-                    <h4 class="font-semibold mb-3">Resume Upload</h4>
-                    <div class="grid md:grid-cols-2 gap-4 items-start">
-                        <div>
-                            <label class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">Resume File (PDF or PNG)</label>
-                            <input type="file" id="resumeFile" accept=".pdf,.png,application/pdf,image/png" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-[#56AE67] dark:bg-gray-700 dark:text-white dark:border-gray-600">
-                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Max 5MB. Use PDF for documents or PNG for image-based resume.</p>
-                        </div>
-                        <div class="text-sm text-gray-600 dark:text-gray-300">
-                            <div class="font-semibold mb-1">Current Resume:</div>
-                            ${profile?.resume
-                                ? `<a href="/api/students/resume" onclick="openOwnResume(event)" class="text-[#56AE67] dark:text-[#6bc481] hover:underline break-all">${getResumeDisplayName(profile.resume)}</a>`
-                                : '<span class="text-gray-500 dark:text-gray-400">No resume uploaded yet</span>'}
-                        </div>
-                    </div>
-                </div>
-                
                 <!-- Job Preferences -->
                 <div class="mt-6">
                     <h4 class="font-semibold mb-3">Job Preferences</h4>
@@ -2828,17 +2762,6 @@ window.saveStudentProfile = async function(event) {
             method: 'PUT',
             body: JSON.stringify(formData)
         });
-
-        const resumeFile = document.getElementById('resumeFile')?.files?.[0] || null;
-        if (resumeFile) {
-            const resumeFormData = new FormData();
-            resumeFormData.append('resume', resumeFile);
-
-            await apiCall('/students/upload-resume', {
-                method: 'POST',
-                body: resumeFormData
-            });
-        }
         
         showToast('Profile updated successfully!', 'success');
         closeModal();
@@ -5034,17 +4957,6 @@ function createStudentProfileViewModal(profile) {
                         ` : '<p class="text-gray-500 dark:text-gray-400">No portfolio links</p>'}
                     </div>
 
-                    <!-- Resume -->
-                    <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
-                            <i class="fas fa-file-alt mr-2 text-[#56AE67]"></i>
-                            Resume
-                        </h3>
-                        ${profile.resume
-                            ? `<a href="/api/students/resume" onclick="openOwnResume(event)" class="inline-flex items-center text-[#56AE67] dark:text-[#6bc481] hover:underline break-all"><i class="fas fa-download mr-2"></i>${getResumeDisplayName(profile.resume)}</a>`
-                            : '<p class="text-gray-500 dark:text-gray-400">No resume uploaded</p>'}
-                    </div>
-                    
                     <!-- Assessment Score -->
                     ${profile.assessmentScore ? `
                         <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 md:col-span-2">
@@ -7180,19 +7092,6 @@ async function loadStudentProfile() {
                     </div>
                 </div>
 
-                <!-- Resume -->
-                <div class="bg-white dark:bg-gray-700 rounded-lg p-6 shadow">
-                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
-                        <i class="fas fa-file-alt mr-2 text-[#56AE67]"></i>
-                        Resume
-                    </h3>
-                    <div class="space-y-3">
-                        ${profile.resume
-                            ? `<a href="/api/students/resume" onclick="openOwnResume(event)" class="text-[#56AE67] dark:text-[#6bc481] hover:underline flex items-center break-all"><i class="fas fa-download mr-2"></i>${getResumeDisplayName(profile.resume)}</a>`
-                            : '<p class="text-gray-500 dark:text-gray-400">No resume uploaded</p>'}
-                    </div>
-                </div>
-                
                 <!-- Skills -->
                 ${profile.skills && profile.skills.length > 0 ? `
                     <div class="bg-white dark:bg-gray-700 rounded-lg p-6 md:col-span-2 shadow">

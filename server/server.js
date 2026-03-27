@@ -65,7 +65,7 @@ app.use(helmet({
 // Rate limiting for all requests
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Limit each IP to 100 requests per windowMs
+  max: 300, // Increased to reduce false positives under normal dashboard usage
   message: 'Too many requests, please try again later.',
   standardHeaders: true,
   legacyHeaders: false,
@@ -74,7 +74,13 @@ const limiter = rateLimit({
 
     const apiPath = String(req.path || '');
     // Allow frequent dashboard read polling without exhausting the write/action quota.
-    return apiPath === '/auth/me' || apiPath.startsWith('/notifications');
+    return apiPath === '/auth/me'
+      || apiPath.startsWith('/notifications')
+      || apiPath === '/students/profile'
+      || apiPath === '/students/applications'
+      || apiPath.startsWith('/jobs')
+      || apiPath.startsWith('/assessments')
+      || apiPath.startsWith('/custom-assessments');
   },
   keyGenerator: (req) => {
     const authHeader = String(req.headers.authorization || '');
