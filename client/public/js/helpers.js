@@ -10,7 +10,8 @@ if (typeof window !== 'undefined') {
 function validateAPIConfiguration() {
     try {
         // Check if API_BASE is defined
-        if (!API_BASE) {
+        const apiBase = window.API_BASE || '/api';
+        if (!apiBase) {
             console.error('API_BASE is not defined');
             return false;
         }
@@ -27,6 +28,17 @@ function validateAPIConfiguration() {
         console.error('Error validating API configuration:', error);
         return false;
     }
+}
+
+function getStoredAuthToken() {
+    const rawToken = sessionStorage.getItem('authToken') || localStorage.getItem('authToken') || localStorage.getItem('token');
+    if (!rawToken) return null;
+
+    return rawToken.startsWith('Bearer ') ? rawToken.slice(7) : rawToken;
+}
+
+if (typeof window !== 'undefined') {
+    window.getStoredAuthToken = window.getStoredAuthToken || getStoredAuthToken;
 }
 
 // API Call Helper Function
@@ -55,7 +67,7 @@ async function apiCall(endpoint, options = {}) {
     };
 
     // Get auth token from sessionStorage if available
-    const authToken = sessionStorage.getItem('authToken');
+    const authToken = getStoredAuthToken();
     if (authToken) {
         config.headers['Authorization'] = `Bearer ${authToken}`;
     }

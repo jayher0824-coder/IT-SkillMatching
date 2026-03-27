@@ -388,21 +388,13 @@ function updateGamificationDisplay() {
  */
 async function saveGamificationPoints() {
     try {
-        const response = await fetch('/api/students/gamification', {
+        const result = await apiCall('/students/gamification', {
             method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-            },
             body: JSON.stringify({
                 points: quizGamification.points,
             }),
         });
 
-        if (!response.ok) {
-            throw new Error(`Failed to save gamification points: ${response.status} ${response.statusText}`);
-        }
-
-        const result = await response.json();
         if (!result.success) {
             console.error('Failed to save gamification points:', result.message);
         }
@@ -425,16 +417,22 @@ async function saveGamificationPoints() {
 async function fetchSkillQuestions(skill, difficulty = 'medium') {
     try {
         console.log('Fetching questions for skill:', skill, 'difficulty:', difficulty);
-        const authToken = sessionStorage.getItem('authToken') || localStorage.getItem('token');
+        const authToken = typeof window.getStoredAuthToken === 'function'
+            ? window.getStoredAuthToken()
+            : (sessionStorage.getItem('authToken') || localStorage.getItem('authToken') || localStorage.getItem('token'));
         
         // Call backend endpoint with difficulty parameter
         const difficultyParam = difficulty ? `?difficulty=${difficulty}` : '';
+        const headers = {
+            'Content-Type': 'application/json'
+        };
+        if (authToken) {
+            headers['Authorization'] = `Bearer ${authToken}`;
+        }
+
         const response = await fetch(`/api/assessments/quiz-questions/${skill.toLowerCase()}${difficultyParam}`, {
             method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': authToken ? `Bearer ${authToken}` : ''
-            }
+            headers
         });
 
         if (!response.ok) {
@@ -2245,10 +2243,11 @@ async function loadCompanyDashboard() {
                                         <option value="result">Result</option>
                                     </select>
                                     <select id="announcement-audience" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-[#56AE67] dark:bg-gray-700 dark:text-white dark:border-gray-600">
-                                        <option value="all">All Students</option>
-                                        <option value="students">Students Dashboard Only</option>
+                                        <option value="all">All Platform Users</option>
+                                        <option value="students">Students Only</option>
                                     </select>
                                 </div>
+                                <p class="text-xs text-gray-500 dark:text-gray-400">Audience controls visibility: choose Students Only for student dashboard feed only.</p>
                                 <div>
                                     <label class="text-xs text-gray-600 dark:text-gray-400">Image (optional)</label>
                                     <input id="announcement-image" type="file" accept="image/*" class="w-full mt-1 text-xs text-gray-700 dark:text-gray-300">
@@ -2256,7 +2255,7 @@ async function loadCompanyDashboard() {
                                 <label class="flex items-center text-xs text-gray-700 dark:text-gray-300">
                                     <input id="announcement-pinned" type="checkbox" class="mr-2"> Pin this post
                                 </label>
-                                <button type="submit" class="w-full bg-[#56AE67] text-white px-4 py-2 rounded-lg hover:bg-[#3d8b4f] transition font-semibold">Publish Announcement</button>
+                                <button type="submit" id="company-announcement-submit" style="background-color: #56AE67; color: #ffffff;" class="w-full px-4 py-2 rounded-lg transition font-semibold border-2 border-[#2d6b3c] hover:opacity-90">Publish Announcement</button>
                             </form>
                             <div id="company-announcement-status" class="text-xs mt-3"></div>
                         </div>
@@ -3423,56 +3422,87 @@ function showAllApplications() {
     apiCall('/students/applications')
         .then(response => {
             console.log('Applications API response:', response);
-            const applications = response.data || [];
+            const applications = Array.isArray(response.data) ? response.data : [];
             console.log('Applications data:', applications);
+
+            const availableApplications = applications.filter(app => app && app.job);
+            const missingJobApplications = applications.filter(app => app && !app.job);
+
+            const applicationCards = applications.map(app => {
+                if (!app) return '';
+
+                if (!app.job) {
+                    return `
+                        <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4 bg-gray-50 dark:bg-gray-800/60">
+                            <div class="flex items-start justify-between gap-3">
+                                <div class="flex-1">
+                                    <div class="flex items-center space-x-3 mb-2">
+                                        <h4 class="font-semibold text-gray-700 dark:text-gray-200">Job no longer available</h4>
+                                        <span class="text-xs px-2 py-1 rounded ${getStatusColor(app.status)}">
+                                            ${capitalizeFirst(app.status || 'pending')}
+                                        </span>
+                                    </div>
+                                    <p class="text-sm text-gray-500 dark:text-gray-400">This application references a job post that may have been removed.</p>
+                                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                                        <i class="fas fa-calendar mr-1"></i>Applied ${formatDate(app.appliedAt)}
+                                    </p>
+                                </div>
+                                ${app.status === 'pending' ? `
+                                    <button onclick="withdrawApplication('${app._id}')" class="text-red-600 hover:text-red-800 text-sm whitespace-nowrap">
+                                        <i class="fas fa-times mr-1"></i>Withdraw
+                                    </button>
+                                ` : ''}
+                            </div>
+                        </div>
+                    `;
+                }
+
+                const jobTitle = app.job.title || 'Unknown Position';
+                const companyName = app.job.company?.companyName || app.job.companyName || 'Unknown Company';
+                const location = typeof app.job.location === 'string'
+                    ? app.job.location
+                    : (app.job.location?.city || 'Remote');
+                const jobType = app.job.jobType || app.job.type || 'full-time';
+                const description = app.job.description || 'No description available';
+
+                return `
+                    <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition">
+                        <div class="flex items-start justify-between">
+                            <div class="flex-1">
+                                <div class="flex items-center space-x-3 mb-2">
+                                    <h4 class="font-semibold text-gray-900 dark:text-white">${jobTitle}</h4>
+                                    <span class="text-xs px-2 py-1 rounded ${getStatusColor(app.status)}">
+                                        ${capitalizeFirst(app.status)}
+                                    </span>
+                                </div>
+                                <p class="text-sm text-gray-600 dark:text-gray-400 mb-2">${companyName}</p>
+                                <div class="flex items-center space-x-4 text-xs text-gray-500 dark:text-gray-400 mb-3">
+                                    <span><i class="fas fa-calendar mr-1"></i>Applied ${formatDate(app.appliedAt)}</span>
+                                    <span><i class="fas fa-map-marker-alt mr-1"></i>${location}</span>
+                                    <span><i class="fas fa-clock mr-1"></i>${capitalizeFirst(jobType)}</span>
+                                </div>
+                                <p class="text-sm text-gray-700 dark:text-gray-300 line-clamp-2">${description.substring(0, 150)}${description.length > 150 ? '...' : ''}</p>
+                            </div>
+                            <div class="flex flex-col space-y-2 ml-4">
+                                <button onclick="viewJob('${app.job._id}')" class="text-[#56AE67] hover:text-[#2d6b3c] text-sm">
+                                    <i class="fas fa-eye mr-1"></i>View Job
+                                </button>
+                                ${app.status === 'pending' ? `
+                                    <button onclick="withdrawApplication('${app._id}')" class="text-red-600 hover:text-red-800 text-sm">
+                                        <i class="fas fa-times mr-1"></i>Withdraw
+                                    </button>
+                                ` : ''}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).filter(Boolean).join('');
 
             modalContent.innerHTML = `
                 <div class="max-h-96 overflow-y-auto">
                     ${applications.length > 0 ? `
                         <div class="space-y-4">
-                            ${applications.map(app => {
-                                // Safety checks for populated fields
-                                if (!app.job) {
-                                    console.warn('Application missing job data:', app);
-                                    return '';
-                                }
-                                const jobTitle = app.job.title || 'Unknown Position';
-                                const companyName = app.job.company?.companyName || 'Unknown Company';
-                                const location = app.job.location?.city || 'Remote';
-                                const jobType = app.job.jobType || 'full-time';
-                                const description = app.job.description || 'No description available';
-                                
-                                return `
-                                <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition">
-                                    <div class="flex items-start justify-between">
-                                        <div class="flex-1">
-                                            <div class="flex items-center space-x-3 mb-2">
-                                                <h4 class="font-semibold text-gray-900 dark:text-white">${jobTitle}</h4>
-                                                <span class="text-xs px-2 py-1 rounded ${getStatusColor(app.status)}">
-                                                    ${capitalizeFirst(app.status)}
-                                                </span>
-                                            </div>
-                                            <p class="text-sm text-gray-600 dark:text-gray-400 mb-2">${companyName}</p>
-                                            <div class="flex items-center space-x-4 text-xs text-gray-500 dark:text-gray-400 mb-3">
-                                                <span><i class="fas fa-calendar mr-1"></i>Applied ${formatDate(app.appliedAt)}</span>
-                                                <span><i class="fas fa-map-marker-alt mr-1"></i>${location}</span>
-                                                <span><i class="fas fa-clock mr-1"></i>${capitalizeFirst(jobType)}</span>
-                                            </div>
-                                            <p class="text-sm text-gray-700 dark:text-gray-300 line-clamp-2">${description.substring(0, 150)}${description.length > 150 ? '...' : ''}</p>
-                                        </div>
-                                        <div class="flex flex-col space-y-2 ml-4">
-                                            <button onclick="viewJob('${app.job._id}')" class="text-[#56AE67] hover:text-[#2d6b3c] text-sm">
-                                                <i class="fas fa-eye mr-1"></i>View Job
-                                            </button>
-                                            ${app.status === 'pending' ? `
-                                                <button onclick="withdrawApplication('${app._id}')" class="text-red-600 hover:text-red-800 text-sm">
-                                                    <i class="fas fa-times mr-1"></i>Withdraw
-                                                </button>
-                                            ` : ''}
-                                        </div>
-                                    </div>
-                                </div>
-                            `}).filter(html => html).join('')}
+                            ${applicationCards}
                         </div>
                     ` : `
                         <div class="text-center py-12">
@@ -3491,7 +3521,7 @@ function showAllApplications() {
                 ${applications.length > 0 ? `
                     <div class="flex justify-between items-center mt-6 pt-4 border-t border-gray-200">
                         <div class="text-sm text-gray-600">
-                            Showing ${applications.length} application${applications.length !== 1 ? 's' : ''}
+                            Showing ${applications.length} application${applications.length !== 1 ? 's' : ''}${missingJobApplications.length > 0 ? ` (${availableApplications.length} active, ${missingJobApplications.length} unavailable)` : ''}
                         </div>
                         <div class="flex space-x-3">
                             <button onclick="closeModal()" class="bg-gray-700 text-white px-4 py-2 rounded-lg hover:bg-gray-800 dark:bg-gray-500 dark:hover:bg-gray-400 dark:text-gray-900 transition font-medium">
@@ -7973,15 +8003,10 @@ window.uploadAvatar = async function(event) {
             throw new Error('Not authenticated');
         }
         
-        const response = await fetch('/api/students/upload-avatar', {
+        const data = await apiCall('/students/upload-avatar', {
             method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${authToken}`
-            },
             body: formData
         });
-        
-        const data = await response.json();
         console.log('Avatar upload response:', data);
         
         if (data.success) {
@@ -8083,16 +8108,10 @@ const feedbackFormHandler = function() {
                     priority: document.getElementById('feedback-priority').value
                 };
                 
-                const response = await fetch('/api/feedback', {
+                const data = await apiCall('/feedback', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${authToken}`
-                    },
                     body: JSON.stringify(formData)
                 });
-                
-                const data = await response.json();
                 
                 if (data.success) {
                     successMsg.classList.remove('hidden');
@@ -8394,6 +8413,21 @@ async function loadCareerPaths() {
                                 `).join('')}
                             </div>
                         </div>
+
+                        ${(path.missingAssessmentSkills || []).length > 0 ? `
+                            <div class="mb-4">
+                                <h4 class="font-semibold text-amber-700 dark:text-amber-400 mb-2 text-sm flex items-center">
+                                    <i class="fas fa-info-circle mr-2"></i>No Quiz Yet:
+                                </h4>
+                                <div class="flex flex-wrap gap-2">
+                                    ${path.missingAssessmentSkills.map(skill => `
+                                        <span class="text-xs px-2 py-1 bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300 rounded">
+                                            ${skill}
+                                        </span>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        ` : ''}
                         
                         ${path.skillGap.length > 0 ? `
                             <div class="mb-4">
@@ -8455,6 +8489,50 @@ const CAREER_PATH_LANGUAGE_HINTS = {
     'Data Analyst': ['python', 'r'],
     'Software Engineer': ['python', 'java', 'javascript', 'typescript', 'csharp', 'cpp', 'c', 'go', 'rust']
 };
+
+const REQUIRED_SKILL_TO_CATEGORY_HINTS = {
+    'htmlcss': ['html', 'css'],
+    'javascript': ['javascript'],
+    'reactvue': ['javascript', 'typescript'],
+    'react': ['javascript', 'typescript'],
+    'vue': ['javascript', 'typescript'],
+    'responsive design': ['css', 'html'],
+    'uiux': ['html', 'css'],
+    'nodejspython': ['javascript', 'python'],
+    'nodejs': ['javascript'],
+    'sql': ['sql', 'database'],
+    'rest apis': ['programming', 'problemSolving'],
+    'authentication': ['programming', 'troubleshooting'],
+    'server management': ['troubleshooting', 'networking'],
+    'datavisualization': ['python', 'r'],
+    'statistics': ['problemSolving'],
+    'excel': ['database'],
+    'tcpip': ['networking'],
+    'network security': ['networking', 'troubleshooting'],
+    'cisco': ['networking'],
+    'troubleshooting': ['troubleshooting'],
+    'protocols': ['networking'],
+    'javapython': ['java', 'python'],
+    'oop': ['programming', 'problemSolving'],
+    'algorithms': ['problemSolving', 'programming'],
+    'git': ['programming'],
+    'testing': ['problemSolving'],
+    'problem solving': ['problemSolving']
+};
+
+function normalizeRequiredSkillKey(skill) {
+    return String(skill || '').toLowerCase().replace(/[^a-z0-9 ]/g, '').trim();
+}
+
+function getAssessmentCategoriesForRequiredSkill(skill) {
+    const normalized = normalizeRequiredSkillKey(skill);
+    if (!normalized) return [];
+
+    const compact = normalized.replace(/\s+/g, '');
+    if (REQUIRED_SKILL_TO_CATEGORY_HINTS[compact]) return REQUIRED_SKILL_TO_CATEGORY_HINTS[compact];
+    if (REQUIRED_SKILL_TO_CATEGORY_HINTS[normalized]) return REQUIRED_SKILL_TO_CATEGORY_HINTS[normalized];
+    return [];
+}
 
 function inferRelevantLanguageCategories(path, categoryScores = {}) {
     const scoredLanguages = Object.entries(categoryScores)
@@ -8546,9 +8624,23 @@ function generateCareerRecommendations(profile, categoryScores, hasCompletedAsse
         let totalScore = 0;
         let categoryCount = 0;
 
+        const requiredSkillAssessmentCoverage = (path.requiredSkills || []).map((skill) => {
+            const mappedCategories = getAssessmentCategoriesForRequiredSkill(skill)
+                .map(category => normalizeAssessmentCategoryKey(category))
+                .filter(category => Boolean(ASSESSMENT_CATEGORY_LABELS[category]));
+
+            return {
+                skill,
+                mappedCategories
+            };
+        });
+
+        const requiredSkillCategories = requiredSkillAssessmentCoverage.flatMap(item => item.mappedCategories);
+
         const scoringCategories = (Array.isArray(path.assessmentCategories) && path.assessmentCategories.length
             ? path.assessmentCategories
             : path.primaryCategories)
+            .concat(requiredSkillCategories)
             .map(category => normalizeAssessmentCategoryKey(category))
             .filter(Boolean);
 
@@ -8574,6 +8666,9 @@ function generateCareerRecommendations(profile, categoryScores, hasCompletedAsse
 
         const inferredLanguageCategories = inferRelevantLanguageCategories(path, categoryScores);
         const breakdownCategories = [...new Set([...scoringCategories, ...inferredLanguageCategories])];
+        const missingAssessmentSkills = requiredSkillAssessmentCoverage
+            .filter(item => item.mappedCategories.length === 0)
+            .map(item => item.skill);
 
         const assessmentBreakdown = breakdownCategories.map((categoryKey) => {
             const normalizedKey = normalizeAssessmentCategoryKey(categoryKey);
@@ -8590,7 +8685,8 @@ function generateCareerRecommendations(profile, categoryScores, hasCompletedAsse
             ...path,
             matchScore,
             skillGap,
-            assessmentBreakdown
+            assessmentBreakdown,
+            missingAssessmentSkills
         };
     }).sort((a, b) => b.matchScore - a.matchScore);
 }

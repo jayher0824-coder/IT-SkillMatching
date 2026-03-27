@@ -7,6 +7,7 @@ let currentPage = 'landing';
 let isDarkMode = false;
 
 let globalAntiCopyEnabled = false;
+let globalAntiCopyHandlers = null;
 
 // API Base URL (use shared window.API_BASE if provided by helpers.js)
 const API_BASE = (typeof window !== 'undefined' && window.API_BASE) ? window.API_BASE : '/api';
@@ -24,8 +25,6 @@ function isTokenExpired(token) {
 
 // Initialize the application
 document.addEventListener('DOMContentLoaded', function() {
-    enableGlobalAntiCopyPasteProtection();
-
     if (validateAPIConfiguration()) {
         initializeApp();
     } else {
@@ -61,6 +60,8 @@ function enableGlobalAntiCopyPasteProtection() {
         return true;
     };
 
+    globalAntiCopyHandlers = { stopEvent, onKeyDown };
+
     document.addEventListener('copy', stopEvent, true);
     document.addEventListener('cut', stopEvent, true);
     document.addEventListener('paste', stopEvent, true);
@@ -69,18 +70,49 @@ function enableGlobalAntiCopyPasteProtection() {
     document.addEventListener('dragstart', stopEvent, true);
     document.addEventListener('keydown', onKeyDown, true);
 
-    const style = document.createElement('style');
-    style.id = 'global-anti-copy-style';
-    style.textContent = `
-        * {
-            -webkit-user-select: none !important;
-            -moz-user-select: none !important;
-            -ms-user-select: none !important;
-            user-select: none !important;
-            -webkit-touch-callout: none !important;
-        }
-    `;
-    document.head.appendChild(style);
+    if (!document.getElementById('global-anti-copy-style')) {
+        const style = document.createElement('style');
+        style.id = 'global-anti-copy-style';
+        style.textContent = `
+            * {
+                -webkit-user-select: none !important;
+                -moz-user-select: none !important;
+                -ms-user-select: none !important;
+                user-select: none !important;
+                -webkit-touch-callout: none !important;
+            }
+        `;
+        document.head.appendChild(style);
+    }
+}
+
+function disableGlobalAntiCopyPasteProtection() {
+    if (!globalAntiCopyEnabled || !globalAntiCopyHandlers) return;
+
+    const { stopEvent, onKeyDown } = globalAntiCopyHandlers;
+    document.removeEventListener('copy', stopEvent, true);
+    document.removeEventListener('cut', stopEvent, true);
+    document.removeEventListener('paste', stopEvent, true);
+    document.removeEventListener('contextmenu', stopEvent, true);
+    document.removeEventListener('selectstart', stopEvent, true);
+    document.removeEventListener('dragstart', stopEvent, true);
+    document.removeEventListener('keydown', onKeyDown, true);
+
+    const style = document.getElementById('global-anti-copy-style');
+    if (style) style.remove();
+
+    globalAntiCopyEnabled = false;
+    globalAntiCopyHandlers = null;
+}
+
+function applyRoleBasedAntiCopyProtection() {
+    // Only students should have global copy/paste lock by policy.
+    if (currentUser?.role === 'student') {
+        enableGlobalAntiCopyPasteProtection();
+        return;
+    }
+
+    disableGlobalAntiCopyPasteProtection();
 }
 
 async function initializeApp() {
@@ -328,6 +360,7 @@ function showPage(pageId) {
 }
 
 function showLandingPage() {
+    disableGlobalAntiCopyPasteProtection();
     showPage('landing-page');
     updateNavigation();
     // Load real-time statistics
@@ -415,6 +448,7 @@ async function showDashboard() {
     }
     
     console.log('showDashboard called for user:', currentUser.email, 'role:', currentUser.role);
+    applyRoleBasedAntiCopyProtection();
     
     if (currentUser.role === 'student') {
         console.log('Loading student dashboard');
@@ -733,6 +767,7 @@ function closeStudentRegistrationModal() {
 function logout() {
     authToken = null;
     currentUser = null;
+    disableGlobalAntiCopyPasteProtection();
     sessionStorage.clear(); // Clear all session data to prevent contamination
     updateNavigation();
     showLandingPage();
@@ -1794,6 +1829,8 @@ document.addEventListener('submit', async (e) => {
         }
         authToken = storedToken;
       }
+
+            const normalizedAuthToken = authToken.startsWith('Bearer ') ? authToken.slice(7) : authToken;
       
       console.log('Debug: authToken exists:', !!authToken);
       console.log('Debug: authToken starts with Bearer:', authToken.startsWith('Bearer'));
@@ -1848,7 +1885,7 @@ document.addEventListener('submit', async (e) => {
         const resumeResponse = await fetch(API_BASE + '/students/upload-resume', {
           method: 'POST',
           headers: { 
-            'Authorization': `Bearer ${authToken}` 
+                        'Authorization': `Bearer ${normalizedAuthToken}` 
           },
           body: resumeFormData
         });
@@ -1880,7 +1917,7 @@ document.addEventListener('submit', async (e) => {
         const avatarResponse = await fetch(API_BASE + '/students/upload-avatar', {
           method: 'POST',
           headers: { 
-            'Authorization': `Bearer ${authToken}` 
+                        'Authorization': `Bearer ${normalizedAuthToken}` 
           },
           body: avatarFormData
         });
@@ -2656,7 +2693,6 @@ async function showAllApplicationsLegacy() {
 async function viewJob(jobId) {
     try {
         console.log('viewJob function called with jobId:', jobId);
-        alert('viewJob called for job: ' + jobId);
         
         const response = await apiCall(`/jobs/${jobId}`);
         const job = response.data || response;

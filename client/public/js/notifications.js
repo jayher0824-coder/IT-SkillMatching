@@ -26,21 +26,12 @@ class NotificationManager {
     // Fetch notifications from server
     async fetchNotifications() {
         try {
-            const token = sessionStorage.getItem('authToken');
-            if (!token) return;
-
-            const response = await fetch('/api/notifications', {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-
-            if (!response.ok) throw new Error('Failed to fetch notifications');
-
-            const data = await response.json();
+            const data = await apiCall('/notifications', { retry: 1 });
             if (data.success) {
-                this.notifications = data.data;
-                this.unreadCount = data.unreadCount;
+                this.notifications = Array.isArray(data.data) ? data.data : [];
+                this.unreadCount = Number.isFinite(Number(data.unreadCount))
+                    ? Number(data.unreadCount)
+                    : this.notifications.filter(n => !n.read).length;
                 this.notifyListeners();
             }
         } catch (error) {
@@ -51,17 +42,9 @@ class NotificationManager {
     // Mark notification as read
     async markAsRead(notificationId) {
         try {
-            const token = sessionStorage.getItem('authToken');
-            const response = await fetch(`/api/notifications/${notificationId}/read`, {
-                method: 'PUT',
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
+            const data = await apiCall(`/notifications/${notificationId}/read`, {
+                method: 'PUT'
             });
-
-            if (!response.ok) throw new Error('Failed to mark notification as read');
-
-            const data = await response.json();
             if (data.success) {
                 await this.fetchNotifications();
             }
@@ -73,17 +56,9 @@ class NotificationManager {
     // Mark all as read
     async markAllAsRead() {
         try {
-            const token = sessionStorage.getItem('authToken');
-            const response = await fetch('/api/notifications/read-all', {
-                method: 'PUT',
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
+            const data = await apiCall('/notifications/read-all', {
+                method: 'PUT'
             });
-
-            if (!response.ok) throw new Error('Failed to mark all as read');
-
-            const data = await response.json();
             if (data.success) {
                 await this.fetchNotifications();
             }
@@ -95,17 +70,9 @@ class NotificationManager {
     // Delete notification
     async deleteNotification(notificationId) {
         try {
-            const token = sessionStorage.getItem('authToken');
-            const response = await fetch(`/api/notifications/${notificationId}`, {
-                method: 'DELETE',
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
+            const data = await apiCall(`/notifications/${notificationId}`, {
+                method: 'DELETE'
             });
-
-            if (!response.ok) throw new Error('Failed to delete notification');
-
-            const data = await response.json();
             if (data.success) {
                 await this.fetchNotifications();
             }
